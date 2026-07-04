@@ -63,7 +63,12 @@ export default function ProjectManagerView() {
             </Button>
           </div>
         ) : (
-          <ProjectManagerList projects={projects} />
+          <ProjectManagerList
+            projects={projects}
+            onDeleteSuccess={(projectName) =>
+              toast.success(`Project "${projectName}" deleted successfully.`)
+            }
+          />
         )}
       </section>
 

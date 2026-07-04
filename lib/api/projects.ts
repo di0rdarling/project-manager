@@ -1,16 +1,5 @@
 import type { ProjectResponse } from "@/lib/types";
-
-async function parseResponse<T>(response: Response): Promise<T> {
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      typeof data.error === "string" ? data.error : "Request failed",
-    );
-  }
-
-  return data as T;
-}
+import { parseResponse } from "@/lib/api/response";
 
 export async function fetchProjects(): Promise<ProjectResponse[]> {
   const response = await fetch("/api/projects");
@@ -28,4 +17,12 @@ export async function createProject(input: {
   });
 
   return parseResponse<ProjectResponse>(response);
+}
+
+export async function deleteProject(projectId: string): Promise<void> {
+  const response = await fetch(`/api/projects/${projectId}`, {
+    method: "DELETE",
+  });
+
+  await parseResponse<{ success: true }>(response);
 }
