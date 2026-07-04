@@ -15,7 +15,14 @@
  *   ];
  */
 export const PLAIN_ENGLISH_STYLE_GUIDE: readonly string[] = [
-  "Use simple, plain English that a high schooler could easily understand.",
+  "Use simple, plain English that a late high schooler could easily understand.",
   "Avoid jargon, buzzwords, and overly formal or corporate language.",
   "Prefer short sentences and everyday words over complex or technical ones.",
+];
+
+export const CONCISE_RESPONSE_STYLE_GUIDE: readonly string[] = [
+  "Be concise and to the point.",
+  "Avoid unnecessary words and phrases.",
+  "Prefer short sentences and everyday words over complex or technical ones.",
+  "Keep responses brief and to the point.",
 ];

@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { buildChatSystemPrompt } from "@/lib/prompts/chat-prompt";
 
 export type GeminiChatMessage = {
   role: "user" | "model";
@@ -47,6 +48,7 @@ export async function generateChatReply(
 ): Promise<string> {
   const model = getGeminiClient().getGenerativeModel({
     model: getChatModelName(),
+    systemInstruction: buildChatSystemPrompt(),
   });
   const chat = model.startChat({
     history: history.map((entry) => ({

@@ -277,6 +277,31 @@ body {
   text-decoration: underline;
 }
 
+.markdown-table-wrapper {
+  margin: 0.75em 0;
+  overflow-x: auto;
+  width: 100%;
+}
+
+.markdown-content table {
+  border-collapse: collapse;
+  min-width: 100%;
+  width: max-content;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid #d4d4d8;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.markdown-content th {
+  background: #f4f4f5;
+  font-weight: 600;
+}
+
 .markdown-content-inverted blockquote {
   border-left-color: #a1a1aa;
   color: #d4d4d8;
@@ -292,6 +317,15 @@ body {
 
 .markdown-content-inverted a {
   color: inherit;
+}
+
+.markdown-content-inverted th {
+  background: rgb(255 255 255 / 0.12);
+}
+
+.markdown-content-inverted th,
+.markdown-content-inverted td {
+  border-color: rgb(255 255 255 / 0.2);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -325,6 +359,15 @@ body {
     background: #27272a;
   }
 
+  .markdown-content th {
+    background: #27272a;
+  }
+
+  .markdown-content th,
+  .markdown-content td {
+    border-color: #3f3f46;
+  }
+
   .markdown-content-inverted blockquote {
     border-left-color: #71717a;
     color: #52525b;
@@ -336,5 +379,14 @@ body {
 
   .markdown-content-inverted pre {
     background: rgb(0 0 0 / 0.06);
+  }
+
+  .markdown-content-inverted th {
+    background: rgb(0 0 0 / 0.08);
+  }
+
+  .markdown-content-inverted th,
+  .markdown-content-inverted td {
+    border-color: rgb(0 0 0 / 0.12);
   }
 }
