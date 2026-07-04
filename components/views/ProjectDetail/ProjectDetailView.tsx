@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, PencilIcon } from "@heroicons/react/24/outline";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
+import { IconButton } from "@/components/ui/IconButton";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useFetchNotes } from "@/hooks/queries/useFetchNotes";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
@@ -23,6 +24,7 @@ import EditToolModal from "./modals/tools/EditToolModal";
 import ProjectItemsList from "./ProjectItemsList";
 import ProjectSection from "./ProjectSection";
 import AIProjectSummary from "./AIProjectSummary";
+import EditProjectModal from "../ProjectManager/modals/EditProjectModal";
 
 interface ProjectDetailViewProps {
   projectId: string;
@@ -35,6 +37,7 @@ export default function ProjectDetailView({
   const [isCreateRequirementModalOpen, setIsCreateRequirementModalOpen] =
     useState(false);
   const [isCreateToolModalOpen, setIsCreateToolModalOpen] = useState(false);
+  const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
 
   const { data: project, isPending, isError, error } =
     useFetchProject(projectId);
@@ -79,7 +82,16 @@ export default function ProjectDetailView({
       ) : (
         <>
           <div className="space-y-2">
-            <h1 className="text-4xl font-bold tracking-tight">{project.name}</h1>
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="text-4xl font-bold tracking-tight">{project.name}</h1>
+              <IconButton
+                type="button"
+                aria-label="Edit project"
+                onClick={() => setIsEditProjectModalOpen(true)}
+              >
+                <PencilIcon className="size-4" />
+              </IconButton>
+            </div>
             {project.description ? (
               <p className="text-zinc-600 dark:text-zinc-400">
                 {project.description}
@@ -228,6 +240,13 @@ export default function ProjectDetailView({
             projectId={projectId}
             onClose={() => setIsCreateToolModalOpen(false)}
             onSuccess={() => toast.success("Tool added successfully.")}
+          />
+
+          <EditProjectModal
+            open={isEditProjectModalOpen}
+            project={project}
+            onClose={() => setIsEditProjectModalOpen(false)}
+            onSuccess={() => toast.success("Project updated successfully.")}
           />
         </>
       )}
