@@ -5,17 +5,23 @@ import { IconButton } from "@/components/ui/IconButton";
 import type { ProjectResponse } from "@/lib/types";
 import { formatDisplayDate } from "@/lib/dates";
 import DeleteProjectModal from "./DeleteProjectModal";
-import { TrashIcon } from "@heroicons/react/24/outline";
+import EditProjectModal from "./EditProjectModal";
+import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 interface ProjectManagerListProps {
   projects: ProjectResponse[];
+  onEditSuccess?: (projectName: string) => void;
   onDeleteSuccess?: (projectName: string) => void;
 }
 
 export default function ProjectManagerList({
   projects,
+  onEditSuccess,
   onDeleteSuccess,
 }: Readonly<ProjectManagerListProps>) {
+  const [projectToEdit, setProjectToEdit] = useState<ProjectResponse | null>(
+    null,
+  );
   const [projectToDelete, setProjectToDelete] = useState<ProjectResponse | null>(
     null,
   );
@@ -46,6 +52,13 @@ export default function ProjectManagerList({
                 </time>
                 <IconButton
                   type="button"
+                  aria-label={`Edit ${project.name}`}
+                  onClick={() => setProjectToEdit(project)}
+                >
+                  <PencilIcon className="size-4" />
+                </IconButton>
+                <IconButton
+                  type="button"
                   variant="danger"
                   aria-label={`Delete ${project.name}`}
                   onClick={() => setProjectToDelete(project)}
@@ -57,6 +70,13 @@ export default function ProjectManagerList({
           </li>
         ))}
       </ul>
+
+      <EditProjectModal
+        open={projectToEdit !== null}
+        project={projectToEdit}
+        onClose={() => setProjectToEdit(null)}
+        onSuccess={(projectName) => onEditSuccess?.(projectName)}
+      />
 
       <DeleteProjectModal
         open={projectToDelete !== null}

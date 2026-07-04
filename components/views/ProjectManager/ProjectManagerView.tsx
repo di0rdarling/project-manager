@@ -65,6 +65,9 @@ export default function ProjectManagerView() {
         ) : (
           <ProjectManagerList
             projects={projects}
+            onEditSuccess={(projectName) =>
+              toast.success(`Project "${projectName}" updated successfully.`)
+            }
             onDeleteSuccess={(projectName) =>
               toast.success(`Project "${projectName}" deleted successfully.`)
             }
