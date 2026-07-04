@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HomeIcon } from "@heroicons/react/24/outline";
+import {
+  ChatBubbleLeftRightIcon,
+  HomeIcon,
+} from "@heroicons/react/24/outline";
 
 const navItems = [
   { href: "/", label: "Home", icon: HomeIcon },
+  { href: "/chats", label: "AI Chats", icon: ChatBubbleLeftRightIcon },
 ] as const;
 
 export default function NavigationSidebar() {
