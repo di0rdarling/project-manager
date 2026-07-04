@@ -10,12 +10,12 @@ import { useFetchNotes } from "@/hooks/queries/useFetchNotes";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
 import { useFetchRequirements } from "@/hooks/queries/useFetchRequirements";
 import { formatDisplayDate } from "@/lib/dates";
-import CreateNoteModal from "./CreateNoteModal";
-import CreateRequirementModal from "./CreateRequirementModal";
-import DeleteNoteModal from "./DeleteNoteModal";
-import DeleteRequirementModal from "./DeleteRequirementModal";
-import EditNoteModal from "./EditNoteModal";
-import EditRequirementModal from "./EditRequirementModal";
+import CreateNoteModal from "./modals/CreateNoteModal";
+import CreateRequirementModal from "./modals/CreateRequirementModal";
+import DeleteNoteModal from "./modals/DeleteNoteModal";
+import DeleteRequirementModal from "./modals/DeleteRequirementModal";
+import EditNoteModal from "./modals/EditNoteModal";
+import EditRequirementModal from "./modals/EditRequirementModal";
 import ProjectItemsList from "./ProjectItemsList";
 import ProjectSection from "./ProjectSection";
 

@@ -5,8 +5,8 @@ import { useState } from "react";
 import { IconButton } from "@/components/ui/IconButton";
 import type { ProjectResponse } from "@/lib/types";
 import { formatDisplayDate } from "@/lib/dates";
-import DeleteProjectModal from "./DeleteProjectModal";
-import EditProjectModal from "./EditProjectModal";
+import DeleteProjectModal from "./modals/DeleteProjectModal";
+import EditProjectModal from "./modals/EditProjectModal";
 import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 interface ProjectManagerListProps {

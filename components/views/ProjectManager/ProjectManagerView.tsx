@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useFetchProjects } from "@/hooks/queries/useFetchProjects";
-import CreateProjectModal from "./CreateProjectModal";
+import CreateProjectModal from "./modals/CreateProjectModal";
 import ProjectManagerList from "./ProjectManagerList";
 
 export default function ProjectManagerView() {
