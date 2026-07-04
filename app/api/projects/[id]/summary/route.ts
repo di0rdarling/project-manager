@@ -55,10 +55,6 @@ export async function POST(_request: Request, context: RouteContext) {
       return Response.json({ error: "Project not found" }, { status: 404 });
     }
 
-    if (hasSavedSummary(project)) {
-      return Response.json(serializeProject(project));
-    }
-
     const [requirements, notes] = await Promise.all([
       db
         .collection<StoredRequirement>("requirements")
@@ -89,14 +85,7 @@ export async function POST(_request: Request, context: RouteContext) {
     const updatedAt = new Date().toISOString();
 
     const updateResult = await db.collection<StoredProject>("projects").updateOne(
-      {
-        _id: projectObjectId,
-        $or: [
-          { aiSummary: { $exists: false } },
-          { aiSummary: null },
-          { aiSummary: "" },
-        ],
-      },
+      { _id: projectObjectId },
       {
         $set: {
           aiSummary,
@@ -106,22 +95,7 @@ export async function POST(_request: Request, context: RouteContext) {
     );
 
     if (updateResult.matchedCount === 0) {
-      const existingProject = await db
-        .collection<StoredProject>("projects")
-        .findOne({ _id: projectObjectId });
-
-      if (!existingProject) {
-        return Response.json({ error: "Project not found" }, { status: 404 });
-      }
-
-      if (hasSavedSummary(existingProject)) {
-        return Response.json(serializeProject(existingProject));
-      }
-
-      return Response.json(
-        { error: "Failed to save project summary" },
-        { status: 500 },
-      );
+      return Response.json({ error: "Project not found" }, { status: 404 });
     }
 
     const savedProject = await db

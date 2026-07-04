@@ -1,9 +1,11 @@
 "use client";
 
+import { useRef } from "react";
 import toast from "react-hot-toast";
-import { SparklesIcon } from "@heroicons/react/24/outline";
+import { ArrowPathIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
+import { IconButton } from "@/components/ui/IconButton";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useGenerateProjectSummary } from "@/hooks/mutations/useGenerateProjectSummary";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
@@ -15,6 +17,7 @@ interface AIProjectSummaryProps {
 export default function AIProjectSummary({
   projectId,
 }: Readonly<AIProjectSummaryProps>) {
+  const isRegeneratingRef = useRef(false);
   const { data: project, isFetching } = useFetchProject(projectId);
   const {
     mutate: generateSummary,
@@ -25,35 +28,68 @@ export default function AIProjectSummary({
     reset,
   } = useGenerateProjectSummary({
     onSuccess: () => {
-      toast.success("Project summary generated successfully.");
+      toast.success(
+        isRegeneratingRef.current
+          ? "Project summary regenerated successfully."
+          : "Project summary generated successfully.",
+      );
     },
   });
 
   const summary = project?.aiSummary ?? null;
   const isLoadingSummary =
-    isPending || (isSuccess && isFetching && summary === null);
+    isPending ||
+    (isSuccess && isFetching && summary === null && !isRegeneratingRef.current);
 
-  function handleGenerateClick() {
+  function handleGenerateClick(isRegenerate: boolean) {
+    isRegeneratingRef.current = isRegenerate;
     reset();
     generateSummary(projectId);
   }
 
   return (
     <section className="space-y-4">
-      <h2 className="inline-flex items-center gap-2 text-lg font-semibold">
-        <SparklesIcon
-          className="size-5 text-zinc-500 dark:text-zinc-400"
-          aria-hidden
-        />
-        Overview
-      </h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="inline-flex items-center gap-2 text-lg font-semibold">
+          <SparklesIcon
+            className="size-5 text-zinc-500 dark:text-zinc-400"
+            aria-hidden
+          />
+          Overview
+        </h2>
+        {summary ? (
+          <IconButton
+            type="button"
+            aria-label="Regenerate summary"
+            onClick={() => handleGenerateClick(true)}
+            disabled={isPending}
+            className="shrink-0"
+          >
+            <ArrowPathIcon className="size-4" />
+          </IconButton>
+        ) : null}
+      </div>
 
-      {summary ? (
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
-            {summary}
-          </p>
-        </div>
+      {isPending ? (
+        <LoadingMessage>
+          {isRegeneratingRef.current
+            ? "Regenerating project summary..."
+            : "Generating project summary..."}
+        </LoadingMessage>
+      ) : summary ? (
+        <>
+          {isError ? (
+            <ErrorMessage
+              error={error}
+              fallbackMessage="Failed to regenerate project summary"
+            />
+          ) : null}
+          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
+              {summary}
+            </p>
+          </div>
+        </>
       ) : isLoadingSummary ? (
         <LoadingMessage>Generating project summary...</LoadingMessage>
       ) : (
@@ -72,7 +108,7 @@ export default function AIProjectSummary({
           ) : null}
           <Button
             type="button"
-            onClick={handleGenerateClick}
+            onClick={() => handleGenerateClick(false)}
             disabled={isPending}
             className="mt-4"
           >
