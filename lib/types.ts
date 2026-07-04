@@ -22,3 +22,22 @@ type NoteBase<TId> = {
 
 export type Note = NoteBase<ObjectId>;
 export type NoteResponse = NoteBase<string>;
+
+type RequirementBase<TId> = {
+  _id: TId;
+  projectId: TId;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Requirement = RequirementBase<ObjectId>;
+export type RequirementResponse = RequirementBase<string>;
+
+export type ProjectContentItem = {
+  _id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+};

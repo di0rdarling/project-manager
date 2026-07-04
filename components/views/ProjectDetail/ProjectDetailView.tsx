@@ -4,14 +4,20 @@ import { useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
-import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useFetchNotes } from "@/hooks/queries/useFetchNotes";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
+import { useFetchRequirements } from "@/hooks/queries/useFetchRequirements";
 import { formatDisplayDate } from "@/lib/dates";
 import CreateNoteModal from "./CreateNoteModal";
-import ProjectNotesList from "./ProjectNotesList";
+import CreateRequirementModal from "./CreateRequirementModal";
+import DeleteNoteModal from "./DeleteNoteModal";
+import DeleteRequirementModal from "./DeleteRequirementModal";
+import EditNoteModal from "./EditNoteModal";
+import EditRequirementModal from "./EditRequirementModal";
+import ProjectItemsList from "./ProjectItemsList";
+import ProjectSection from "./ProjectSection";
 
 interface ProjectDetailViewProps {
   projectId: string;
@@ -20,21 +26,28 @@ interface ProjectDetailViewProps {
 export default function ProjectDetailView({
   projectId,
 }: Readonly<ProjectDetailViewProps>) {
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreateNoteModalOpen, setIsCreateNoteModalOpen] = useState(false);
+  const [isCreateRequirementModalOpen, setIsCreateRequirementModalOpen] =
+    useState(false);
 
   const { data: project, isPending, isError, error } =
     useFetchProject(projectId);
+
+  const canFetchSections = !isPending && !isError;
 
   const {
     data: notes = [],
     isPending: isNotesPending,
     isError: isNotesError,
     error: notesError,
-  } = useFetchNotes(projectId, { enabled: !isPending && !isError });
+  } = useFetchNotes(projectId, { enabled: canFetchSections });
 
-  function openCreateModal() {
-    setIsCreateModalOpen(true);
-  }
+  const {
+    data: requirements = [],
+    isPending: isRequirementsPending,
+    isError: isRequirementsError,
+    error: requirementsError,
+  } = useFetchRequirements(projectId, { enabled: canFetchSections });
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-6 py-12">
@@ -64,49 +77,100 @@ export default function ProjectDetailView({
             </p>
           </div>
 
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Notes</h2>
-              <Button type="button" onClick={openCreateModal} className="shrink-0">
-                Add Note
-              </Button>
-            </div>
+          <ProjectSection
+            title="Requirements"
+            addButtonLabel="Add Requirement"
+            onAddClick={() => setIsCreateRequirementModalOpen(true)}
+            isPending={isRequirementsPending}
+            isError={isRequirementsError}
+            error={requirementsError}
+            loadingMessage="Loading requirements..."
+            errorFallbackMessage="Failed to load requirements"
+            isEmpty={requirements.length === 0}
+            emptyMessage="No requirements yet. Add your first one to get started."
+          >
+            <ProjectItemsList
+              items={requirements}
+              itemLabel="requirement"
+              onEditSuccess={() =>
+                toast.success("Requirement updated successfully.")
+              }
+              onDeleteSuccess={() =>
+                toast.success("Requirement deleted successfully.")
+              }
+              renderEditModal={({ open, item, onClose, onSuccess }) => (
+                <EditRequirementModal
+                  open={open}
+                  projectId={projectId}
+                  requirement={item}
+                  onClose={onClose}
+                  onSuccess={onSuccess}
+                />
+              )}
+              renderDeleteModal={({ open, item, onClose, onSuccess }) => (
+                <DeleteRequirementModal
+                  open={open}
+                  projectId={projectId}
+                  requirement={item}
+                  onClose={onClose}
+                  onSuccess={onSuccess}
+                />
+              )}
+            />
+          </ProjectSection>
 
-            {isNotesPending ? (
-              <LoadingMessage>Loading notes...</LoadingMessage>
-            ) : isNotesError ? (
-              <ErrorMessage
-                error={notesError}
-                fallbackMessage="Failed to load notes"
-              />
-            ) : notes.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-zinc-300 px-4 py-8 text-center dark:border-zinc-700">
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                  No notes yet. Add your first one to get started.
-                </p>
-                <Button
-                  type="button"
-                  onClick={openCreateModal}
-                  className="mt-4"
-                >
-                  Add Note
-                </Button>
-              </div>
-            ) : (
-              <ProjectNotesList
-                projectId={projectId}
-                notes={notes}
-                onEditSuccess={() => toast.success("Note updated successfully.")}
-                onDeleteSuccess={() => toast.success("Note deleted successfully.")}
-              />
-            )}
-          </section>
+          <ProjectSection
+            title="Notes"
+            addButtonLabel="Add Note"
+            onAddClick={() => setIsCreateNoteModalOpen(true)}
+            isPending={isNotesPending}
+            isError={isNotesError}
+            error={notesError}
+            loadingMessage="Loading notes..."
+            errorFallbackMessage="Failed to load notes"
+            isEmpty={notes.length === 0}
+            emptyMessage="No notes yet. Add your first one to get started."
+          >
+            <ProjectItemsList
+              items={notes}
+              itemLabel="note"
+              onEditSuccess={() => toast.success("Note updated successfully.")}
+              onDeleteSuccess={() => toast.success("Note deleted successfully.")}
+              renderEditModal={({ open, item, onClose, onSuccess }) => (
+                <EditNoteModal
+                  open={open}
+                  projectId={projectId}
+                  note={item}
+                  onClose={onClose}
+                  onSuccess={onSuccess}
+                />
+              )}
+              renderDeleteModal={({ open, item, onClose, onSuccess }) => (
+                <DeleteNoteModal
+                  open={open}
+                  projectId={projectId}
+                  note={item}
+                  onClose={onClose}
+                  onSuccess={onSuccess}
+                />
+              )}
+            />
+          </ProjectSection>
+
+
 
           <CreateNoteModal
-            open={isCreateModalOpen}
+            open={isCreateNoteModalOpen}
             projectId={projectId}
-            onClose={() => setIsCreateModalOpen(false)}
+            onClose={() => setIsCreateNoteModalOpen(false)}
             onSuccess={() => toast.success("Note added successfully.")}
+          />
+
+          <CreateRequirementModal
+            open={isCreateRequirementModalOpen}
+            projectId={projectId}
+            onClose={() => setIsCreateRequirementModalOpen(false)}
+            onSuccess={() => toast.success("Requirement added successfully.")}
           />
         </>
       )}

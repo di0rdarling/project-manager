@@ -6,3 +6,8 @@ export const projectKeys = {
 export const noteKeys = {
   all: (projectId: string) => ["projects", projectId, "notes"] as const,
 };
+
+export const requirementKeys = {
+  all: (projectId: string) =>
+    ["projects", projectId, "requirements"] as const,
+};
