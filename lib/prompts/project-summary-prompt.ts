@@ -2,7 +2,8 @@ import { stripRichText } from "@/lib/rich-text";
 import { PLAIN_ENGLISH_STYLE_GUIDE } from "@/lib/prompts/style-guide";
 
 type SummaryContentItem = {
-  title: string;
+  title?: string;
+  name?: string;
   content: string;
 };
 
@@ -10,6 +11,7 @@ type BuildProjectSummaryPromptInput = {
   name: string;
   description: string;
   requirements: SummaryContentItem[];
+  tools: SummaryContentItem[];
   notes: SummaryContentItem[];
 };
 
@@ -23,10 +25,12 @@ function formatContentItems(
 
   const formattedItems = items
     .map((item, index) => {
-      const title = item.title.trim() || `Untitled ${label.slice(0, -1)}`;
+      const heading =
+        (item.title ?? item.name ?? "").trim() ||
+        `Untitled ${label.slice(0, -1)}`;
       const content = stripRichText(item.content);
 
-      return `${index + 1}. ${title}\n   ${content || "No content provided."}`;
+      return `${index + 1}. ${heading}\n   ${content || "No content provided."}`;
     })
     .join("\n");
 
@@ -37,12 +41,13 @@ export function buildProjectSummaryPrompt({
   name,
   description,
   requirements,
+  tools,
   notes,
 }: BuildProjectSummaryPromptInput): string {
   const sections = [
     "You are a project management assistant.",
     "Write a concise 2-3 paragraph overview of the project below.",
-    "Synthesize the project's purpose, key requirements, and important notes.",
+    "Synthesize the project's purpose, key requirements, tools, and important notes.",
     ...PLAIN_ENGLISH_STYLE_GUIDE,
     "Use clear plain text with no markdown or bullet lists.",
     "",
@@ -50,6 +55,8 @@ export function buildProjectSummaryPrompt({
     `Description: ${description.trim() || "No description provided."}`,
     "",
     formatContentItems("Requirements", requirements),
+    "",
+    formatContentItems("Tools", tools),
     "",
     formatContentItems("Notes", notes),
   ];

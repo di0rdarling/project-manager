@@ -9,13 +9,17 @@ import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useFetchNotes } from "@/hooks/queries/useFetchNotes";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
 import { useFetchRequirements } from "@/hooks/queries/useFetchRequirements";
+import { useFetchTools } from "@/hooks/queries/useFetchTools";
 import { formatDisplayDate } from "@/lib/dates";
 import CreateNoteModal from "./modals/notes/CreateNoteModal";
 import CreateRequirementModal from "./modals/requirements/CreateRequirementModal";
+import CreateToolModal from "./modals/tools/CreateToolModal";
 import DeleteNoteModal from "./modals/notes/DeleteNoteModal";
 import DeleteRequirementModal from "./modals/requirements/DeleteRequirementModal";
+import DeleteToolModal from "./modals/tools/DeleteToolModal";
 import EditNoteModal from "./modals/notes/EditNoteModal";
 import EditRequirementModal from "./modals/requirements/EditRequirementModal";
+import EditToolModal from "./modals/tools/EditToolModal";
 import ProjectItemsList from "./ProjectItemsList";
 import ProjectSection from "./ProjectSection";
 import AIProjectSummary from "./AIProjectSummary";
@@ -30,6 +34,7 @@ export default function ProjectDetailView({
   const [isCreateNoteModalOpen, setIsCreateNoteModalOpen] = useState(false);
   const [isCreateRequirementModalOpen, setIsCreateRequirementModalOpen] =
     useState(false);
+  const [isCreateToolModalOpen, setIsCreateToolModalOpen] = useState(false);
 
   const { data: project, isPending, isError, error } =
     useFetchProject(projectId);
@@ -49,6 +54,13 @@ export default function ProjectDetailView({
     isError: isRequirementsError,
     error: requirementsError,
   } = useFetchRequirements(projectId, { enabled: canFetchSections });
+
+  const {
+    data: tools = [],
+    isPending: isToolsPending,
+    isError: isToolsError,
+    error: toolsError,
+  } = useFetchTools(projectId, { enabled: canFetchSections });
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-6 py-12">
@@ -123,6 +135,44 @@ export default function ProjectDetailView({
           </ProjectSection>
 
           <ProjectSection
+            title="Tools"
+            addButtonLabel="Add Tool"
+            onAddClick={() => setIsCreateToolModalOpen(true)}
+            isPending={isToolsPending}
+            isError={isToolsError}
+            error={toolsError}
+            loadingMessage="Loading tools..."
+            errorFallbackMessage="Failed to load tools"
+            isEmpty={tools.length === 0}
+            emptyMessage="No tools yet. Add your first one to get started."
+          >
+            <ProjectItemsList
+              items={tools}
+              itemLabel="tool"
+              onEditSuccess={() => toast.success("Tool updated successfully.")}
+              onDeleteSuccess={() => toast.success("Tool deleted successfully.")}
+              renderEditModal={({ open, item, onClose, onSuccess }) => (
+                <EditToolModal
+                  open={open}
+                  projectId={projectId}
+                  tool={item}
+                  onClose={onClose}
+                  onSuccess={onSuccess}
+                />
+              )}
+              renderDeleteModal={({ open, item, onClose, onSuccess }) => (
+                <DeleteToolModal
+                  open={open}
+                  projectId={projectId}
+                  tool={item}
+                  onClose={onClose}
+                  onSuccess={onSuccess}
+                />
+              )}
+            />
+          </ProjectSection>
+
+          <ProjectSection
             title="Notes"
             addButtonLabel="Add Note"
             onAddClick={() => setIsCreateNoteModalOpen(true)}
@@ -171,6 +221,13 @@ export default function ProjectDetailView({
             projectId={projectId}
             onClose={() => setIsCreateRequirementModalOpen(false)}
             onSuccess={() => toast.success("Requirement added successfully.")}
+          />
+
+          <CreateToolModal
+            open={isCreateToolModalOpen}
+            projectId={projectId}
+            onClose={() => setIsCreateToolModalOpen(false)}
+            onSuccess={() => toast.success("Tool added successfully.")}
           />
         </>
       )}

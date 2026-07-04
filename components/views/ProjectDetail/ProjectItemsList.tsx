@@ -37,16 +37,19 @@ export default function ProjectItemsList<T extends ProjectContentItem>({
   return (
     <>
       <ul className="space-y-3">
-        {items.map((item) => (
+        {items.map((item) => {
+          const heading = item.title ?? item.name;
+
+          return (
           <li
             key={item._id}
             className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1 space-y-2">
-                {item.title ? (
+                {heading ? (
                   <h3 className="text-md font-semibold text-zinc-900 dark:text-zinc-100">
-                    {item.title}
+                    {heading}
                   </h3>
                 ) : null}
                 <RichTextContent
@@ -79,7 +82,8 @@ export default function ProjectItemsList<T extends ProjectContentItem>({
               </div>
             </div>
           </li>
-        ))}
+          );
+        })}
       </ul>
 
       {renderEditModal({

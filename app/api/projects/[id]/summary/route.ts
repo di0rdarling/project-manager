@@ -5,7 +5,7 @@ import {
   serializeProject,
   type StoredProject,
 } from "@/lib/serialize-project";
-import type { Note, Requirement } from "@/lib/types";
+import type { Note, Requirement, Tool } from "@/lib/types";
 import { buildProjectSummaryPrompt } from "@/lib/prompts/project-summary-prompt";
 
 type RouteContext = {
@@ -25,6 +25,13 @@ type StoredRequirement = Omit<
 type StoredNote = Omit<Note, "_id" | "projectId" | "createdAt" | "updatedAt"> & {
   _id: Note["_id"];
   projectId: Note["projectId"];
+  createdAt: string | Date;
+  updatedAt: string | Date;
+};
+
+type StoredTool = Omit<Tool, "_id" | "projectId" | "createdAt" | "updatedAt"> & {
+  _id: Tool["_id"];
+  projectId: Tool["projectId"];
   createdAt: string | Date;
   updatedAt: string | Date;
 };
@@ -55,9 +62,14 @@ export async function POST(_request: Request, context: RouteContext) {
       return Response.json({ error: "Project not found" }, { status: 404 });
     }
 
-    const [requirements, notes] = await Promise.all([
+    const [requirements, tools, notes] = await Promise.all([
       db
         .collection<StoredRequirement>("requirements")
+        .find({ projectId: projectObjectId })
+        .sort({ createdAt: -1 })
+        .toArray(),
+      db
+        .collection<StoredTool>("tools")
         .find({ projectId: projectObjectId })
         .sort({ createdAt: -1 })
         .toArray(),
@@ -74,6 +86,10 @@ export async function POST(_request: Request, context: RouteContext) {
       requirements: requirements.map((requirement) => ({
         title: requirement.title,
         content: requirement.content,
+      })),
+      tools: tools.map((tool) => ({
+        name: tool.name,
+        content: tool.content,
       })),
       notes: notes.map((note) => ({
         title: note.title,

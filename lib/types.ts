@@ -36,9 +36,22 @@ type RequirementBase<TId> = {
 export type Requirement = RequirementBase<ObjectId>;
 export type RequirementResponse = RequirementBase<string>;
 
+type ToolBase<TId> = {
+  _id: TId;
+  projectId: TId;
+  name: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Tool = ToolBase<ObjectId>;
+export type ToolResponse = ToolBase<string>;
+
 export type ProjectContentItem = {
   _id: string;
-  title: string;
+  title?: string;
+  name?: string;
   content: string;
   createdAt: string;
 };
