@@ -113,7 +113,8 @@ export default function AIProjectSummary({
           <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-900/50">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
               Generate an AI overview that synthesizes this project&apos;s
-              description, requirements, tools, and notes.
+              description, core users, pain points, requirements, tools, and
+              notes.
             </p>
             {isGenerateError ? (
               <div className="mt-4 text-left">

@@ -12,6 +12,7 @@ type BuildProjectSummaryPromptInput = {
   name: string;
   description: string;
   coreUsers: SummaryContentItem[];
+  painPoints: SummaryContentItem[];
   requirements: SummaryContentItem[];
   tools: SummaryContentItem[];
   notes: SummaryContentItem[];
@@ -45,6 +46,7 @@ export function buildProjectSummaryPrompt({
   name,
   description,
   coreUsers,
+  painPoints,
   requirements,
   tools,
   notes,
@@ -52,7 +54,7 @@ export function buildProjectSummaryPrompt({
   const sections = [
     "You are a project management assistant.",
     "Write a concise 2-3 paragraph overview of the project below.",
-    "Synthesize the project's purpose, key stakeholders, requirements, tools, and important notes.",
+    "Synthesize the project's purpose, key stakeholders, pain points, requirements, tools, and important notes.",
     ...PLAIN_ENGLISH_STYLE_GUIDE,
     "Use clear plain text with no markdown or bullet lists.",
     "",
@@ -60,6 +62,8 @@ export function buildProjectSummaryPrompt({
     `Description: ${description.trim() || "No description provided."}`,
     "",
     formatContentItems("Core Users", coreUsers),
+    "",
+    formatContentItems("Pain Points", painPoints),
     "",
     formatContentItems("Requirements", requirements),
     "",

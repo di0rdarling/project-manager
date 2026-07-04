@@ -12,8 +12,10 @@ import { useFetchProject } from "@/hooks/queries/useFetchProject";
 import { useFetchRequirements } from "@/hooks/queries/useFetchRequirements";
 import { useFetchTools } from "@/hooks/queries/useFetchTools";
 import { useFetchCoreUsers } from "@/hooks/queries/useFetchCoreUsers";
+import { useFetchPainPoints } from "@/hooks/queries/useFetchPainPoints";
 import { formatDisplayDate } from "@/lib/dates";
 import CreateNoteModal from "./modals/notes/CreateNoteModal";
+import CreatePainPointModal from "./modals/painPoints/CreatePainPointModal";
 import CreateRequirementModal from "./modals/requirements/CreateRequirementModal";
 import CreateToolModal from "./modals/tools/CreateToolModal";
 import CreateCoreUserModal from "./modals/coreUsers/CreateCoreUserModal";
@@ -21,7 +23,9 @@ import DeleteNoteModal from "./modals/notes/DeleteNoteModal";
 import DeleteRequirementModal from "./modals/requirements/DeleteRequirementModal";
 import DeleteToolModal from "./modals/tools/DeleteToolModal";
 import DeleteCoreUserModal from "./modals/coreUsers/DeleteCoreUserModal";
+import DeletePainPointModal from "./modals/painPoints/DeletePainPointModal";
 import EditNoteModal from "./modals/notes/EditNoteModal";
+import EditPainPointModal from "./modals/painPoints/EditPainPointModal";
 import EditRequirementModal from "./modals/requirements/EditRequirementModal";
 import EditToolModal from "./modals/tools/EditToolModal";
 import EditCoreUserModal from "./modals/coreUsers/EditCoreUserModal";
@@ -42,6 +46,8 @@ export default function ProjectDetailView({
     useState(false);
   const [isCreateToolModalOpen, setIsCreateToolModalOpen] = useState(false);
   const [isCreateCoreUserModalOpen, setIsCreateCoreUserModalOpen] =
+    useState(false);
+  const [isCreatePainPointModalOpen, setIsCreatePainPointModalOpen] =
     useState(false);
   const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
 
@@ -77,6 +83,13 @@ export default function ProjectDetailView({
     isError: isCoreUsersError,
     error: coreUsersError,
   } = useFetchCoreUsers(projectId, { enabled: canFetchSections });
+
+  const {
+    data: painPoints = [],
+    isPending: isPainPointsPending,
+    isError: isPainPointsError,
+    error: painPointsError,
+  } = useFetchPainPoints(projectId, { enabled: canFetchSections });
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-6 py-12">
@@ -152,6 +165,48 @@ export default function ProjectDetailView({
                   open={open}
                   projectId={projectId}
                   coreUser={item}
+                  onClose={onClose}
+                  onSuccess={onSuccess}
+                />
+              )}
+            />
+          </ProjectSection>
+
+          <ProjectSection
+            title="Pain Points"
+            addButtonLabel="Add Pain Point"
+            onAddClick={() => setIsCreatePainPointModalOpen(true)}
+            isPending={isPainPointsPending}
+            isError={isPainPointsError}
+            error={painPointsError}
+            loadingMessage="Loading pain points..."
+            errorFallbackMessage="Failed to load pain points"
+            isEmpty={painPoints.length === 0}
+            emptyMessage="No pain points yet. Add the problems this project solves for core users."
+          >
+            <ProjectItemsList
+              items={painPoints}
+              itemLabel="pain point"
+              onEditSuccess={() =>
+                toast.success("Pain point updated successfully.")
+              }
+              onDeleteSuccess={() =>
+                toast.success("Pain point deleted successfully.")
+              }
+              renderEditModal={({ open, item, onClose, onSuccess }) => (
+                <EditPainPointModal
+                  open={open}
+                  projectId={projectId}
+                  painPoint={item}
+                  onClose={onClose}
+                  onSuccess={onSuccess}
+                />
+              )}
+              renderDeleteModal={({ open, item, onClose, onSuccess }) => (
+                <DeletePainPointModal
+                  open={open}
+                  projectId={projectId}
+                  painPoint={item}
                   onClose={onClose}
                   onSuccess={onSuccess}
                 />
@@ -302,6 +357,13 @@ export default function ProjectDetailView({
             projectId={projectId}
             onClose={() => setIsCreateCoreUserModalOpen(false)}
             onSuccess={() => toast.success("Core user added successfully.")}
+          />
+
+          <CreatePainPointModal
+            open={isCreatePainPointModalOpen}
+            projectId={projectId}
+            onClose={() => setIsCreatePainPointModalOpen(false)}
+            onSuccess={() => toast.success("Pain point added successfully.")}
           />
 
           <EditProjectModal

@@ -24,6 +24,18 @@ type NoteBase<TId> = {
 export type Note = NoteBase<ObjectId>;
 export type NoteResponse = NoteBase<string>;
 
+type PainPointBase<TId> = {
+  _id: TId;
+  projectId: TId;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PainPoint = PainPointBase<ObjectId>;
+export type PainPointResponse = PainPointBase<string>;
+
 type RequirementBase<TId> = {
   _id: TId;
   projectId: TId;

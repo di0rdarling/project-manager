@@ -19,3 +19,8 @@ export const toolKeys = {
 export const coreUserKeys = {
   all: (projectId: string) => ["projects", projectId, "core-users"] as const,
 };
+
+export const painPointKeys = {
+  all: (projectId: string) =>
+    ["projects", projectId, "pain-points"] as const,
+};
