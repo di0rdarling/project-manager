@@ -96,6 +96,7 @@ export default function ProjectDetailView({
               <ProjectNotesList
                 projectId={projectId}
                 notes={notes}
+                onEditSuccess={() => toast.success("Note updated successfully.")}
                 onDeleteSuccess={() => toast.success("Note deleted successfully.")}
               />
             )}

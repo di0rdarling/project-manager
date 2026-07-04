@@ -1,23 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { TrashIcon } from "@heroicons/react/24/outline";
+import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { IconButton } from "@/components/ui/IconButton";
 import type { NoteResponse } from "@/lib/types";
 import { formatDisplayDate } from "@/lib/dates";
 import DeleteNoteModal from "./DeleteNoteModal";
+import EditNoteModal from "./EditNoteModal";
 
 interface ProjectNotesListProps {
   projectId: string;
   notes: NoteResponse[];
+  onEditSuccess?: () => void;
   onDeleteSuccess?: () => void;
 }
 
 export default function ProjectNotesList({
   projectId,
   notes,
+  onEditSuccess,
   onDeleteSuccess,
 }: Readonly<ProjectNotesListProps>) {
+  const [noteToEdit, setNoteToEdit] = useState<NoteResponse | null>(null);
   const [noteToDelete, setNoteToDelete] = useState<NoteResponse | null>(null);
 
   return (
@@ -41,6 +45,13 @@ export default function ProjectNotesList({
                 </time>
                 <IconButton
                   type="button"
+                  aria-label="Edit note"
+                  onClick={() => setNoteToEdit(note)}
+                >
+                  <PencilIcon className="size-4" />
+                </IconButton>
+                <IconButton
+                  type="button"
                   variant="danger"
                   aria-label="Delete note"
                   onClick={() => setNoteToDelete(note)}
@@ -52,6 +63,14 @@ export default function ProjectNotesList({
           </li>
         ))}
       </ul>
+
+      <EditNoteModal
+        open={noteToEdit !== null}
+        projectId={projectId}
+        note={noteToEdit}
+        onClose={() => setNoteToEdit(null)}
+        onSuccess={() => onEditSuccess?.()}
+      />
 
       <DeleteNoteModal
         open={noteToDelete !== null}

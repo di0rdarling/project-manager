@@ -20,6 +20,21 @@ export async function createNote(input: {
   return parseResponse<NoteResponse>(response);
 }
 
+export async function updateNote(input: {
+  projectId: string;
+  noteId: string;
+  content: string;
+}): Promise<NoteResponse> {
+  const { projectId, noteId, content } = input;
+  const response = await fetch(`/api/projects/${projectId}/notes/${noteId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+
+  return parseResponse<NoteResponse>(response);
+}
+
 export async function deleteNote(input: {
   projectId: string;
   noteId: string;
