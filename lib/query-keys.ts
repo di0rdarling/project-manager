@@ -24,3 +24,8 @@ export const painPointKeys = {
   all: (projectId: string) =>
     ["projects", projectId, "pain-points"] as const,
 };
+
+export const chatKeys = {
+  all: ["chats"] as const,
+  detail: (id: string) => ["chats", id] as const,
+};

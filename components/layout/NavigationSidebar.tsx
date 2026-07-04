@@ -23,7 +23,8 @@ export default function NavigationSidebar() {
 
       <nav className="flex flex-col gap-1 p-3">
         {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href;
+          const isActive =
+            href === "/" ? pathname === "/" : pathname.startsWith(href);
 
           return (
             <Link

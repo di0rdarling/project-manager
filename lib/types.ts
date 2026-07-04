@@ -81,3 +81,36 @@ export type ProjectContentItem = {
   content: string;
   createdAt: string;
 };
+
+export type ChatMessageRole = "user" | "model";
+
+type ChatMessageBase<TId> = {
+  _id: TId;
+  chatId: TId;
+  role: ChatMessageRole;
+  content: string;
+  createdAt: string;
+};
+
+export type ChatMessage = ChatMessageBase<ObjectId>;
+export type ChatMessageResponse = ChatMessageBase<string>;
+
+type ChatBase<TId> = {
+  _id: TId;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Chat = ChatBase<ObjectId>;
+export type ChatResponse = ChatBase<string>;
+
+export type ChatWithMessagesResponse = ChatResponse & {
+  messages: ChatMessageResponse[];
+};
+
+export type SendChatMessageResponse = {
+  chat: ChatResponse;
+  userMessage: ChatMessageResponse;
+  assistantMessage: ChatMessageResponse;
+};

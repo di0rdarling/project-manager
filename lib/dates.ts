@@ -9,3 +9,13 @@ export function formatDisplayDate(isoDate: string): string {
     day: "numeric",
   });
 }
+
+export function formatDisplayDateTime(isoDate: string): string {
+  return new Date(isoDate).toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
