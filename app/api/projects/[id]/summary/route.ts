@@ -127,3 +127,46 @@ export async function POST(_request: Request, context: RouteContext) {
     );
   }
 }
+
+export async function DELETE(_request: Request, context: RouteContext) {
+  try {
+    const { id } = await context.params;
+
+    if (!ObjectId.isValid(id)) {
+      return Response.json({ error: "Invalid project id" }, { status: 400 });
+    }
+
+    const client = await getClientPromise();
+    const db = client.db();
+    const projectObjectId = new ObjectId(id);
+
+    const updateResult = await db.collection<StoredProject>("projects").updateOne(
+      { _id: projectObjectId },
+      {
+        $set: {
+          aiSummary: null,
+          updatedAt: new Date().toISOString(),
+        },
+      },
+    );
+
+    if (updateResult.matchedCount === 0) {
+      return Response.json({ error: "Project not found" }, { status: 404 });
+    }
+
+    const savedProject = await db
+      .collection<StoredProject>("projects")
+      .findOne({ _id: projectObjectId });
+
+    if (!savedProject) {
+      return Response.json({ error: "Project not found" }, { status: 404 });
+    }
+
+    return Response.json(serializeProject(savedProject));
+  } catch {
+    return Response.json(
+      { error: "Failed to delete project summary" },
+      { status: 500 },
+    );
+  }
+}

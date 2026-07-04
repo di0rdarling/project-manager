@@ -10,3 +10,13 @@ export async function generateProjectSummary(
 
   return parseResponse<ProjectResponse>(response);
 }
+
+export async function deleteProjectSummary(
+  projectId: string,
+): Promise<ProjectResponse> {
+  const response = await fetch(`/api/projects/${projectId}/summary`, {
+    method: "DELETE",
+  });
+
+  return parseResponse<ProjectResponse>(response);
+}
