@@ -70,9 +70,7 @@ export default function ChatDetailView({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat?.messages.length, sendMessageMutation.isPending]);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
+  function sendMessage() {
     const trimmedMessage = message.trim();
 
     if (!trimmedMessage || sendMessageMutation.isPending) {
@@ -83,6 +81,20 @@ export default function ChatDetailView({
       chatId,
       content: trimmedMessage,
     });
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    sendMessage();
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey) {
+      return;
+    }
+
+    event.preventDefault();
+    sendMessage();
   }
 
   if (isPending) {
@@ -109,8 +121,8 @@ export default function ChatDetailView({
   }
 
   return (
-    <div className="flex min-h-full flex-1 flex-col">
-      <div className="border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="shrink-0 border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
         <div className="mx-auto flex w-full max-w-3xl items-center gap-4">
           <Link
             href="/chats"
@@ -123,8 +135,8 @@ export default function ChatDetailView({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6">
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
+        <div className="mx-auto flex w-full min-h-full max-w-3xl flex-col justify-end gap-4">
           {chat.messages.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-zinc-300 px-4 py-8 text-center dark:border-zinc-700">
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -149,7 +161,7 @@ export default function ChatDetailView({
         </div>
       </div>
 
-      <div className="border-t border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="shrink-0 border-t border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
         <form
           onSubmit={handleSubmit}
           className="mx-auto flex w-full max-w-3xl items-end gap-3"
@@ -157,6 +169,7 @@ export default function ChatDetailView({
           <textarea
             value={message}
             onChange={(event) => setMessage(event.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Type your message..."
             rows={3}
             disabled={sendMessageMutation.isPending}

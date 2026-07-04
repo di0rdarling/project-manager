@@ -30,11 +30,13 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full">
+      <body className="h-dvh overflow-hidden">
         <QueryProvider>
-          <div className="flex min-h-full">
+          <div className="flex h-full">
             <NavigationSidebar />
-            <main className="flex flex-1 flex-col">{children}</main>
+            <main className="flex flex-1 flex-col overflow-y-auto">
+              {children}
+            </main>
           </div>
           <ToastProvider />
         </QueryProvider>
