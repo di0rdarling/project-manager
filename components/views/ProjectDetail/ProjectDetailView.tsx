@@ -18,6 +18,7 @@ import EditNoteModal from "./modals/EditNoteModal";
 import EditRequirementModal from "./modals/EditRequirementModal";
 import ProjectItemsList from "./ProjectItemsList";
 import ProjectSection from "./ProjectSection";
+import AIProjectSummary from "./AIProjectSummary";
 
 interface ProjectDetailViewProps {
   projectId: string;
@@ -76,6 +77,8 @@ export default function ProjectDetailView({
               Created {formatDisplayDate(project.createdAt)}
             </p>
           </div>
+
+          <AIProjectSummary projectId={projectId} />
 
           <ProjectSection
             title="Requirements"
@@ -156,9 +159,6 @@ export default function ProjectDetailView({
               )}
             />
           </ProjectSection>
-
-
-
           <CreateNoteModal
             open={isCreateNoteModalOpen}
             projectId={projectId}

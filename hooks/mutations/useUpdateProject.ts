@@ -29,6 +29,7 @@ export function useUpdateProject(options?: UseUpdateProjectOptions) {
           existing._id === project._id ? project : existing,
         ),
       );
+      queryClient.setQueryData(projectKeys.detail(project._id), project);
       onSuccess?.(project, variables, onMutateResult, context);
     },
   });

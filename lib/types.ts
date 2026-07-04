@@ -4,6 +4,7 @@ type ProjectBase<TId> = {
   _id: TId;
   name: string;
   description: string;
+  aiSummary: string | null;
   createdAt: string;
   updatedAt: string;
 };

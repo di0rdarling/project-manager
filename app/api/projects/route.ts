@@ -1,24 +1,9 @@
 import getClientPromise from "@/lib/mongodb";
-import { toIsoString } from "@/lib/dates";
-import type { Project, ProjectResponse } from "@/lib/types";
-
-type StoredProject = Omit<Project, "_id" | "createdAt" | "updatedAt"> & {
-  _id: Project["_id"];
-  createdAt: string | Date;
-  updatedAt: string | Date;
-};
-
-function serializeProject(project: StoredProject): ProjectResponse {
-  return {
-    _id: project._id.toString(),
-    name: project.name,
-    description: project.description,
-    createdAt: toIsoString(project.createdAt),
-    updatedAt: project.updatedAt
-      ? toIsoString(project.updatedAt)
-      : toIsoString(project.createdAt),
-  };
-}
+import {
+  serializeProject,
+  type StoredProject,
+} from "@/lib/serialize-project";
+import type { Project } from "@/lib/types";
 
 export async function GET() {
   try {
@@ -57,6 +42,7 @@ export async function POST(request: Request) {
     const project: Omit<Project, "_id"> = {
       name,
       description,
+      aiSummary: null,
       createdAt: now,
       updatedAt: now,
     };
