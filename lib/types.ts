@@ -74,6 +74,25 @@ type CoreUserBase<TId> = {
 export type CoreUser = CoreUserBase<ObjectId>;
 export type CoreUserResponse = CoreUserBase<string>;
 
+export type DomainKnowledgeConfidenceLevel =
+  | "novice"
+  | "learning"
+  | "comfortable";
+
+type DomainKnowledgeBase<TId> = {
+  _id: TId;
+  projectId: TId;
+  name: string;
+  currentUnderstanding: string;
+  openQuestions: string;
+  confidenceLevel: DomainKnowledgeConfidenceLevel | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DomainKnowledge = DomainKnowledgeBase<ObjectId>;
+export type DomainKnowledgeResponse = DomainKnowledgeBase<string>;
+
 export type ProjectContentItem = {
   _id: string;
   title?: string;

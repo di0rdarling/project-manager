@@ -5,7 +5,7 @@ import {
   serializeProject,
   type StoredProject,
 } from "@/lib/serialize-project";
-import type { CoreUser, Note, PainPoint, Requirement, Tool } from "@/lib/types";
+import type { CoreUser, DomainKnowledge, Note, PainPoint, Requirement, Tool } from "@/lib/types";
 import { buildProjectSummaryPrompt } from "@/lib/prompts/project-summary-prompt";
 
 type RouteContext = {
@@ -56,6 +56,16 @@ type StoredPainPoint = Omit<
   updatedAt: string | Date;
 };
 
+type StoredDomainKnowledge = Omit<
+  DomainKnowledge,
+  "_id" | "projectId" | "createdAt" | "updatedAt"
+> & {
+  _id: DomainKnowledge["_id"];
+  projectId: DomainKnowledge["projectId"];
+  createdAt: string | Date;
+  updatedAt: string | Date;
+};
+
 function hasSavedSummary(project: StoredProject): boolean {
   return (
     typeof project.aiSummary === "string" && project.aiSummary.trim().length > 0
@@ -82,7 +92,7 @@ export async function POST(_request: Request, context: RouteContext) {
       return Response.json({ error: "Project not found" }, { status: 404 });
     }
 
-    const [coreUsers, painPoints, requirements, tools, notes] =
+    const [coreUsers, painPoints, domainKnowledge, requirements, tools, notes] =
       await Promise.all([
       db
         .collection<StoredCoreUser>("coreUsers")
@@ -91,6 +101,11 @@ export async function POST(_request: Request, context: RouteContext) {
         .toArray(),
       db
         .collection<StoredPainPoint>("painPoints")
+        .find({ projectId: projectObjectId })
+        .sort({ createdAt: -1 })
+        .toArray(),
+      db
+        .collection<StoredDomainKnowledge>("domainKnowledge")
         .find({ projectId: projectObjectId })
         .sort({ createdAt: -1 })
         .toArray(),
@@ -122,6 +137,12 @@ export async function POST(_request: Request, context: RouteContext) {
       painPoints: painPoints.map((painPoint) => ({
         title: painPoint.title,
         content: painPoint.content,
+      })),
+      domainKnowledge: domainKnowledge.map((item) => ({
+        name: item.name,
+        currentUnderstanding: item.currentUnderstanding,
+        openQuestions: item.openQuestions,
+        confidenceLevel: item.confidenceLevel,
       })),
       requirements: requirements.map((requirement) => ({
         title: requirement.title,

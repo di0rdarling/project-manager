@@ -1,4 +1,4 @@
-export const CHAT_TEAMMATE_IDS = ["general", "ava"] as const;
+export const CHAT_TEAMMATE_IDS = ["general", "sandy"] as const;
 
 export type ChatTeammateId = (typeof CHAT_TEAMMATE_IDS)[number];
 
@@ -8,6 +8,7 @@ export type ChatTeammate = {
   role: string;
   description: string;
   avatarInitials: string;
+  avatarImageSrc?: string;
   avatarColorClassName: string;
 };
 
@@ -23,12 +24,13 @@ export const CHAT_TEAMMATES: ChatTeammate[] = [
     avatarColorClassName: "bg-zinc-700 dark:bg-zinc-600",
   },
   {
-    id: "ava",
-    name: "Ava",
+    id: "sandy",
+    name: "Sandy",
     role: "Business Analyst",
     description:
       "Digs into requirements, users, and priorities like a business analyst.",
-    avatarInitials: "AV",
+    avatarInitials: "SA",
+    avatarImageSrc: "/sandy_2.png",
     avatarColorClassName: "bg-violet-600 dark:bg-violet-500",
   },
 ];

@@ -24,6 +24,8 @@ const TEAMMATE_OPTIONS = CHAT_TEAMMATES.map((teammate) => ({
   avatar: (
     <Avatar
       initials={teammate.avatarInitials}
+      src={teammate.avatarImageSrc}
+      alt={teammate.name}
       colorClassName={teammate.avatarColorClassName}
     />
   ),

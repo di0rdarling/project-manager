@@ -13,9 +13,11 @@ import { useFetchRequirements } from "@/hooks/queries/useFetchRequirements";
 import { useFetchTools } from "@/hooks/queries/useFetchTools";
 import { useFetchCoreUsers } from "@/hooks/queries/useFetchCoreUsers";
 import { useFetchPainPoints } from "@/hooks/queries/useFetchPainPoints";
+import { useFetchDomainKnowledge } from "@/hooks/queries/useFetchDomainKnowledge";
 import { formatDisplayDate } from "@/lib/dates";
 import CreateNoteModal from "./modals/notes/CreateNoteModal";
 import CreatePainPointModal from "./modals/painPoints/CreatePainPointModal";
+import CreateDomainKnowledgeModal from "./modals/domainKnowledge/CreateDomainKnowledgeModal";
 import CreateRequirementModal from "./modals/requirements/CreateRequirementModal";
 import CreateToolModal from "./modals/tools/CreateToolModal";
 import CreateCoreUserModal from "./modals/coreUsers/CreateCoreUserModal";
@@ -24,12 +26,15 @@ import DeleteRequirementModal from "./modals/requirements/DeleteRequirementModal
 import DeleteToolModal from "./modals/tools/DeleteToolModal";
 import DeleteCoreUserModal from "./modals/coreUsers/DeleteCoreUserModal";
 import DeletePainPointModal from "./modals/painPoints/DeletePainPointModal";
+import DeleteDomainKnowledgeModal from "./modals/domainKnowledge/DeleteDomainKnowledgeModal";
 import EditNoteModal from "./modals/notes/EditNoteModal";
 import EditPainPointModal from "./modals/painPoints/EditPainPointModal";
+import EditDomainKnowledgeModal from "./modals/domainKnowledge/EditDomainKnowledgeModal";
 import EditRequirementModal from "./modals/requirements/EditRequirementModal";
 import EditToolModal from "./modals/tools/EditToolModal";
 import EditCoreUserModal from "./modals/coreUsers/EditCoreUserModal";
 import ProjectItemsList from "./ProjectItemsList";
+import DomainKnowledgeItemsList from "./DomainKnowledgeItemsList";
 import ProjectSection from "./ProjectSection";
 import AIProjectSummary from "./AIProjectSummary";
 import EditProjectModal from "../ProjectManager/modals/EditProjectModal";
@@ -48,6 +53,8 @@ export default function ProjectDetailView({
   const [isCreateCoreUserModalOpen, setIsCreateCoreUserModalOpen] =
     useState(false);
   const [isCreatePainPointModalOpen, setIsCreatePainPointModalOpen] =
+    useState(false);
+  const [isCreateDomainKnowledgeModalOpen, setIsCreateDomainKnowledgeModalOpen] =
     useState(false);
   const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
 
@@ -90,6 +97,13 @@ export default function ProjectDetailView({
     isError: isPainPointsError,
     error: painPointsError,
   } = useFetchPainPoints(projectId, { enabled: canFetchSections });
+
+  const {
+    data: domainKnowledge = [],
+    isPending: isDomainKnowledgePending,
+    isError: isDomainKnowledgeError,
+    error: domainKnowledgeError,
+  } = useFetchDomainKnowledge(projectId, { enabled: canFetchSections });
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-6 py-12">
@@ -207,6 +221,47 @@ export default function ProjectDetailView({
                   open={open}
                   projectId={projectId}
                   painPoint={item}
+                  onClose={onClose}
+                  onSuccess={onSuccess}
+                />
+              )}
+            />
+          </ProjectSection>
+
+          <ProjectSection
+            title="Domain Knowledge"
+            addButtonLabel="Add Domain Knowledge"
+            onAddClick={() => setIsCreateDomainKnowledgeModalOpen(true)}
+            isPending={isDomainKnowledgePending}
+            isError={isDomainKnowledgeError}
+            error={domainKnowledgeError}
+            loadingMessage="Loading domain knowledge..."
+            errorFallbackMessage="Failed to load domain knowledge"
+            isEmpty={domainKnowledge.length === 0}
+            emptyMessage="No domain knowledge yet. Capture terms, concepts, and what you still want to learn."
+          >
+            <DomainKnowledgeItemsList
+              items={domainKnowledge}
+              onEditSuccess={() =>
+                toast.success("Domain knowledge updated successfully.")
+              }
+              onDeleteSuccess={() =>
+                toast.success("Domain knowledge deleted successfully.")
+              }
+              renderEditModal={({ open, item, onClose, onSuccess }) => (
+                <EditDomainKnowledgeModal
+                  open={open}
+                  projectId={projectId}
+                  domainKnowledge={item}
+                  onClose={onClose}
+                  onSuccess={onSuccess}
+                />
+              )}
+              renderDeleteModal={({ open, item, onClose, onSuccess }) => (
+                <DeleteDomainKnowledgeModal
+                  open={open}
+                  projectId={projectId}
+                  domainKnowledge={item}
                   onClose={onClose}
                   onSuccess={onSuccess}
                 />
@@ -364,6 +419,15 @@ export default function ProjectDetailView({
             projectId={projectId}
             onClose={() => setIsCreatePainPointModalOpen(false)}
             onSuccess={() => toast.success("Pain point added successfully.")}
+          />
+
+          <CreateDomainKnowledgeModal
+            open={isCreateDomainKnowledgeModalOpen}
+            projectId={projectId}
+            onClose={() => setIsCreateDomainKnowledgeModalOpen(false)}
+            onSuccess={() =>
+              toast.success("Domain knowledge added successfully.")
+            }
           />
 
           <EditProjectModal

@@ -1,7 +1,8 @@
 import type { Db, ObjectId } from "mongodb";
 import { buildChatProjectContext } from "@/lib/prompts/chat-project-context-prompt";
+import { parseConfidenceLevel } from "@/lib/domain-knowledge";
 import type { StoredProject } from "@/lib/serialize-project";
-import type { CoreUser, Note, PainPoint, Requirement, Tool } from "@/lib/types";
+import type { CoreUser, DomainKnowledge, Note, PainPoint, Requirement, Tool } from "@/lib/types";
 
 type StoredRequirement = Omit<
   Requirement,
@@ -47,6 +48,16 @@ type StoredPainPoint = Omit<
   updatedAt: string | Date;
 };
 
+type StoredDomainKnowledge = Omit<
+  DomainKnowledge,
+  "_id" | "projectId" | "createdAt" | "updatedAt"
+> & {
+  _id: DomainKnowledge["_id"];
+  projectId: DomainKnowledge["projectId"];
+  createdAt: string | Date;
+  updatedAt: string | Date;
+};
+
 export async function getProjectContext(
   db: Db,
   projectId: ObjectId,
@@ -59,7 +70,8 @@ export async function getProjectContext(
     return null;
   }
 
-  const [coreUsers, painPoints, requirements, tools, notes] = await Promise.all([
+  const [coreUsers, painPoints, domainKnowledge, requirements, tools, notes] =
+    await Promise.all([
     db
       .collection<StoredCoreUser>("coreUsers")
       .find({ projectId })
@@ -67,6 +79,11 @@ export async function getProjectContext(
       .toArray(),
     db
       .collection<StoredPainPoint>("painPoints")
+      .find({ projectId })
+      .sort({ createdAt: -1 })
+      .toArray(),
+    db
+      .collection<StoredDomainKnowledge>("domainKnowledge")
       .find({ projectId })
       .sort({ createdAt: -1 })
       .toArray(),
@@ -99,6 +116,12 @@ export async function getProjectContext(
     painPoints: painPoints.map((painPoint) => ({
       title: painPoint.title,
       content: painPoint.content,
+    })),
+    domainKnowledge: domainKnowledge.map((item) => ({
+      name: item.name,
+      currentUnderstanding: item.currentUnderstanding,
+      openQuestions: item.openQuestions,
+      confidenceLevel: parseConfidenceLevel(item.confidenceLevel),
     })),
     requirements: requirements.map((requirement) => ({
       title: requirement.title,

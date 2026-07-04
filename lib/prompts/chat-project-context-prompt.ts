@@ -1,4 +1,6 @@
 import { stripRichText } from "@/lib/rich-text";
+import { getConfidenceLevelLabel } from "@/lib/domain-knowledge";
+import type { DomainKnowledgeConfidenceLevel } from "@/lib/types";
 
 type ProjectContextItem = {
   title?: string;
@@ -7,12 +9,20 @@ type ProjectContextItem = {
   content: string;
 };
 
+type DomainKnowledgeContextItem = {
+  name: string;
+  currentUnderstanding: string;
+  openQuestions: string;
+  confidenceLevel: DomainKnowledgeConfidenceLevel | null;
+};
+
 type BuildChatProjectContextInput = {
   name: string;
   description: string;
   aiSummary: string | null;
   coreUsers: ProjectContextItem[];
   painPoints: ProjectContextItem[];
+  domainKnowledge: DomainKnowledgeContextItem[];
   requirements: ProjectContextItem[];
   tools: ProjectContextItem[];
   notes: ProjectContextItem[];
@@ -42,12 +52,39 @@ function formatContentItems(
   return `${label}:\n${formattedItems}`;
 }
 
+function formatDomainKnowledgeItems(items: DomainKnowledgeContextItem[]): string {
+  if (items.length === 0) {
+    return "Domain Knowledge: None";
+  }
+
+  const formattedItems = items
+    .map((item, index) => {
+      const name = item.name.trim() || "Untitled concept";
+      const confidenceLabel = getConfidenceLevelLabel(item.confidenceLevel);
+      const confidenceLine = confidenceLabel
+        ? `\n   Confidence: ${confidenceLabel}`
+        : "";
+      const currentUnderstanding =
+        stripRichText(item.currentUnderstanding) || "No understanding recorded.";
+      const openQuestions = stripRichText(item.openQuestions);
+      const openQuestionsLine = openQuestions
+        ? `\n   Open questions: ${openQuestions}`
+        : "";
+
+      return `${index + 1}. ${name}${confidenceLine}\n   Current understanding: ${currentUnderstanding}${openQuestionsLine}`;
+    })
+    .join("\n");
+
+  return `Domain Knowledge:\n${formattedItems}`;
+}
+
 export function buildChatProjectContext({
   name,
   description,
   aiSummary,
   coreUsers,
   painPoints,
+  domainKnowledge,
   requirements,
   tools,
   notes,
@@ -66,6 +103,8 @@ export function buildChatProjectContext({
     formatContentItems("Core Users", coreUsers),
     "",
     formatContentItems("Pain Points", painPoints),
+    "",
+    formatDomainKnowledgeItems(domainKnowledge),
     "",
     formatContentItems("Requirements", requirements),
     "",

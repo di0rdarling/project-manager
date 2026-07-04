@@ -39,6 +39,8 @@ export default function ChatsList({
                 >
                   <Avatar
                     initials={teammate.avatarInitials}
+                    src={teammate.avatarImageSrc}
+                    alt={teammate.name}
                     colorClassName={teammate.avatarColorClassName}
                     size="sm"
                     className="mt-0.5"
