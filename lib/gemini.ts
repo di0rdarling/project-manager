@@ -10,15 +10,19 @@ function getGeminiClient() {
   return new GoogleGenerativeAI(apiKey);
 }
 
-export async function generateProjectSummary(prompt: string): Promise<string> {
+export async function generateText(prompt: string): Promise<string> {
   const modelName = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
   const model = getGeminiClient().getGenerativeModel({ model: modelName });
   const result = await model.generateContent(prompt);
-  const summary = result.response.text().trim();
+  const text = result.response.text().trim();
 
-  if (!summary) {
-    throw new Error("Gemini returned an empty summary");
+  if (!text) {
+    throw new Error("Gemini returned an empty response");
   }
 
-  return summary;
+  return text;
+}
+
+export async function generateProjectSummary(prompt: string): Promise<string> {
+  return generateText(prompt);
 }

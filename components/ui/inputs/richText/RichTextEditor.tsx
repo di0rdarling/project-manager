@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { getRichTextExtensions } from "@/lib/tiptap-extensions";
+import { RichTextEditorAiDropdown } from "./RichTextEditorAiDropdown";
 import { RichTextEditorToolbar } from "./RichTextEditorToolbar";
 
 type RichTextEditorProps = {
@@ -54,6 +55,7 @@ export function RichTextEditor({
       <div className="overflow-hidden rounded-lg border border-zinc-300 bg-white focus-within:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:focus-within:border-zinc-400">
         <RichTextEditorToolbar editor={editor} />
         <EditorContent editor={editor} />
+        <RichTextEditorAiDropdown editor={editor} onEnhanced={onChange} />
       </div>
     </div>
   );
