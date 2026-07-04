@@ -11,16 +11,20 @@ import { useFetchNotes } from "@/hooks/queries/useFetchNotes";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
 import { useFetchRequirements } from "@/hooks/queries/useFetchRequirements";
 import { useFetchTools } from "@/hooks/queries/useFetchTools";
+import { useFetchCoreUsers } from "@/hooks/queries/useFetchCoreUsers";
 import { formatDisplayDate } from "@/lib/dates";
 import CreateNoteModal from "./modals/notes/CreateNoteModal";
 import CreateRequirementModal from "./modals/requirements/CreateRequirementModal";
 import CreateToolModal from "./modals/tools/CreateToolModal";
+import CreateCoreUserModal from "./modals/coreUsers/CreateCoreUserModal";
 import DeleteNoteModal from "./modals/notes/DeleteNoteModal";
 import DeleteRequirementModal from "./modals/requirements/DeleteRequirementModal";
 import DeleteToolModal from "./modals/tools/DeleteToolModal";
+import DeleteCoreUserModal from "./modals/coreUsers/DeleteCoreUserModal";
 import EditNoteModal from "./modals/notes/EditNoteModal";
 import EditRequirementModal from "./modals/requirements/EditRequirementModal";
 import EditToolModal from "./modals/tools/EditToolModal";
+import EditCoreUserModal from "./modals/coreUsers/EditCoreUserModal";
 import ProjectItemsList from "./ProjectItemsList";
 import ProjectSection from "./ProjectSection";
 import AIProjectSummary from "./AIProjectSummary";
@@ -37,6 +41,8 @@ export default function ProjectDetailView({
   const [isCreateRequirementModalOpen, setIsCreateRequirementModalOpen] =
     useState(false);
   const [isCreateToolModalOpen, setIsCreateToolModalOpen] = useState(false);
+  const [isCreateCoreUserModalOpen, setIsCreateCoreUserModalOpen] =
+    useState(false);
   const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
 
   const { data: project, isPending, isError, error } =
@@ -64,6 +70,13 @@ export default function ProjectDetailView({
     isError: isToolsError,
     error: toolsError,
   } = useFetchTools(projectId, { enabled: canFetchSections });
+
+  const {
+    data: coreUsers = [],
+    isPending: isCoreUsersPending,
+    isError: isCoreUsersError,
+    error: coreUsersError,
+  } = useFetchCoreUsers(projectId, { enabled: canFetchSections });
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-6 py-12">
@@ -103,6 +116,48 @@ export default function ProjectDetailView({
           </div>
 
           <AIProjectSummary projectId={projectId} />
+
+          <ProjectSection
+            title="Core Users"
+            addButtonLabel="Add Core User"
+            onAddClick={() => setIsCreateCoreUserModalOpen(true)}
+            isPending={isCoreUsersPending}
+            isError={isCoreUsersError}
+            error={coreUsersError}
+            loadingMessage="Loading core users..."
+            errorFallbackMessage="Failed to load core users"
+            isEmpty={coreUsers.length === 0}
+            emptyMessage="No core users yet. Add your first one to get started."
+          >
+            <ProjectItemsList
+              items={coreUsers}
+              itemLabel="core user"
+              onEditSuccess={() =>
+                toast.success("Core user updated successfully.")
+              }
+              onDeleteSuccess={() =>
+                toast.success("Core user deleted successfully.")
+              }
+              renderEditModal={({ open, item, onClose, onSuccess }) => (
+                <EditCoreUserModal
+                  open={open}
+                  projectId={projectId}
+                  coreUser={item}
+                  onClose={onClose}
+                  onSuccess={onSuccess}
+                />
+              )}
+              renderDeleteModal={({ open, item, onClose, onSuccess }) => (
+                <DeleteCoreUserModal
+                  open={open}
+                  projectId={projectId}
+                  coreUser={item}
+                  onClose={onClose}
+                  onSuccess={onSuccess}
+                />
+              )}
+            />
+          </ProjectSection>
 
           <ProjectSection
             title="Requirements"
@@ -240,6 +295,13 @@ export default function ProjectDetailView({
             projectId={projectId}
             onClose={() => setIsCreateToolModalOpen(false)}
             onSuccess={() => toast.success("Tool added successfully.")}
+          />
+
+          <CreateCoreUserModal
+            open={isCreateCoreUserModalOpen}
+            projectId={projectId}
+            onClose={() => setIsCreateCoreUserModalOpen(false)}
+            onSuccess={() => toast.success("Core user added successfully.")}
           />
 
           <EditProjectModal

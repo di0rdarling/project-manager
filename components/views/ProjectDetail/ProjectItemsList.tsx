@@ -52,6 +52,11 @@ export default function ProjectItemsList<T extends ProjectContentItem>({
                     {heading}
                   </h3>
                 ) : null}
+                {item.role ? (
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    {item.role}
+                  </p>
+                ) : null}
                 <RichTextContent
                   content={item.content}
                   className="text-sm text-zinc-800 dark:text-zinc-200"

@@ -5,7 +5,7 @@ import {
   serializeProject,
   type StoredProject,
 } from "@/lib/serialize-project";
-import type { Note, Requirement, Tool } from "@/lib/types";
+import type { CoreUser, Note, Requirement, Tool } from "@/lib/types";
 import { buildProjectSummaryPrompt } from "@/lib/prompts/project-summary-prompt";
 
 type RouteContext = {
@@ -36,6 +36,16 @@ type StoredTool = Omit<Tool, "_id" | "projectId" | "createdAt" | "updatedAt"> & 
   updatedAt: string | Date;
 };
 
+type StoredCoreUser = Omit<
+  CoreUser,
+  "_id" | "projectId" | "createdAt" | "updatedAt"
+> & {
+  _id: CoreUser["_id"];
+  projectId: CoreUser["projectId"];
+  createdAt: string | Date;
+  updatedAt: string | Date;
+};
+
 function hasSavedSummary(project: StoredProject): boolean {
   return (
     typeof project.aiSummary === "string" && project.aiSummary.trim().length > 0
@@ -62,7 +72,12 @@ export async function POST(_request: Request, context: RouteContext) {
       return Response.json({ error: "Project not found" }, { status: 404 });
     }
 
-    const [requirements, tools, notes] = await Promise.all([
+    const [coreUsers, requirements, tools, notes] = await Promise.all([
+      db
+        .collection<StoredCoreUser>("coreUsers")
+        .find({ projectId: projectObjectId })
+        .sort({ createdAt: -1 })
+        .toArray(),
       db
         .collection<StoredRequirement>("requirements")
         .find({ projectId: projectObjectId })
@@ -83,6 +98,11 @@ export async function POST(_request: Request, context: RouteContext) {
     const prompt = buildProjectSummaryPrompt({
       name: project.name,
       description: project.description,
+      coreUsers: coreUsers.map((coreUser) => ({
+        name: coreUser.name,
+        role: coreUser.role,
+        content: coreUser.content,
+      })),
       requirements: requirements.map((requirement) => ({
         title: requirement.title,
         content: requirement.content,

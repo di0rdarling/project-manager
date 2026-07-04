@@ -48,10 +48,24 @@ type ToolBase<TId> = {
 export type Tool = ToolBase<ObjectId>;
 export type ToolResponse = ToolBase<string>;
 
+type CoreUserBase<TId> = {
+  _id: TId;
+  projectId: TId;
+  name: string;
+  role: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CoreUser = CoreUserBase<ObjectId>;
+export type CoreUserResponse = CoreUserBase<string>;
+
 export type ProjectContentItem = {
   _id: string;
   title?: string;
   name?: string;
+  role?: string;
   content: string;
   createdAt: string;
 };
