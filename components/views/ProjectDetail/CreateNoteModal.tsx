@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { Textarea } from "@/components/ui/Textarea";
+import { Input } from "@/components/ui/inputs/Input";
+import { RichTextEditor } from "@/components/ui/inputs/richText/RichTextEditor";
 import { useCreateNote } from "@/hooks/mutations/useCreateNote";
+import { isRichTextEmpty } from "@/lib/rich-text";
 
 type CreateNoteModalProps = {
   open: boolean;
@@ -19,11 +21,15 @@ export default function CreateNoteModal({
   onClose,
   onSuccess,
 }: CreateNoteModalProps) {
+  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const createNoteMutation = useCreateNote({
     onSuccess: () => {
+      setTitle("");
       setContent("");
+      setValidationError(null);
       onSuccess();
       onClose();
     },
@@ -31,7 +37,19 @@ export default function CreateNoteModal({
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    createNoteMutation.mutate({ projectId, content });
+
+    if (!title.trim()) {
+      setValidationError("Note title is required");
+      return;
+    }
+
+    if (isRichTextEmpty(content)) {
+      setValidationError("Note content is required");
+      return;
+    }
+
+    setValidationError(null);
+    createNoteMutation.mutate({ projectId, title: title.trim(), content });
   }
 
   function handleClose() {
@@ -39,27 +57,41 @@ export default function CreateNoteModal({
       return;
     }
 
+    setTitle("");
     setContent("");
+    setValidationError(null);
     createNoteMutation.reset();
     onClose();
   }
 
   const formError =
-    createNoteMutation.error instanceof Error
+    validationError ??
+    (createNoteMutation.error instanceof Error
       ? createNoteMutation.error.message
-      : null;
+      : null);
+
+  if (!open) {
+    return null;
+  }
 
   return (
     <Modal open={open} onClose={handleClose} title="New Note">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Textarea
+        <Input
+          id="title"
+          label="Title"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          placeholder="Enter a title for this note"
+          autoFocus
+        />
+
+        <RichTextEditor
+          key="create-note"
           id="content"
           label="Note"
           value={content}
-          onChange={(event) => setContent(event.target.value)}
-          placeholder="Write your note..."
-          rows={5}
-          required
+          onChange={setContent}
         />
 
         {formError ? (

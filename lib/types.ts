@@ -14,6 +14,7 @@ export type ProjectResponse = ProjectBase<string>;
 type NoteBase<TId> = {
   _id: TId;
   projectId: TId;
+  title: string;
   content: string;
   createdAt: string;
   updatedAt: string;

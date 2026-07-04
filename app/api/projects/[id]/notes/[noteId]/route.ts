@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
+import { isRichTextEmpty } from "@/lib/rich-text";
 import type { Note, NoteResponse } from "@/lib/types";
 
 type RouteContext = {
@@ -18,6 +19,7 @@ function serializeNote(note: StoredNote): NoteResponse {
   return {
     _id: note._id.toString(),
     projectId: note.projectId.toString(),
+    title: typeof note.title === "string" ? note.title : "",
     content: note.content,
     createdAt: toIsoString(note.createdAt),
     updatedAt: note.updatedAt
@@ -39,10 +41,15 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const body = await request.json();
+    const title = typeof body.title === "string" ? body.title.trim() : "";
     const content =
       typeof body.content === "string" ? body.content.trim() : "";
 
-    if (!content) {
+    if (!title) {
+      return Response.json({ error: "Note title is required" }, { status: 400 });
+    }
+
+    if (isRichTextEmpty(content)) {
       return Response.json({ error: "Note content is required" }, { status: 400 });
     }
 
@@ -57,6 +64,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         },
         {
           $set: {
+            title,
             content,
             updatedAt: new Date().toISOString(),
           },

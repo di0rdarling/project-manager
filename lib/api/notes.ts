@@ -8,13 +8,14 @@ export async function fetchNotes(projectId: string): Promise<NoteResponse[]> {
 
 export async function createNote(input: {
   projectId: string;
+  title: string;
   content: string;
 }): Promise<NoteResponse> {
-  const { projectId, content } = input;
+  const { projectId, title, content } = input;
   const response = await fetch(`/api/projects/${projectId}/notes`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ title, content }),
   });
 
   return parseResponse<NoteResponse>(response);
@@ -23,13 +24,14 @@ export async function createNote(input: {
 export async function updateNote(input: {
   projectId: string;
   noteId: string;
+  title: string;
   content: string;
 }): Promise<NoteResponse> {
-  const { projectId, noteId, content } = input;
+  const { projectId, noteId, title, content } = input;
   const response = await fetch(`/api/projects/${projectId}/notes/${noteId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ title, content }),
   });
 
   return parseResponse<NoteResponse>(response);

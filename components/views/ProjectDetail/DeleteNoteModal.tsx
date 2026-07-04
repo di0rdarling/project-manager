@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { useDeleteNote } from "@/hooks/mutations/useDeleteNote";
 import type { NoteResponse } from "@/lib/types";
+import { getRichTextPreview } from "@/lib/rich-text";
 
 type DeleteNoteModalProps = {
   open: boolean;
@@ -12,15 +13,6 @@ type DeleteNoteModalProps = {
   onClose: () => void;
   onSuccess: () => void;
 };
-
-function getNotePreview(content: string): string {
-  const trimmed = content.trim();
-  if (trimmed.length <= 80) {
-    return trimmed;
-  }
-
-  return `${trimmed.slice(0, 80)}...`;
-}
 
 export default function DeleteNoteModal({
   open,
@@ -66,7 +58,9 @@ export default function DeleteNoteModal({
           <>
             {" "}
             <span className="font-medium text-zinc-900 dark:text-zinc-100">
-              &ldquo;{getNotePreview(note.content)}&rdquo;
+              &ldquo;
+              {note.title.trim() || getRichTextPreview(note.content)}
+              &rdquo;
             </span>
           </>
         ) : null}

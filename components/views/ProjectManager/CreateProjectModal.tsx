@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
+import { Input } from "@/components/ui/inputs/Input";
 import { Modal } from "@/components/ui/Modal";
-import { Textarea } from "@/components/ui/Textarea";
+import { Textarea } from "@/components/ui/inputs/Textarea";
 import { useCreateProject } from "@/hooks/mutations/useCreateProject";
 
 type CreateProjectModalProps = {

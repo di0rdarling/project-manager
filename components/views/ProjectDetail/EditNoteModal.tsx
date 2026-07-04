@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { Textarea } from "@/components/ui/Textarea";
+import { Input } from "@/components/ui/inputs/Input";
+import { RichTextEditor } from "@/components/ui/inputs/richText/RichTextEditor";
 import { useUpdateNote } from "@/hooks/mutations/useUpdateNote";
 import type { NoteResponse } from "@/lib/types";
+import { isRichTextEmpty } from "@/lib/rich-text";
 
 type EditNoteModalProps = {
   open: boolean;
@@ -22,11 +24,15 @@ export default function EditNoteModal({
   onClose,
   onSuccess,
 }: EditNoteModalProps) {
+  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (note) {
+      setTitle(note.title);
       setContent(note.content);
+      setValidationError(null);
     }
   }, [note]);
 
@@ -44,9 +50,21 @@ export default function EditNoteModal({
       return;
     }
 
+    if (!title.trim()) {
+      setValidationError("Note title is required");
+      return;
+    }
+
+    if (isRichTextEmpty(content)) {
+      setValidationError("Note content is required");
+      return;
+    }
+
+    setValidationError(null);
     updateNoteMutation.mutate({
       projectId,
       noteId: note._id,
+      title: title.trim(),
       content,
     });
   }
@@ -56,26 +74,39 @@ export default function EditNoteModal({
       return;
     }
 
+    setValidationError(null);
     updateNoteMutation.reset();
     onClose();
   }
 
   const formError =
-    updateNoteMutation.error instanceof Error
+    validationError ??
+    (updateNoteMutation.error instanceof Error
       ? updateNoteMutation.error.message
-      : null;
+      : null);
+
+  if (!open || !note) {
+    return null;
+  }
 
   return (
     <Modal open={open} onClose={handleClose} title="Edit note">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Textarea
+        <Input
+          id="edit-title"
+          label="Title"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          placeholder="Enter a title for this note"
+          autoFocus
+        />
+
+        <RichTextEditor
+          key={note._id}
           id="edit-content"
           label="Note"
           value={content}
-          onChange={(event) => setContent(event.target.value)}
-          placeholder="Write your note..."
-          rows={5}
-          required
+          onChange={setContent}
         />
 
         {formError ? (
