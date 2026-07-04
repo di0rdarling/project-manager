@@ -19,3 +19,15 @@ export async function createNote(input: {
 
   return parseResponse<NoteResponse>(response);
 }
+
+export async function deleteNote(input: {
+  projectId: string;
+  noteId: string;
+}): Promise<void> {
+  const { projectId, noteId } = input;
+  const response = await fetch(`/api/projects/${projectId}/notes/${noteId}`, {
+    method: "DELETE",
+  });
+
+  await parseResponse<{ success: true }>(response);
+}

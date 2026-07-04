@@ -93,7 +93,11 @@ export default function ProjectDetailView({
                 </Button>
               </div>
             ) : (
-              <ProjectNotesList notes={notes} />
+              <ProjectNotesList
+                projectId={projectId}
+                notes={notes}
+                onDeleteSuccess={() => toast.success("Note deleted successfully.")}
+              />
             )}
           </section>
 
