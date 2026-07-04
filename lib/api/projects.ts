@@ -6,6 +6,11 @@ export async function fetchProjects(): Promise<ProjectResponse[]> {
   return parseResponse<ProjectResponse[]>(response);
 }
 
+export async function fetchProject(projectId: string): Promise<ProjectResponse> {
+  const response = await fetch(`/api/projects/${projectId}`);
+  return parseResponse<ProjectResponse>(response);
+}
+
 export async function createProject(input: {
   name: string;
   description: string;

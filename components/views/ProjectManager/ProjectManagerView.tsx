@@ -3,6 +3,8 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
+import { ErrorMessage } from "@/components/ui/ErrorMessage";
+import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useFetchProjects } from "@/hooks/queries/useFetchProjects";
 import CreateProjectModal from "./CreateProjectModal";
 import ProjectManagerList from "./ProjectManagerList";
@@ -42,13 +44,12 @@ export default function ProjectManagerView() {
         </div>
 
         {isPending ? (
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Loading projects...
-          </p>
+          <LoadingMessage>Loading projects...</LoadingMessage>
         ) : isError ? (
-          <p className="text-sm text-red-600 dark:text-red-400">
-            {error instanceof Error ? error.message : "Failed to load projects"}
-          </p>
+          <ErrorMessage
+            error={error}
+            fallbackMessage="Failed to load projects"
+          />
         ) : projects.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-zinc-300 px-4 py-8 text-center dark:border-zinc-700">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">

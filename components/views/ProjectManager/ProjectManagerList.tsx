@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { IconButton } from "@/components/ui/IconButton";
 import type { ProjectResponse } from "@/lib/types";
@@ -32,17 +33,20 @@ export default function ProjectManagerList({
         {projects.map((project) => (
           <li
             key={project._id}
-            className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+            className="rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
           >
             <div className="flex items-start justify-between gap-4">
-              <div>
+              <Link
+                href={`/projects/${project._id}`}
+                className="min-w-0 flex-1 rounded-lg outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-100"
+              >
                 <h3 className="font-medium">{project.name}</h3>
                 {project.description ? (
                   <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
                     {project.description}
                   </p>
                 ) : null}
-              </div>
+              </Link>
               <div className="flex shrink-0 items-start gap-1">
                 <time
                   dateTime={project.createdAt}

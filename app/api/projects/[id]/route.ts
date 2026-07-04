@@ -25,6 +25,33 @@ function serializeProject(project: StoredProject): ProjectResponse {
   };
 }
 
+export async function GET(_request: Request, context: RouteContext) {
+  try {
+    const { id } = await context.params;
+
+    if (!ObjectId.isValid(id)) {
+      return Response.json({ error: "Invalid project id" }, { status: 400 });
+    }
+
+    const client = await getClientPromise();
+    const project = await client
+      .db()
+      .collection<StoredProject>("projects")
+      .findOne({ _id: new ObjectId(id) });
+
+    if (!project) {
+      return Response.json({ error: "Project not found" }, { status: 404 });
+    }
+
+    return Response.json(serializeProject(project));
+  } catch {
+    return Response.json(
+      { error: "Failed to fetch project" },
+      { status: 500 },
+    );
+  }
+}
+
 export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
