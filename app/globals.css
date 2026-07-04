@@ -184,6 +184,116 @@ body {
   padding: 0.125rem 0.25rem;
 }
 
+.markdown-content {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.markdown-content > :first-child {
+  margin-top: 0;
+}
+
+.markdown-content > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content p {
+  margin: 0.5em 0;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin: 0.5em 0;
+  padding-left: 1.5rem;
+}
+
+.markdown-content ul {
+  list-style: disc;
+}
+
+.markdown-content ol {
+  list-style: decimal;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4 {
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0.75em 0 0.25em;
+}
+
+.markdown-content h1 {
+  font-size: 1.25rem;
+}
+
+.markdown-content h2 {
+  font-size: 1.125rem;
+}
+
+.markdown-content h3,
+.markdown-content h4 {
+  font-size: 1rem;
+}
+
+.markdown-content strong {
+  font-weight: 600;
+}
+
+.markdown-content em {
+  font-style: italic;
+}
+
+.markdown-content blockquote {
+  border-left: 3px solid #d4d4d8;
+  color: #52525b;
+  margin: 0.75em 0;
+  padding-left: 0.75rem;
+}
+
+.markdown-content code {
+  background: #f4f4f5;
+  border-radius: 0.25rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.875em;
+  padding: 0.125rem 0.25rem;
+}
+
+.markdown-content pre {
+  background: #f4f4f5;
+  border-radius: 0.5rem;
+  margin: 0.75em 0;
+  overflow-x: auto;
+  padding: 0.75rem;
+}
+
+.markdown-content pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.markdown-content a {
+  text-decoration: underline;
+}
+
+.markdown-content-inverted blockquote {
+  border-left-color: #a1a1aa;
+  color: #d4d4d8;
+}
+
+.markdown-content-inverted code {
+  background: rgb(255 255 255 / 0.15);
+}
+
+.markdown-content-inverted pre {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.markdown-content-inverted a {
+  color: inherit;
+}
+
 @media (prefers-color-scheme: dark) {
   .tiptap-editor blockquote,
   .tiptap-content blockquote {
@@ -200,5 +310,31 @@ body {
   .tiptap-content mark {
     background-color: #854d0e;
     color: #fef9c3;
+  }
+
+  .markdown-content blockquote {
+    border-left-color: #52525b;
+    color: #a1a1aa;
+  }
+
+  .markdown-content code {
+    background: #27272a;
+  }
+
+  .markdown-content pre {
+    background: #27272a;
+  }
+
+  .markdown-content-inverted blockquote {
+    border-left-color: #71717a;
+    color: #52525b;
+  }
+
+  .markdown-content-inverted code {
+    background: rgb(0 0 0 / 0.08);
+  }
+
+  .markdown-content-inverted pre {
+    background: rgb(0 0 0 / 0.06);
   }
 }

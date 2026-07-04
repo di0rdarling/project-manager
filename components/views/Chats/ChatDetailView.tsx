@@ -7,6 +7,7 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
+import { MarkdownContent } from "@/components/ui/MarkdownContent";
 import { useSendChatMessage } from "@/hooks/mutations/chats/useSendChatMessage";
 import { useFetchChat } from "@/hooks/queries/useFetchChat";
 import { formatDisplayDateTime } from "@/lib/dates";
@@ -28,7 +29,10 @@ function ChatMessageBubble({ message }: { message: ChatMessageResponse }) {
             : "border border-zinc-200 bg-white text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
         }`}
       >
-        <p className="whitespace-pre-wrap">{message.content}</p>
+        <MarkdownContent
+          content={message.content}
+          variant={isUser ? "inverted" : "default"}
+        />
         <time
           dateTime={message.createdAt}
           className={`mt-2 block text-xs ${
