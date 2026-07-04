@@ -6,13 +6,13 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
-import { useCreateChat } from "@/hooks/mutations/chats/useCreateChat";
 import { useFetchChats } from "@/hooks/queries/useFetchChats";
 import ChatsList from "./ChatsList";
+import CreateChatModal from "./modals/CreateChatModal";
 
 export default function ChatsView() {
   const router = useRouter();
-  const [isCreating, setIsCreating] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const {
     data: chats = [],
@@ -21,19 +21,8 @@ export default function ChatsView() {
     error,
   } = useFetchChats();
 
-  const createChatMutation = useCreateChat({
-    onSuccess: (chat) => {
-      router.push(`/chats/${chat._id}`);
-    },
-    onError: (mutationError) => {
-      setIsCreating(false);
-      toast.error(mutationError.message);
-    },
-  });
-
-  function handleCreateChat() {
-    setIsCreating(true);
-    createChatMutation.mutate();
+  function openCreateModal() {
+    setIsCreateModalOpen(true);
   }
 
   return (
@@ -52,13 +41,10 @@ export default function ChatsView() {
           <h2 className="mt-4 text-lg font-semibold">Your chats</h2>
           <Button
             type="button"
-            onClick={handleCreateChat}
-            disabled={isCreating || createChatMutation.isPending}
+            onClick={openCreateModal}
             className="shrink-0"
           >
-            {isCreating || createChatMutation.isPending
-              ? "Creating..."
-              : "New Chat"}
+            New Chat
           </Button>
         </div>
 
@@ -72,15 +58,8 @@ export default function ChatsView() {
               No chats yet. Start a new conversation to get help from the AI
               assistant.
             </p>
-            <Button
-              type="button"
-              onClick={handleCreateChat}
-              disabled={isCreating || createChatMutation.isPending}
-              className="mt-4"
-            >
-              {isCreating || createChatMutation.isPending
-                ? "Creating..."
-                : "New Chat"}
+            <Button type="button" onClick={openCreateModal} className="mt-4">
+              New Chat
             </Button>
           </div>
         ) : (
@@ -92,6 +71,12 @@ export default function ChatsView() {
           />
         )}
       </section>
+
+      <CreateChatModal
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={(chatId) => router.push(`/chats/${chatId}`)}
+      />
     </div>
   );
 }

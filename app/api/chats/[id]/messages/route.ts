@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { generateChatReply } from "@/lib/gemini";
 import getClientPromise from "@/lib/mongodb";
+import { getProjectContext } from "@/lib/project-context";
 import {
   buildChatTitleFromMessage,
   serializeChat,
@@ -69,7 +70,15 @@ export async function POST(request: Request, context: RouteContext) {
       content: message.content,
     }));
 
-    const assistantContent = await generateChatReply(history, content);
+    const projectContext = result.chat.projectId
+      ? await getProjectContext(result.client.db(), result.chat.projectId)
+      : null;
+
+    const assistantContent = await generateChatReply(
+      history,
+      content,
+      projectContext ?? undefined,
+    );
     const now = new Date().toISOString();
     const userMessage: Omit<ChatMessage, "_id"> = {
       chatId: result.chatObjectId,

@@ -97,6 +97,7 @@ export type ChatMessageResponse = ChatMessageBase<string>;
 
 type ChatBase<TId> = {
   _id: TId;
+  projectId: TId | null;
   title: string;
   createdAt: string;
   updatedAt: string;

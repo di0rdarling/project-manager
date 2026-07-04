@@ -10,7 +10,7 @@ import { chatKeys } from "@/lib/query-keys";
 import type { ChatResponse } from "@/lib/types";
 
 type UseCreateChatOptions = Omit<
-  UseMutationOptions<ChatResponse, Error, void>,
+  UseMutationOptions<ChatResponse, Error, { projectId: string }>,
   "mutationFn"
 >;
 

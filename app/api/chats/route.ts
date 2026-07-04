@@ -1,5 +1,7 @@
+import { ObjectId } from "mongodb";
 import getClientPromise from "@/lib/mongodb";
 import { serializeChat, type StoredChat } from "@/lib/serialize-chat";
+import type { StoredProject } from "@/lib/serialize-project";
 import type { Chat } from "@/lib/types";
 
 export async function GET() {
@@ -18,18 +20,39 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const body = await request.json();
+    const projectId =
+      typeof body.projectId === "string" ? body.projectId.trim() : "";
+
+    if (!projectId || !ObjectId.isValid(projectId)) {
+      return Response.json(
+        { error: "A valid project id is required" },
+        { status: 400 },
+      );
+    }
+
+    const client = await getClientPromise();
+    const db = client.db();
+    const projectObjectId = new ObjectId(projectId);
+    const project = await db
+      .collection<StoredProject>("projects")
+      .findOne({ _id: projectObjectId });
+
+    if (!project) {
+      return Response.json({ error: "Project not found" }, { status: 404 });
+    }
+
     const now = new Date().toISOString();
     const chat: Omit<Chat, "_id"> = {
+      projectId: projectObjectId,
       title: "New Chat",
       createdAt: now,
       updatedAt: now,
     };
 
-    const client = await getClientPromise();
-    const result = await client
-      .db()
+    const result = await db
       .collection<Omit<Chat, "_id">>("chats")
       .insertOne(chat);
 

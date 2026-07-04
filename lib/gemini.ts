@@ -45,10 +45,11 @@ export async function generateText(prompt: string): Promise<string> {
 export async function generateChatReply(
   history: GeminiChatMessage[],
   message: string,
+  projectContext?: string,
 ): Promise<string> {
   const model = getGeminiClient().getGenerativeModel({
     model: getChatModelName(),
-    systemInstruction: buildChatSystemPrompt(),
+    systemInstruction: buildChatSystemPrompt(projectContext),
   });
   const chat = model.startChat({
     history: history.map((entry) => ({

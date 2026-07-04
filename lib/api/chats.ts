@@ -15,9 +15,13 @@ export async function fetchChat(chatId: string): Promise<ChatWithMessagesRespons
   return parseResponse<ChatWithMessagesResponse>(response);
 }
 
-export async function createChat(): Promise<ChatResponse> {
+export async function createChat(input: {
+  projectId: string;
+}): Promise<ChatResponse> {
   const response = await fetch("/api/chats", {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
   });
 
   return parseResponse<ChatResponse>(response);
