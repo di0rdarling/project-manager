@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { getRichTextExtensions } from "@/lib/tiptap-extensions";
 import { RichTextEditorToolbar } from "./RichTextEditorToolbar";
@@ -34,6 +35,16 @@ export function RichTextEditor({
       onChange(currentEditor.getHTML());
     },
   });
+
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) {
+      return;
+    }
+
+    if (editor.getHTML() !== value) {
+      editor.commands.setContent(value, { emitUpdate: false });
+    }
+  }, [editor, value]);
 
   return (
     <div className="space-y-2">
