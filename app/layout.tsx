@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import NavigationSidebar from "@/components/layout/NavigationSidebar";
 import QueryProvider from "@/components/providers/QueryProvider";
 import ToastProvider from "@/components/providers/ToastProvider";
 import "./globals.css";
@@ -29,9 +30,12 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full">
         <QueryProvider>
-          {children}
+          <div className="flex min-h-full">
+            <NavigationSidebar />
+            <main className="flex flex-1 flex-col">{children}</main>
+          </div>
           <ToastProvider />
         </QueryProvider>
       </body>
