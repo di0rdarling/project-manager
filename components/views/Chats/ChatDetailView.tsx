@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { MarkdownContent } from "@/components/ui/MarkdownContent";
 import { useSendChatMessage } from "@/hooks/mutations/chats/useSendChatMessage";
 import { useFetchChat } from "@/hooks/queries/useFetchChat";
+import { getChatTeammate } from "@/lib/chat-teammates";
 import { formatDisplayDateTime } from "@/lib/dates";
 import type { ChatMessageResponse } from "@/lib/types";
 
@@ -109,6 +111,8 @@ export default function ChatDetailView({
     );
   }
 
+  const teammate = chat ? getChatTeammate(chat.teammateId) : null;
+
   if (isError || !chat) {
     return (
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-12">
@@ -135,7 +139,23 @@ export default function ChatDetailView({
             <ArrowLeftIcon className="size-4" aria-hidden />
             Back
           </Link>
-          <h1 className="truncate text-lg font-semibold">{chat.title}</h1>
+          <div className="flex min-w-0 items-center gap-3">
+            {teammate ? (
+              <Avatar
+                initials={teammate.avatarInitials}
+                colorClassName={teammate.avatarColorClassName}
+                size="sm"
+              />
+            ) : null}
+            <div className="min-w-0">
+              <h1 className="truncate text-lg font-semibold">{chat.title}</h1>
+              {teammate ? (
+                <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+                  {teammate.name} · {teammate.role}
+                </p>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
 

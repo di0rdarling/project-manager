@@ -1,4 +1,8 @@
 import { ObjectId } from "mongodb";
+import {
+  DEFAULT_CHAT_TEAMMATE_ID,
+  isChatTeammateId,
+} from "@/lib/chat-teammates";
 import getClientPromise from "@/lib/mongodb";
 import { serializeChat, type StoredChat } from "@/lib/serialize-chat";
 import type { StoredProject } from "@/lib/serialize-project";
@@ -44,9 +48,14 @@ export async function POST(request: Request) {
       return Response.json({ error: "Project not found" }, { status: 404 });
     }
 
+    const teammateId = isChatTeammateId(body.teammateId)
+      ? body.teammateId
+      : DEFAULT_CHAT_TEAMMATE_ID;
+
     const now = new Date().toISOString();
     const chat: Omit<Chat, "_id"> = {
       projectId: projectObjectId,
+      teammateId,
       title: "New Chat",
       createdAt: now,
       updatedAt: now,

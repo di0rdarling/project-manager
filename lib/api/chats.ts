@@ -1,4 +1,5 @@
 import { parseResponse } from "@/lib/api/response";
+import type { ChatTeammateId } from "@/lib/chat-teammates";
 import type {
   ChatResponse,
   ChatWithMessagesResponse,
@@ -17,6 +18,7 @@ export async function fetchChat(chatId: string): Promise<ChatWithMessagesRespons
 
 export async function createChat(input: {
   projectId: string;
+  teammateId: ChatTeammateId;
 }): Promise<ChatResponse> {
   const response = await fetch("/api/chats", {
     method: "POST",

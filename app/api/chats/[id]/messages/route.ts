@@ -74,9 +74,11 @@ export async function POST(request: Request, context: RouteContext) {
       ? await getProjectContext(result.client.db(), result.chat.projectId)
       : null;
 
+    const chatResponse = serializeChat(result.chat);
     const assistantContent = await generateChatReply(
       history,
       content,
+      chatResponse.teammateId,
       projectContext ?? undefined,
     );
     const now = new Date().toISOString();

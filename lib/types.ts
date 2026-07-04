@@ -1,4 +1,5 @@
 import type { ObjectId } from "mongodb";
+import type { ChatTeammateId } from "@/lib/chat-teammates";
 
 type ProjectBase<TId> = {
   _id: TId;
@@ -98,6 +99,7 @@ export type ChatMessageResponse = ChatMessageBase<string>;
 type ChatBase<TId> = {
   _id: TId;
   projectId: TId | null;
+  teammateId: ChatTeammateId;
   title: string;
   createdAt: string;
   updatedAt: string;

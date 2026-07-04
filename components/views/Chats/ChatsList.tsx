@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Avatar } from "@/components/ui/Avatar";
 import { IconButton } from "@/components/ui/IconButton";
+import { getChatTeammate } from "@/lib/chat-teammates";
 import { formatDisplayDate } from "@/lib/dates";
 import type { ChatResponse } from "@/lib/types";
 import DeleteChatModal from "./modals/DeleteChatModal";
@@ -22,34 +24,47 @@ export default function ChatsList({
   return (
     <>
       <ul className="space-y-3">
-        {chats.map((chat) => (
-          <li
-            key={chat._id}
-            className="rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <Link
-                href={`/chats/${chat._id}`}
-                className="min-w-0 flex-1 rounded-lg outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-100"
-              >
-                <h3 className="font-medium">{chat.title}</h3>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                  Last updated {formatDisplayDate(chat.updatedAt)}
-                </p>
-              </Link>
-              <div className="flex shrink-0 items-start gap-1">
-                <IconButton
-                  type="button"
-                  variant="danger"
-                  aria-label={`Delete ${chat.title}`}
-                  onClick={() => setChatToDelete(chat)}
+        {chats.map((chat) => {
+          const teammate = getChatTeammate(chat.teammateId);
+
+          return (
+            <li
+              key={chat._id}
+              className="rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <Link
+                  href={`/chats/${chat._id}`}
+                  className="flex min-w-0 flex-1 items-start gap-3 rounded-lg outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-100"
                 >
-                  <TrashIcon className="size-4 text-red-500" />
-                </IconButton>
+                  <Avatar
+                    initials={teammate.avatarInitials}
+                    colorClassName={teammate.avatarColorClassName}
+                    size="sm"
+                    className="mt-0.5"
+                  />
+                  <span className="min-w-0">
+                    <h3 className="font-medium">{chat.title}</h3>
+                    <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                      {teammate.name} · Last updated{" "}
+                      {formatDisplayDate(chat.updatedAt)}
+                    </p>
+                  </span>
+                </Link>
+                <div className="flex shrink-0 items-start gap-1">
+                  <IconButton
+                    type="button"
+                    variant="danger"
+                    aria-label={`Delete ${chat.title}`}
+                    onClick={() => setChatToDelete(chat)}
+                  >
+                    <TrashIcon className="size-4 text-red-500" />
+                  </IconButton>
+                </div>
               </div>
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
 
       <DeleteChatModal
