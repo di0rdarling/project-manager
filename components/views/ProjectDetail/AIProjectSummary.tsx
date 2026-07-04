@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { IconButton } from "@/components/ui/IconButton";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
-import { useGenerateProjectSummary } from "@/hooks/mutations/useGenerateProjectSummary";
+import { useGenerateProjectSummary } from "@/hooks/mutations/projects/useGenerateProjectSummary";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
 import DeleteProjectSummaryModal from "./modals/DeleteProjectSummaryModal";
 

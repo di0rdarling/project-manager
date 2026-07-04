@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { useDeleteCoreUser } from "@/hooks/mutations/useDeleteCoreUser";
+import { useDeleteCoreUser } from "@/hooks/mutations/coreUsers/useDeleteCoreUser";
 import type { CoreUserResponse } from "@/lib/types";
 import { getRichTextPreview } from "@/lib/rich-text";
 

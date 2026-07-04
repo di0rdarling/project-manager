@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { useDeleteTool } from "@/hooks/mutations/useDeleteTool";
+import { useDeleteTool } from "@/hooks/mutations/tools/useDeleteTool";
 import type { ToolResponse } from "@/lib/types";
 import { getRichTextPreview } from "@/lib/rich-text";
 

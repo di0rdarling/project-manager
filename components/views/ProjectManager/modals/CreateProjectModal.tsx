@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/inputs/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Textarea } from "@/components/ui/inputs/Textarea";
-import { useCreateProject } from "@/hooks/mutations/useCreateProject";
+import { useCreateProject } from "@/hooks/mutations/projects/useCreateProject";
 
 type CreateProjectModalProps = {
   open: boolean;

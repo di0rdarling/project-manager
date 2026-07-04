@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/inputs/Input";
 import { RichTextEditor } from "@/components/ui/inputs/richText/RichTextEditor";
-import { useCreateRequirement } from "@/hooks/mutations/useCreateRequirement";
+import { useCreateRequirement } from "@/hooks/mutations/requirements/useCreateRequirement";
 import { isRichTextEmpty } from "@/lib/rich-text";
 
 type CreateRequirementModalProps = {

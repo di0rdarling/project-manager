@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/inputs/Input";
 import { RichTextEditor } from "@/components/ui/inputs/richText/RichTextEditor";
-import { useCreateCoreUser } from "@/hooks/mutations/useCreateCoreUser";
+import { useCreateCoreUser } from "@/hooks/mutations/coreUsers/useCreateCoreUser";
 import { isRichTextEmpty } from "@/lib/rich-text";
 
 type CreateCoreUserModalProps = {

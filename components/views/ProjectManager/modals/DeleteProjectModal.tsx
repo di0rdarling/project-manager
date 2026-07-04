@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { useDeleteProject } from "@/hooks/mutations/useDeleteProject";
+import { useDeleteProject } from "@/hooks/mutations/projects/useDeleteProject";
 import type { ProjectResponse } from "@/lib/types";
 
 type DeleteProjectModalProps = {

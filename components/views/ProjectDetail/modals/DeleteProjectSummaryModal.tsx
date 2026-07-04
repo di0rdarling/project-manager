@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { useDeleteProjectSummary } from "@/hooks/mutations/useDeleteProjectSummary";
+import { useDeleteProjectSummary } from "@/hooks/mutations/projects/useDeleteProjectSummary";
 
 type DeleteProjectSummaryModalProps = {
   open: boolean;

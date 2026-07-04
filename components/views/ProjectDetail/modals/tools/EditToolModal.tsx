@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/inputs/Input";
 import { RichTextEditor } from "@/components/ui/inputs/richText/RichTextEditor";
-import { useUpdateTool } from "@/hooks/mutations/useUpdateTool";
+import { useUpdateTool } from "@/hooks/mutations/tools/useUpdateTool";
 import type { ToolResponse } from "@/lib/types";
 import { isRichTextEmpty } from "@/lib/rich-text";
 

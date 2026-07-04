@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { useDeleteRequirement } from "@/hooks/mutations/useDeleteRequirement";
+import { useDeleteRequirement } from "@/hooks/mutations/requirements/useDeleteRequirement";
 import type { RequirementResponse } from "@/lib/types";
 import { getRichTextPreview } from "@/lib/rich-text";
 

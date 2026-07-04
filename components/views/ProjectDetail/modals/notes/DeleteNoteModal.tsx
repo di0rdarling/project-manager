@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { useDeleteNote } from "@/hooks/mutations/useDeleteNote";
+import { useDeleteNote } from "@/hooks/mutations/notes/useDeleteNote";
 import type { NoteResponse } from "@/lib/types";
 import { getRichTextPreview } from "@/lib/rich-text";
 

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/inputs/Input";
 import { RichTextEditor } from "@/components/ui/inputs/richText/RichTextEditor";
-import { useCreateNote } from "@/hooks/mutations/useCreateNote";
+import { useCreateNote } from "@/hooks/mutations/notes/useCreateNote";
 import { isRichTextEmpty } from "@/lib/rich-text";
 
 type CreateNoteModalProps = {
