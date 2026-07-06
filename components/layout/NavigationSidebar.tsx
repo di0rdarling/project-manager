@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
+  ArrowRightOnRectangleIcon,
   ChatBubbleLeftRightIcon,
   HomeIcon,
 } from "@heroicons/react/24/outline";
+import { Button } from "@/components/ui/Button";
 
 const navItems = [
   { href: "/", label: "Home", icon: HomeIcon },
@@ -14,6 +16,13 @@ const navItems = [
 
 export default function NavigationSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.replace("/login");
+    router.refresh();
+  }
 
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
@@ -42,6 +51,18 @@ export default function NavigationSidebar() {
           );
         })}
       </nav>
+
+      <div className="mt-auto border-t border-zinc-200 p-3 dark:border-zinc-800">
+        <Button
+          type="button"
+          variant="secondary"
+          className="flex w-full items-center justify-center gap-2"
+          onClick={handleLogout}
+        >
+          <ArrowRightOnRectangleIcon className="size-4" aria-hidden />
+          Sign out
+        </Button>
+      </div>
     </aside>
   );
 }
