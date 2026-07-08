@@ -210,6 +210,29 @@ body {
   padding: 0;
 }
 
+.tiptap-content table,
+.tiptap-editor table {
+  border-collapse: collapse;
+  min-width: 100%;
+  width: max-content;
+}
+
+.tiptap-content th,
+.tiptap-content td,
+.tiptap-editor th,
+.tiptap-editor td {
+  border: 1px solid #d4d4d8;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.tiptap-content th,
+.tiptap-editor th {
+  background: #f4f4f5;
+  font-weight: 600;
+}
+
 .markdown-content {
   font-size: 0.875rem;
   line-height: 1.5;
@@ -369,6 +392,18 @@ body {
   .tiptap-editor pre,
   .tiptap-content pre {
     background: #27272a;
+  }
+
+  .tiptap-content th,
+  .tiptap-editor th {
+    background: #27272a;
+  }
+
+  .tiptap-content th,
+  .tiptap-content td,
+  .tiptap-editor th,
+  .tiptap-editor td {
+    border-color: #3f3f46;
   }
 
   .tiptap-editor mark,

@@ -2,6 +2,7 @@ import { MarkdownContent } from "@/components/ui/MarkdownContent";
 import {
   annotateRichTextHeadings,
   getRenderableRichTextContent,
+  prepareRichTextHtmlForDisplay,
 } from "@/lib/rich-text";
 import type { RichTextHeading } from "@/lib/rich-text";
 
@@ -30,9 +31,11 @@ export function RichTextContent({
     );
   }
 
-  const htmlContent = headings?.length
-    ? annotateRichTextHeadings(content, headings)
-    : renderable.content;
+  const htmlContent = prepareRichTextHtmlForDisplay(
+    headings?.length
+      ? annotateRichTextHeadings(content, headings)
+      : renderable.content,
+  );
   const contentClassName = `tiptap-content ${textClassName}`;
 
   return (

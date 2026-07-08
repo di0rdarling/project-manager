@@ -25,17 +25,179 @@ function decodeHtmlEntities(value: string): string {
     .replace(/&#39;/g, "'");
 }
 
+function stripInlineHtml(html: string): string {
+  return decodeHtmlEntities(html.replace(/<[^>]+>/g, "").trim());
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+const MARKDOWN_TABLE_ROW_PATTERN = /^\|.+\|$/;
+const MARKDOWN_TABLE_SEPARATOR_PATTERN = /^\|[-:|\s]+\|$/;
+
+export function isMarkdownTableRow(text: string): boolean {
+  const trimmed = text.trim();
+  return MARKDOWN_TABLE_ROW_PATTERN.test(trimmed);
+}
+
+export function isMarkdownTableSeparator(text: string): boolean {
+  const trimmed = text.trim();
+  return MARKDOWN_TABLE_SEPARATOR_PATTERN.test(trimmed);
+}
+
+function parseMarkdownTableCells(row: string): string[] {
+  return row
+    .trim()
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((cell) => cell.trim());
+}
+
+function buildHtmlTable(rows: string[]): string {
+  const headerCells = parseMarkdownTableCells(rows[0]);
+  const bodyRows = rows.slice(2).map(parseMarkdownTableCells);
+
+  const headerHtml = headerCells
+    .map((cell) => `<th>${escapeHtml(cell)}</th>`)
+    .join("");
+  const bodyHtml = bodyRows
+    .map(
+      (cells) =>
+        `<tr>${cells.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`,
+    )
+    .join("");
+
+  return `<div class="markdown-table-wrapper"><table><thead><tr>${headerHtml}</tr></thead><tbody>${bodyHtml}</tbody></table></div>`;
+}
+
+export function normalizeMarkdownTables(markdown: string): string {
+  const lines = markdown.split("\n");
+  const normalized: string[] = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const previousLine = normalized.at(-1);
+
+    if (
+      line.trim() === "" &&
+      previousLine &&
+      isMarkdownTableRow(previousLine) &&
+      index + 1 < lines.length &&
+      isMarkdownTableRow(lines[index + 1])
+    ) {
+      continue;
+    }
+
+    normalized.push(line);
+  }
+
+  return normalized.join("\n");
+}
+
+export function convertMarkdownTableParagraphsInHtml(html: string): string {
+  const paragraphRegex = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+  type Segment =
+    | { type: "paragraph"; raw: string; text: string }
+    | { type: "other"; raw: string };
+
+  const segments: Segment[] = [];
+  let lastIndex = 0;
+  let match = paragraphRegex.exec(html);
+
+  while (match) {
+    if (match.index > lastIndex) {
+      segments.push({ type: "other", raw: html.slice(lastIndex, match.index) });
+    }
+
+    segments.push({
+      type: "paragraph",
+      raw: match[0],
+      text: stripInlineHtml(match[1]),
+    });
+    lastIndex = match.index + match[0].length;
+    match = paragraphRegex.exec(html);
+  }
+
+  if (lastIndex < html.length) {
+    segments.push({ type: "other", raw: html.slice(lastIndex) });
+  }
+
+  const result: string[] = [];
+  let index = 0;
+
+  while (index < segments.length) {
+    const segment = segments[index];
+
+    if (segment.type === "paragraph" && isMarkdownTableRow(segment.text)) {
+      const tableParagraphs: Array<{ raw: string; text: string }> = [];
+
+      while (
+        index < segments.length &&
+        segments[index].type === "paragraph" &&
+        isMarkdownTableRow((segments[index] as Segment & { text: string }).text)
+      ) {
+        const paragraph = segments[index] as Segment & {
+          raw: string;
+          text: string;
+        };
+        tableParagraphs.push({ raw: paragraph.raw, text: paragraph.text });
+        index += 1;
+      }
+
+      if (
+        tableParagraphs.length >= 2 &&
+        isMarkdownTableSeparator(tableParagraphs[1].text)
+      ) {
+        result.push(buildHtmlTable(tableParagraphs.map((row) => row.text)));
+        continue;
+      }
+
+      tableParagraphs.forEach((row) => result.push(row.raw));
+      continue;
+    }
+
+    result.push(segment.raw);
+    index += 1;
+  }
+
+  return result.join("");
+}
+
+export function wrapBareHtmlTables(html: string): string {
+  return html.replace(/<table[\s\S]*?<\/table>/gi, (match, offset, full) => {
+    const before = full.slice(Math.max(0, offset - 60), offset);
+
+    if (/<div class="markdown-table-wrapper">\s*$/.test(before)) {
+      return match;
+    }
+
+    return `<div class="markdown-table-wrapper">${match}</div>`;
+  });
+}
+
+export function prepareRichTextHtmlForDisplay(html: string): string {
+  return wrapBareHtmlTables(convertMarkdownTableParagraphsInHtml(html));
+}
+
 export function htmlToPlainText(html: string): string {
-  return decodeHtmlEntities(
-    html
-      .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<\/p>\s*<p[^>]*>/gi, "\n\n")
-      .replace(/<\/li>\s*<li[^>]*>/gi, "\n")
-      .replace(/<\/h[1-6]>\s*<h[1-6][^>]*>/gi, "\n\n")
-      .replace(/<\/(?:p|div|h[1-6]|li|tr|blockquote)>/gi, "\n")
-      .replace(/<[^>]+>/g, "")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim(),
+  return normalizeMarkdownTables(
+    decodeHtmlEntities(
+      html
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/p>\s*<p[^>]*>/gi, "\n\n")
+        .replace(/<\/li>\s*<li[^>]*>/gi, "\n")
+        .replace(/<\/h[1-6]>\s*<h[1-6][^>]*>/gi, "\n\n")
+        .replace(/<\/(?:p|div|h[1-6]|li|tr|blockquote)>/gi, "\n")
+        .replace(/<[^>]+>/g, "")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim(),
+    ),
   );
 }
 
@@ -67,7 +229,9 @@ export function getRenderableRichTextContent(
   if (!isHtml || (hasFences && !hasPreBlocks)) {
     return {
       type: "markdown",
-      content: isHtml ? htmlToPlainText(trimmed) : trimmed,
+      content: normalizeMarkdownTables(
+        isHtml ? htmlToPlainText(trimmed) : trimmed,
+      ),
     };
   }
 

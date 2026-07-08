@@ -1,7 +1,10 @@
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { RichTextHeading } from "@/lib/rich-text";
+import {
+  normalizeMarkdownTables,
+  type RichTextHeading,
+} from "@/lib/rich-text";
 
 type MarkdownContentProps = {
   content: string;
@@ -28,6 +31,7 @@ function createMarkdownComponents(headings?: RichTextHeading[]): Components {
     return baseMarkdownComponents;
   }
 
+  const resolvedHeadings: RichTextHeading[] = headings;
   let headingIndex = 0;
 
   function createHeadingComponent(
@@ -37,7 +41,7 @@ function createMarkdownComponents(headings?: RichTextHeading[]): Components {
     return function MarkdownHeading({
       children,
     }: Readonly<{ children?: React.ReactNode }>) {
-      const heading = headings[headingIndex];
+      const heading = resolvedHeadings[headingIndex];
       headingIndex += 1;
       const id = heading?.level === level ? heading.id : undefined;
 
@@ -77,7 +81,7 @@ export function MarkdownContent({
         remarkPlugins={[remarkGfm]}
         components={createMarkdownComponents(headings)}
       >
-        {content}
+        {normalizeMarkdownTables(content)}
       </ReactMarkdown>
     </div>
   );
