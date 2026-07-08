@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { ArrowLeftIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowLeftIcon,
+  DocumentTextIcon,
+  PencilIcon,
+} from "@heroicons/react/24/outline";
 import PageContent, { pageInnerClassName } from "@/components/layout/PageContent";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -11,6 +15,7 @@ import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { IconButton } from "@/components/ui/IconButton";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { MarkdownContent } from "@/components/ui/MarkdownContent";
+import EditChatTitleModal from "@/components/views/Chats/modals/EditChatTitleModal";
 import ChatSummaryModal from "@/components/views/Chats/modals/ChatSummaryModal";
 import { useSendChatMessage } from "@/hooks/mutations/chats/useSendChatMessage";
 import { useFetchChat } from "@/hooks/queries/useFetchChat";
@@ -100,6 +105,7 @@ export default function ChatDetailView({
 }: Readonly<ChatDetailViewProps>) {
   const [message, setMessage] = useState("");
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
+  const [isEditTitleModalOpen, setIsEditTitleModalOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -188,22 +194,33 @@ export default function ChatDetailView({
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <TeammateAvatar teammate={teammate} size="md" />
             <div className="min-w-0">
-              <h1 className="truncate text-lg font-semibold">{chat.title}</h1>
+              <div className="flex items-center gap-1">
+                <h1 className="truncate text-lg font-semibold">{chat.title}</h1>
+                <IconButton
+                  type="button"
+                  aria-label="Edit chat title"
+                  onClick={() => setIsEditTitleModalOpen(true)}
+                >
+                  <PencilIcon className="size-4" />
+                </IconButton>
+              </div>
               <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
                 {teammate.name} · {teammate.role}
               </p>
             </div>
           </div>
-          {chat.conversationSummary ? (
-            <IconButton
-              type="button"
-              aria-label="View conversation summary"
-              title="View conversation summary"
-              onClick={() => setIsSummaryModalOpen(true)}
-            >
-              <DocumentTextIcon className="size-5" />
-            </IconButton>
-          ) : null}
+          <div className="flex shrink-0 items-center gap-1">
+            {chat.conversationSummary ? (
+              <IconButton
+                type="button"
+                aria-label="View conversation summary"
+                title="View conversation summary"
+                onClick={() => setIsSummaryModalOpen(true)}
+              >
+                <DocumentTextIcon className="size-5" />
+              </IconButton>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -256,6 +273,15 @@ export default function ChatDetailView({
           </Button>
         </form>
       </div>
+
+      <EditChatTitleModal
+        open={isEditTitleModalOpen}
+        chat={chat}
+        onClose={() => setIsEditTitleModalOpen(false)}
+        onSuccess={(chatTitle) =>
+          toast.success(`Chat title updated to "${chatTitle}".`)
+        }
+      />
 
       <ChatSummaryModal
         open={isSummaryModalOpen}

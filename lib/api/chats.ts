@@ -45,6 +45,20 @@ export async function sendChatMessage(input: {
   return parseResponse<SendChatMessageResponse>(response);
 }
 
+export async function updateChat(input: {
+  chatId: string;
+  title: string;
+}): Promise<ChatResponse> {
+  const { chatId, title } = input;
+  const response = await fetch(`/api/chats/${chatId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title }),
+  });
+
+  return parseResponse<ChatResponse>(response);
+}
+
 export async function deleteChat(chatId: string): Promise<void> {
   const response = await fetch(`/api/chats/${chatId}`, {
     method: "DELETE",
