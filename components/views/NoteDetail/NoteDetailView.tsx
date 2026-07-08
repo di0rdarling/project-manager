@@ -1,8 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { ArrowLeftIcon, PencilIcon } from "@heroicons/react/24/outline";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ArrowLeftIcon,
+  PencilIcon,
+  QueueListIcon,
+} from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
 import PageContent from "@/components/layout/PageContent";
 import { Button } from "@/components/ui/Button";
@@ -12,12 +16,14 @@ import { Input } from "@/components/ui/inputs/Input";
 import { RichTextContent } from "@/components/ui/inputs/richText/RichTextContent";
 import { RichTextEditor } from "@/components/ui/inputs/richText/RichTextEditor";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
+import { NoteTableOfContents } from "@/components/views/NoteDetail/NoteTableOfContents";
+import { useNoteHeadings } from "@/hooks/notes/useNoteHeadings";
 import { useUpdateNote } from "@/hooks/mutations/notes/useUpdateNote";
 import { useFetchFeature } from "@/hooks/queries/useFetchFeature";
 import { useFetchNote } from "@/hooks/queries/useFetchNote";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
 import { formatDisplayDate } from "@/lib/dates";
-import { isRichTextEmpty } from "@/lib/rich-text";
+import { getRichTextHeadings, isRichTextEmpty } from "@/lib/rich-text";
 
 interface NoteDetailViewProps {
   projectId: string;
@@ -54,9 +60,18 @@ export default function NoteDetailView({
   });
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isTocOpen, setIsTocOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
+  const { contentRef, contentElement, hasHeadings } = useNoteHeadings(
+    note?.content ?? "",
+    !isEditing && Boolean(note),
+  );
+  const noteHeadings = useMemo(
+    () => (note ? getRichTextHeadings(note.content) : []),
+    [note],
+  );
 
   useEffect(() => {
     if (note) {
@@ -95,6 +110,7 @@ export default function NoteDetailView({
       return;
     }
 
+    setIsTocOpen(false);
     setTitle(note.title);
     setContent(note.content);
     setValidationError(null);
@@ -230,18 +246,44 @@ export default function NoteDetailView({
                   : null}
               </p>
             </div>
-            <IconButton
-              type="button"
-              aria-label="Edit note"
-              onClick={startEditing}
-            >
-              <PencilIcon className="size-4" />
-            </IconButton>
+            <div className="flex shrink-0 items-start gap-1">
+              <IconButton
+                type="button"
+                aria-label={
+                  isTocOpen ? "Hide table of contents" : "Show table of contents"
+                }
+                aria-pressed={isTocOpen}
+                aria-expanded={isTocOpen}
+                aria-controls="note-table-of-contents"
+                disabled={!hasHeadings}
+                className={isTocOpen ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100" : undefined}
+                onClick={() => setIsTocOpen((current) => !current)}
+              >
+                <QueueListIcon className="size-4" />
+              </IconButton>
+              <IconButton
+                type="button"
+                aria-label="Edit note"
+                onClick={startEditing}
+              >
+                <PencilIcon className="size-4" />
+              </IconButton>
+            </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+          <NoteTableOfContents
+            isOpen={isTocOpen}
+            contentKey={`${note._id}-${note.updatedAt}`}
+            contentElement={contentElement}
+          />
+
+          <div
+            ref={contentRef}
+            className="note-toc-content rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+          >
             <RichTextContent
               content={note.content}
+              headings={noteHeadings}
               className="text-sm text-zinc-800 dark:text-zinc-200"
             />
           </div>

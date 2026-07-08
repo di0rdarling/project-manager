@@ -1,14 +1,20 @@
 import { MarkdownContent } from "@/components/ui/MarkdownContent";
-import { getRenderableRichTextContent } from "@/lib/rich-text";
+import {
+  annotateRichTextHeadings,
+  getRenderableRichTextContent,
+} from "@/lib/rich-text";
+import type { RichTextHeading } from "@/lib/rich-text";
 
 type RichTextContentProps = {
   content: string;
   className?: string;
+  headings?: RichTextHeading[];
 };
 
 export function RichTextContent({
   content,
   className,
+  headings,
 }: Readonly<RichTextContentProps>) {
   const renderable = getRenderableRichTextContent(content);
   const textClassName =
@@ -16,16 +22,23 @@ export function RichTextContent({
 
   if (renderable.type === "markdown") {
     return (
-      <MarkdownContent content={renderable.content} className={textClassName} />
+      <MarkdownContent
+        content={renderable.content}
+        className={textClassName}
+        headings={headings}
+      />
     );
   }
 
+  const htmlContent = headings?.length
+    ? annotateRichTextHeadings(content, headings)
+    : renderable.content;
   const contentClassName = `tiptap-content ${textClassName}`;
 
   return (
     <div
       className={contentClassName}
-      dangerouslySetInnerHTML={{ __html: renderable.content }}
+      dangerouslySetInnerHTML={{ __html: htmlContent }}
     />
   );
 }

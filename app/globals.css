@@ -421,3 +421,53 @@ body {
     border-color: rgb(0 0 0 / 0.12);
   }
 }
+
+.note-toc-content h1,
+.note-toc-content h2,
+.note-toc-content h3 {
+  scroll-margin-top: 1.5rem;
+}
+
+.note-toc .note-toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.note-toc .note-toc-list .note-toc-list {
+  margin-top: 0.25rem;
+  padding-left: 0.75rem;
+}
+
+.note-toc-link {
+  border-left: 2px solid transparent;
+  color: #52525b;
+  display: block;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  padding: 0.25rem 0 0.25rem 0.75rem;
+  text-decoration: none;
+  transition: color 150ms ease, border-color 150ms ease;
+}
+
+.note-toc-link:hover {
+  color: #18181b;
+}
+
+.note-toc-link-active {
+  border-left-color: #18181b;
+  color: #18181b;
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  .note-toc-link {
+    color: #a1a1aa;
+  }
+
+  .note-toc-link:hover,
+  .note-toc-link-active {
+    border-left-color: #fafafa;
+    color: #fafafa;
+  }
+}

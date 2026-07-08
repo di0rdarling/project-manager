@@ -73,3 +73,155 @@ export function getRenderableRichTextContent(
 
   return { type: "html", content: trimmed };
 }
+
+export type RichTextHeading = {
+  id: string;
+  text: string;
+  level: 1 | 2 | 3;
+};
+
+function slugifyHeading(text: string): string {
+  const slug = text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  return slug || "section";
+}
+
+function createUniqueHeadingId(text: string, usedIds: Set<string>): string {
+  const baseId = slugifyHeading(text);
+  let id = baseId;
+  let counter = 2;
+
+  while (usedIds.has(id)) {
+    id = `${baseId}-${counter}`;
+    counter += 1;
+  }
+
+  usedIds.add(id);
+  return id;
+}
+
+function stripMarkdownInlineFormatting(text: string): string {
+  return text
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/(\*\*|__)(.*?)\1/g, "$2")
+    .replace(/(\*|_)(.*?)\1/g, "$2")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/~~([^~]+)~~/g, "$1")
+    .trim();
+}
+
+function extractHeadingsFromHtml(html: string): RichTextHeading[] {
+  const headings: RichTextHeading[] = [];
+  const usedIds = new Set<string>();
+  const regex = /<h([1-3])([^>]*)>([\s\S]*?)<\/h\1>/gi;
+  let match = regex.exec(html);
+
+  while (match) {
+    const level = Number(match[1]) as 1 | 2 | 3;
+    const text = stripRichText(match[3]);
+
+    if (text) {
+      headings.push({
+        id: createUniqueHeadingId(text, usedIds),
+        text,
+        level,
+      });
+    }
+
+    match = regex.exec(html);
+  }
+
+  return headings;
+}
+
+function extractHeadingsFromMarkdown(markdown: string): RichTextHeading[] {
+  const headings: RichTextHeading[] = [];
+  const usedIds = new Set<string>();
+  const regex = /^(#{1,3})\s+(.+)$/gm;
+  let match = regex.exec(markdown);
+
+  while (match) {
+    const level = match[1].length as 1 | 2 | 3;
+    const text = stripMarkdownInlineFormatting(match[2]);
+
+    if (text) {
+      headings.push({
+        id: createUniqueHeadingId(text, usedIds),
+        text,
+        level,
+      });
+    }
+
+    match = regex.exec(markdown);
+  }
+
+  return headings;
+}
+
+export function getRichTextHeadings(content: string): RichTextHeading[] {
+  const trimmed = content.trim();
+
+  if (!trimmed) {
+    return [];
+  }
+
+  const htmlHeadings = extractHeadingsFromHtml(trimmed);
+  if (htmlHeadings.length > 0) {
+    return htmlHeadings;
+  }
+
+  const renderable = getRenderableRichTextContent(content);
+
+  if (renderable.type === "markdown") {
+    return extractHeadingsFromMarkdown(renderable.content);
+  }
+
+  return htmlHeadings;
+}
+
+export function annotateRichTextHeadings(
+  content: string,
+  headings: RichTextHeading[],
+): string {
+  const renderable = getRenderableRichTextContent(content);
+
+  if (renderable.type === "markdown") {
+    return renderable.content;
+  }
+
+  let headingIndex = 0;
+
+  return renderable.content.replace(
+    /<h([1-3])([^>]*)>([\s\S]*?)<\/h\1>/gi,
+    (match, level: string, attrs: string, inner: string) => {
+      while (headingIndex < headings.length) {
+        const heading = headings[headingIndex];
+        headingIndex += 1;
+
+        if (Number(level) !== heading.level) {
+          continue;
+        }
+
+        const text = stripRichText(inner);
+        if (!text) {
+          continue;
+        }
+
+        if (/\bid\s*=/.test(attrs)) {
+          return match;
+        }
+
+        return `<h${level}${attrs} id="${heading.id}" class="scroll-mt-24">${inner}</h${level}>`;
+      }
+
+      return match;
+    },
+  );
+}
