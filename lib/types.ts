@@ -154,6 +154,7 @@ type ChatBase<TId> = {
   featureId: TId | null;
   teammateId: ChatTeammateId;
   title: string;
+  conversationSummary: string | null;
   createdAt: string;
   updatedAt: string;
 };

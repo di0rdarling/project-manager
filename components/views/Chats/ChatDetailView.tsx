@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
 import PageContent, { pageInnerClassName } from "@/components/layout/PageContent";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
+import { IconButton } from "@/components/ui/IconButton";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { MarkdownContent } from "@/components/ui/MarkdownContent";
+import ChatSummaryModal from "@/components/views/Chats/modals/ChatSummaryModal";
 import { useSendChatMessage } from "@/hooks/mutations/chats/useSendChatMessage";
 import { useFetchChat } from "@/hooks/queries/useFetchChat";
 import { getChatTeammate, type ChatTeammate } from "@/lib/chat-teammates";
@@ -97,6 +99,7 @@ export default function ChatDetailView({
   chatId,
 }: Readonly<ChatDetailViewProps>) {
   const [message, setMessage] = useState("");
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -182,7 +185,7 @@ export default function ChatDetailView({
             <ArrowLeftIcon className="size-4" aria-hidden />
             Back
           </Link>
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <TeammateAvatar teammate={teammate} size="md" />
             <div className="min-w-0">
               <h1 className="truncate text-lg font-semibold">{chat.title}</h1>
@@ -191,6 +194,16 @@ export default function ChatDetailView({
               </p>
             </div>
           </div>
+          {chat.conversationSummary ? (
+            <IconButton
+              type="button"
+              aria-label="View conversation summary"
+              title="View conversation summary"
+              onClick={() => setIsSummaryModalOpen(true)}
+            >
+              <DocumentTextIcon className="size-5" />
+            </IconButton>
+          ) : null}
         </div>
       </div>
 
@@ -243,6 +256,12 @@ export default function ChatDetailView({
           </Button>
         </form>
       </div>
+
+      <ChatSummaryModal
+        open={isSummaryModalOpen}
+        summary={chat.conversationSummary}
+        onClose={() => setIsSummaryModalOpen(false)}
+      />
     </div>
   );
 }

@@ -72,3 +72,9 @@ export async function generateChatReply(
 export async function generateProjectSummary(prompt: string): Promise<string> {
   return generateText(prompt);
 }
+
+export async function generateConversationSummary(
+  prompt: string,
+): Promise<string> {
+  return generateText(prompt);
+}

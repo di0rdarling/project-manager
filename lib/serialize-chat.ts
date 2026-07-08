@@ -33,6 +33,7 @@ export function serializeChat(chat: StoredChat): ChatResponse {
       ? chat.teammateId
       : DEFAULT_CHAT_TEAMMATE_ID,
     title: chat.title,
+    conversationSummary: chat.conversationSummary ?? null,
     createdAt: toIsoString(chat.createdAt),
     updatedAt: toIsoString(chat.updatedAt),
   };

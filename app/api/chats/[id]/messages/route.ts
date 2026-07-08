@@ -1,7 +1,8 @@
 import { ObjectId } from "mongodb";
-import { generateChatReply } from "@/lib/gemini";
+import { generateChatReply, generateConversationSummary } from "@/lib/gemini";
 import getClientPromise from "@/lib/mongodb";
 import { getProjectContext } from "@/lib/project-context";
+import { buildChatConversationSummaryPrompt } from "@/lib/prompts/chat-conversation-summary-prompt";
 import {
   buildChatTitleFromMessage,
   serializeChat,
@@ -108,10 +109,31 @@ export async function POST(request: Request, context: RouteContext) {
 
     const shouldUpdateTitle =
       existingMessages.length === 0 && result.chat.title === "New Chat";
-    const updatedChat: Pick<Chat, "title" | "updatedAt"> = {
-      title: shouldUpdateTitle
-        ? buildChatTitleFromMessage(content)
-        : result.chat.title,
+    const nextTitle = shouldUpdateTitle
+      ? buildChatTitleFromMessage(content)
+      : result.chat.title;
+
+    let conversationSummary = result.chat.conversationSummary ?? null;
+
+    try {
+      conversationSummary = await generateConversationSummary(
+        buildChatConversationSummaryPrompt({
+          chatTitle: nextTitle,
+          previousSummary: result.chat.conversationSummary ?? null,
+          userMessage: content,
+          assistantMessage: assistantContent,
+        }),
+      );
+    } catch {
+      // Keep the previous summary if generation fails.
+    }
+
+    const updatedChat: Pick<
+      Chat,
+      "title" | "conversationSummary" | "updatedAt"
+    > = {
+      title: nextTitle,
+      conversationSummary,
       updatedAt: now,
     };
 
