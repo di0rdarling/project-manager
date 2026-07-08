@@ -8,6 +8,17 @@ export async function fetchFeatures(
   return parseResponse<FeatureResponse[]>(response);
 }
 
+export async function fetchFeature(input: {
+  projectId: string;
+  featureId: string;
+}): Promise<FeatureResponse> {
+  const { projectId, featureId } = input;
+  const response = await fetch(
+    `/api/projects/${projectId}/features/${featureId}`,
+  );
+  return parseResponse<FeatureResponse>(response);
+}
+
 export async function createFeature(input: {
   projectId: string;
   title: string;

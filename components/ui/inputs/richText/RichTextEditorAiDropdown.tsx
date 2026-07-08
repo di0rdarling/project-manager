@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/core";
+import { useEditorState } from "@tiptap/react";
 import {
   ArrowPathIcon,
   ArrowsPointingInIcon,
   ArrowsPointingOutIcon,
   ChevronDownIcon,
+  PencilSquareIcon,
   SparklesIcon,
 } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
@@ -28,9 +30,15 @@ type AiMenuOption = {
 
 const AI_MENU_OPTIONS: AiMenuOption[] = [
   {
+    action: "polish",
+    label: "Polish",
+    description: "Fix grammar and spelling and make it clearer",
+    icon: <PencilSquareIcon className="size-4" aria-hidden />,
+  },
+  {
     action: "shorten",
-    label: "Shorten & polish",
-    description: "Make it shorter and fix grammar and spelling",
+    label: "Shorten",
+    description: "Make it shorter and more concise",
     icon: <ArrowsPointingInIcon className="size-4" aria-hidden />,
   },
   {
@@ -64,8 +72,17 @@ export function RichTextEditorAiDropdown({
   });
 
   const isProcessing = enhanceRichTextMutation.isPending;
-  const currentHtml = editor?.getHTML() ?? "";
-  const isEmpty = isRichTextEmpty(currentHtml);
+  const editorState = useEditorState({
+    editor,
+    selector: ({ editor: currentEditor }) => {
+      if (!currentEditor) {
+        return { isEmpty: true };
+      }
+
+      return { isEmpty: isRichTextEmpty(currentEditor.getHTML()) };
+    },
+  });
+  const isEmpty = editorState?.isEmpty ?? true;
   const isDisabled = !editor || isEmpty || isProcessing;
 
   useEffect(() => {

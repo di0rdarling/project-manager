@@ -6,7 +6,7 @@ import {
 } from "@/lib/prompts/rich-text-enhance-prompt";
 import { isRichTextEmpty } from "@/lib/rich-text";
 
-const VALID_ACTIONS: RichTextEnhanceAction[] = ["shorten", "expand"];
+const VALID_ACTIONS: RichTextEnhanceAction[] = ["shorten", "polish", "expand"];
 
 type EnhanceTextRequest = {
   html?: string;

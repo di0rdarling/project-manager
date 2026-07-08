@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Link from "next/link";
 import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { IconButton } from "@/components/ui/IconButton";
 import { RichTextContent } from "@/components/ui/inputs/richText/RichTextContent";
@@ -15,6 +16,7 @@ interface ItemModalRenderProps {
 }
 
 interface FeatureItemsListProps {
+  projectId: string;
   items: FeatureResponse[];
   requirements: RequirementResponse[];
   onEditSuccess?: () => void;
@@ -36,6 +38,7 @@ function getRequirementTitle(
 }
 
 export default function FeatureItemsList({
+  projectId,
   items,
   requirements,
   onEditSuccess,
@@ -58,10 +61,13 @@ export default function FeatureItemsList({
           return (
             <li
               key={item._id}
-              className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+              className="rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
             >
               <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1 space-y-2">
+                <Link
+                  href={`/projects/${projectId}/features/${item._id}`}
+                  className="min-w-0 flex-1 space-y-2 rounded-lg outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-100"
+                >
                   <h3 className="text-md font-semibold text-zinc-900 dark:text-zinc-100">
                     {item.title}
                   </h3>
@@ -74,7 +80,7 @@ export default function FeatureItemsList({
                     content={item.content}
                     className="text-sm text-zinc-800 dark:text-zinc-200"
                   />
-                </div>
+                </Link>
                 <div className="flex shrink-0 items-start gap-1">
                   <time
                     dateTime={item.createdAt}

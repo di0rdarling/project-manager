@@ -1,11 +1,13 @@
 import { stripRichText } from "@/lib/rich-text";
 import { PLAIN_ENGLISH_STYLE_GUIDE } from "@/lib/prompts/style-guide";
 
-export type RichTextEnhanceAction = "shorten" | "expand";
+export type RichTextEnhanceAction = "shorten" | "polish" | "expand";
 
 const ACTION_INSTRUCTIONS: Record<RichTextEnhanceAction, string> = {
   shorten:
-    "Make the text shorter and more concise while preserving its meaning. Fix any grammar and spelling errors.",
+    "Make the text shorter and more concise while preserving its meaning.",
+  polish:
+    "Polish the text to improve clarity and readability. Fix grammar and spelling errors. Keep roughly the same length — do not shorten or expand the content.",
   expand:
     "Expand the text to be more detailed and comprehensive while preserving its core meaning. Fix any grammar and spelling errors.",
 };

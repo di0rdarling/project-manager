@@ -78,6 +78,37 @@ async function validateRequirementLink(
   return null;
 }
 
+export async function GET(_request: Request, context: RouteContext) {
+  try {
+    const { id, featureId } = await context.params;
+
+    if (!ObjectId.isValid(id)) {
+      return Response.json({ error: "Invalid project id" }, { status: 400 });
+    }
+
+    if (!ObjectId.isValid(featureId)) {
+      return Response.json({ error: "Invalid feature id" }, { status: 400 });
+    }
+
+    const client = await getClientPromise();
+    const feature = await client
+      .db()
+      .collection<StoredFeature>("features")
+      .findOne({
+        _id: new ObjectId(featureId),
+        projectId: new ObjectId(id),
+      });
+
+    if (!feature) {
+      return Response.json({ error: "Feature not found" }, { status: 404 });
+    }
+
+    return Response.json(serializeFeature(feature));
+  } catch {
+    return Response.json({ error: "Failed to fetch feature" }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id, featureId } = await context.params;

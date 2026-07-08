@@ -14,6 +14,8 @@ export const requirementKeys = {
 
 export const featureKeys = {
   all: (projectId: string) => ["projects", projectId, "features"] as const,
+  detail: (projectId: string, featureId: string) =>
+    ["projects", projectId, "features", featureId] as const,
 };
 
 export const toolKeys = {

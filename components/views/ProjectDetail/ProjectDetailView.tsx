@@ -338,6 +338,7 @@ export default function ProjectDetailView({
             emptyMessage="No features yet. Add your first one to get started."
           >
             <FeatureItemsList
+              projectId={projectId}
               items={features}
               requirements={requirements}
               onEditSuccess={() => toast.success("Feature updated successfully.")}
