@@ -3,7 +3,10 @@ import { generateChatReply, generateConversationSummary } from "@/lib/gemini";
 import { getTeammateChatSummaries } from "@/lib/chat-summaries";
 import getClientPromise from "@/lib/mongodb";
 import { getProjectContext } from "@/lib/project-context";
-import { buildChatConversationSummaryPrompt } from "@/lib/prompts/chat-conversation-summary-prompt";
+import {
+  buildChatConversationSummaryPrompt,
+  RECENT_MESSAGE_WINDOW,
+} from "@/lib/prompts/chat-conversation-summary-prompt";
 import { buildChatOtherConversationsContext } from "@/lib/prompts/chat-other-conversations-prompt";
 import {
   buildChatTitleFromMessage,
@@ -137,12 +140,22 @@ export async function POST(request: Request, context: RouteContext) {
     let conversationSummary = result.chat.conversationSummary ?? null;
 
     try {
+      const fullTranscript = [
+        ...history,
+        { role: "user" as const, content },
+        { role: "model" as const, content: assistantReply.content },
+      ];
+      const recentMessages = fullTranscript.slice(-RECENT_MESSAGE_WINDOW);
+      const hasTruncatedMessages =
+        fullTranscript.length > recentMessages.length;
+
       conversationSummary = await generateConversationSummary(
         buildChatConversationSummaryPrompt({
           chatTitle: nextTitle,
-          previousSummary: result.chat.conversationSummary ?? null,
-          userMessage: content,
-          assistantMessage: assistantReply.content,
+          olderSummary: hasTruncatedMessages
+            ? (result.chat.conversationSummary ?? null)
+            : null,
+          recentMessages,
         }),
       );
     } catch {

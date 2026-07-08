@@ -26,3 +26,18 @@ export const CONCISE_RESPONSE_STYLE_GUIDE: readonly string[] = [
   "Prefer short sentences and everyday words over complex or technical ones.",
   "Keep responses brief and to the point.",
 ];
+
+/**
+ * Style guide for AI-generated text that is meant to be reused as context
+ * (fed back into future prompts, other agents, or other systems) rather than
+ * read once by a human. Unlike PLAIN_ENGLISH_STYLE_GUIDE, this guide favors
+ * factual completeness and specificity over simplicity, since flattening
+ * technical detail into "plain English" here means that detail is gone for
+ * good the next time this text is used as context.
+ */
+export const PRESERVE_DETAIL_STYLE_GUIDE: readonly string[] = [
+  "Preserve concrete technical details from the source material: names of tools, technologies, products, files, and systems; specific numbers; and the exact options that were considered.",
+  "Do not generalize or simplify technical terms into vague descriptions. State the specific technologies and methods that were actually discussed, by name.",
+  "Name the decision that was reached on each topic and the reasoning behind it, not just that 'a decision was made'.",
+  "Write in clear, well-organized prose, but never sacrifice factual detail or specificity for the sake of brevity.",
+];

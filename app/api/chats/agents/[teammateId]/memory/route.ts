@@ -4,7 +4,7 @@ import {
   type ChatTeammateId,
 } from "@/lib/chat-teammates";
 import { getTeammateChatSummaries } from "@/lib/chat-summaries";
-import { generateText } from "@/lib/gemini";
+import { generateAgentMemory } from "@/lib/gemini";
 import getClientPromise from "@/lib/mongodb";
 import { buildAgentMemoryPrompt } from "@/lib/prompts/agent-memory-prompt";
 import { toIsoString } from "@/lib/dates";
@@ -87,15 +87,17 @@ export async function POST(_request: Request, context: RouteContext) {
     }
 
     const teammate = getChatTeammate(parsed.teammateId);
-    const memory = await generateText(
+    const generatedAt = new Date();
+    const memory = await generateAgentMemory(
       buildAgentMemoryPrompt({
         agentName: teammate.name,
         agentRole: teammate.role,
         agentDescription: teammate.description,
         chatSummaries,
+        generatedAt,
       }),
     );
-    const now = new Date().toISOString();
+    const now = generatedAt.toISOString();
     const client = await getClientPromise();
 
     await client

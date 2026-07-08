@@ -18,7 +18,7 @@ function formatProjectContext(
 function formatChatSummary(chat: TeammateChatSummary, index: number): string {
   const title = chat.title.trim() || "Untitled chat";
   const sections = [
-    `${index + 1}. Chat "${title}" (last updated ${chat.updatedAt})`,
+    `${index + 1}. Chat "${title}" (created ${chat.createdAt}, last updated ${chat.updatedAt})`,
   ];
 
   if (chat.project) {

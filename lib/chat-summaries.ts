@@ -8,6 +8,7 @@ import type { StoredProject } from "@/lib/serialize-project";
 export type TeammateChatSummary = {
   chatId: string;
   title: string;
+  createdAt: string;
   updatedAt: string;
   summary: string;
   project: {
@@ -72,6 +73,7 @@ export async function getTeammateChatSummaries(
     return {
       chatId: chat._id.toString(),
       title: chat.title,
+      createdAt: toIsoString(chat.createdAt),
       updatedAt: toIsoString(chat.updatedAt),
       summary: chat.conversationSummary!.trim(),
       project: project

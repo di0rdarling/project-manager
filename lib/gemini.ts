@@ -46,6 +46,14 @@ function getDefaultModelName(): string {
   return process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 }
 
+export function getMemoryModelName(): string {
+  return (
+    process.env.GEMINI_MEMORY_MODEL ??
+    process.env.GEMINI_MODEL ??
+    "gemini-2.5-flash"
+  );
+}
+
 const DEFAULT_GEMINI_THINKING_BUDGET = 8192;
 
 function parseThinkingBudget(value: string | undefined): number {
@@ -165,9 +173,12 @@ function extractGroundingFromResponse(
   };
 }
 
-export async function generateText(prompt: string): Promise<string> {
+export async function generateText(
+  prompt: string,
+  modelName?: string,
+): Promise<string> {
   const model = getGeminiClient().getGenerativeModel({
-    model: getDefaultModelName(),
+    model: modelName ?? getDefaultModelName(),
   });
   const result = await model.generateContent(prompt);
   const text = result.response.text().trim();
@@ -227,4 +238,8 @@ export async function generateConversationSummary(
   prompt: string,
 ): Promise<string> {
   return generateText(prompt);
+}
+
+export async function generateAgentMemory(prompt: string): Promise<string> {
+  return generateText(prompt, getMemoryModelName());
 }
