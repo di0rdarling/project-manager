@@ -52,3 +52,7 @@ export const chatKeys = {
   all: ["chats"] as const,
   detail: (id: string) => ["chats", id] as const,
 };
+
+export const agentMemoryKeys = {
+  detail: (teammateId: string) => ["agent-memory", teammateId] as const,
+};

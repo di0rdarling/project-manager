@@ -21,6 +21,7 @@ export type AISummaryMessages = {
 
 type AISummarySectionProps = {
   summary: string | null;
+  title?: string;
   isFetching: boolean;
   isGenerating: boolean;
   isGenerateError: boolean;
@@ -33,6 +34,7 @@ type AISummarySectionProps = {
 
 export function AISummarySection({
   summary,
+  title = "Overview",
   isFetching,
   isGenerating,
   isGenerateError,
@@ -60,7 +62,7 @@ export function AISummarySection({
             className="size-5 text-zinc-500 dark:text-zinc-400"
             aria-hidden
           />
-          Overview
+          {title}
         </h2>
         {summary ? (
           <div className="flex shrink-0 items-center gap-1">

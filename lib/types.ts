@@ -171,3 +171,9 @@ export type SendChatMessageResponse = {
   userMessage: ChatMessageResponse;
   assistantMessage: ChatMessageResponse;
 };
+
+export type AgentMemoryResponse = {
+  teammateId: ChatTeammateId;
+  memory: string | null;
+  updatedAt: string | null;
+};
