@@ -8,12 +8,14 @@ import DeleteChallengeModal from "./modals/challenges/DeleteChallengeModal";
 import EditChallengeModal from "./modals/challenges/EditChallengeModal";
 import ChallengesItemsList from "./ChallengesItemsList";
 import ProjectSection from "./ProjectSection";
+import type { ProjectDetailSectionId } from "@/lib/project-detail-sections";
 
 type ChallengesSectionProps = {
   projectId: string;
   featureId?: string;
   enabled?: boolean;
   emptyMessage?: string;
+  sectionId?: ProjectDetailSectionId;
 };
 
 export default function ChallengesSection({
@@ -21,6 +23,7 @@ export default function ChallengesSection({
   featureId,
   enabled = true,
   emptyMessage = "No challenges recorded yet. Add any current issues or blockers you're facing.",
+  sectionId,
 }: Readonly<ChallengesSectionProps>) {
   const [isCreateChallengeModalOpen, setIsCreateChallengeModalOpen] =
     useState(false);
@@ -39,6 +42,7 @@ export default function ChallengesSection({
     <>
       <ProjectSection
         title="Current Challenges"
+        sectionId={sectionId}
         addButtonLabel="Add Challenge"
         onAddClick={() => setIsCreateChallengeModalOpen(true)}
         isPending={isPending}

@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { IconButton } from "@/components/ui/IconButton";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
+import { useRegisterProjectSection } from "@/hooks/useRegisterProjectSection";
+import type { ProjectDetailSectionId } from "@/lib/project-detail-sections";
 
 export type AISummaryMessages = {
   emptyDescription: string;
@@ -22,6 +24,7 @@ export type AISummaryMessages = {
 type AISummarySectionProps = {
   summary: string | null;
   title?: string;
+  sectionId?: ProjectDetailSectionId;
   isFetching: boolean;
   isGenerating: boolean;
   isGenerateError: boolean;
@@ -35,6 +38,7 @@ type AISummarySectionProps = {
 export function AISummarySection({
   summary,
   title = "Overview",
+  sectionId,
   isFetching,
   isGenerating,
   isGenerateError,
@@ -44,7 +48,10 @@ export function AISummarySection({
   onGenerate,
   onDeleteClick,
 }: Readonly<AISummarySectionProps>) {
+  const sectionRef = useRef<HTMLElement>(null);
   const isRegeneratingRef = useRef(false);
+
+  useRegisterProjectSection(sectionId, sectionRef);
   const isLoadingSummary =
     isGenerating ||
     (isSuccess && isFetching && summary === null && !isRegeneratingRef.current);
@@ -55,7 +62,11 @@ export function AISummarySection({
   }
 
   return (
-    <section className="space-y-4">
+    <section
+      ref={sectionRef}
+      id={sectionId}
+      className="scroll-mt-6 space-y-4"
+    >
       <div className="flex items-center justify-between gap-3">
         <h2 className="inline-flex items-center gap-2 text-lg font-semibold">
           <SparklesIcon

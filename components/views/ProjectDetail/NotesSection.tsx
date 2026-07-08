@@ -8,12 +8,14 @@ import DeleteNoteModal from "./modals/notes/DeleteNoteModal";
 import EditNoteModal from "./modals/notes/EditNoteModal";
 import NotesList from "./NotesList";
 import ProjectSection from "./ProjectSection";
+import type { ProjectDetailSectionId } from "@/lib/project-detail-sections";
 
 type NotesSectionProps = {
   projectId: string;
   featureId?: string;
   enabled?: boolean;
   emptyMessage?: string;
+  sectionId?: ProjectDetailSectionId;
 };
 
 export default function NotesSection({
@@ -21,6 +23,7 @@ export default function NotesSection({
   featureId,
   enabled = true,
   emptyMessage = "No notes yet. Add your first one to get started.",
+  sectionId,
 }: Readonly<NotesSectionProps>) {
   const [isCreateNoteModalOpen, setIsCreateNoteModalOpen] = useState(false);
 
@@ -38,6 +41,7 @@ export default function NotesSection({
     <>
       <ProjectSection
         title="Notes"
+        sectionId={sectionId}
         addButtonLabel="Add Note"
         onAddClick={() => setIsCreateNoteModalOpen(true)}
         isPending={isPending}

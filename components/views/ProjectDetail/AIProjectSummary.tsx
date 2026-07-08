@@ -72,6 +72,7 @@ export default function AIProjectSummary({
     <>
       <AISummarySection
         summary={project?.aiSummary ?? null}
+        sectionId="overview"
         isFetching={isFetching}
         isGenerating={isGenerating}
         isGenerateError={isGenerateError}

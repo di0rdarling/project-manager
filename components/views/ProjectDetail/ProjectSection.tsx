@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
+import { useRegisterProjectSection } from "@/hooks/useRegisterProjectSection";
+import type { ProjectDetailSectionId } from "@/lib/project-detail-sections";
 
 interface ProjectSectionProps {
   title: string;
@@ -18,6 +20,7 @@ interface ProjectSectionProps {
   isEmpty: boolean;
   emptyMessage: string;
   defaultExpanded?: boolean;
+  sectionId?: ProjectDetailSectionId;
   children: ReactNode;
 }
 
@@ -33,10 +36,16 @@ export default function ProjectSection({
   isEmpty,
   emptyMessage,
   defaultExpanded = true,
+  sectionId,
   children,
 }: Readonly<ProjectSectionProps>) {
+  const sectionRef = useRef<HTMLElement>(null);
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const contentId = `${title.toLowerCase().replace(/\s+/g, "-")}-section-content`;
+
+  useRegisterProjectSection(sectionId, sectionRef, () => {
+    setIsExpanded(true);
+  });
 
   function handleAddClick() {
     if (!isExpanded) {
@@ -47,7 +56,11 @@ export default function ProjectSection({
   }
 
   return (
-    <section className="space-y-4">
+    <section
+      ref={sectionRef}
+      id={sectionId}
+      className="scroll-mt-6 space-y-4"
+    >
       <div className="flex items-center justify-between gap-3">
         <h2 className="min-w-0 text-lg font-semibold">
           <button

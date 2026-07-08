@@ -8,12 +8,14 @@ import DeleteDomainKnowledgeModal from "./modals/domainKnowledge/DeleteDomainKno
 import EditDomainKnowledgeModal from "./modals/domainKnowledge/EditDomainKnowledgeModal";
 import DomainKnowledgeItemsList from "./DomainKnowledgeItemsList";
 import ProjectSection from "./ProjectSection";
+import type { ProjectDetailSectionId } from "@/lib/project-detail-sections";
 
 type DomainKnowledgeSectionProps = {
   projectId: string;
   featureId?: string;
   enabled?: boolean;
   emptyMessage?: string;
+  sectionId?: ProjectDetailSectionId;
 };
 
 export default function DomainKnowledgeSection({
@@ -21,6 +23,7 @@ export default function DomainKnowledgeSection({
   featureId,
   enabled = true,
   emptyMessage = "No domain knowledge yet. Capture terms, concepts, and what you still want to learn.",
+  sectionId,
 }: Readonly<DomainKnowledgeSectionProps>) {
   const [isCreateDomainKnowledgeModalOpen, setIsCreateDomainKnowledgeModalOpen] =
     useState(false);
@@ -39,6 +42,7 @@ export default function DomainKnowledgeSection({
     <>
       <ProjectSection
         title="Domain Knowledge"
+        sectionId={sectionId}
         addButtonLabel="Add Domain Knowledge"
         onAddClick={() => setIsCreateDomainKnowledgeModalOpen(true)}
         isPending={isPending}

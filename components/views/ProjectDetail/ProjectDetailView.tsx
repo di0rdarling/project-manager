@@ -139,6 +139,7 @@ export default function ProjectDetailView({
 
           <ProjectSection
             title="Core Users"
+            sectionId="core-users"
             addButtonLabel="Add Core User"
             onAddClick={() => setIsCreateCoreUserModalOpen(true)}
             isPending={isCoreUsersPending}
@@ -181,6 +182,7 @@ export default function ProjectDetailView({
 
           <ProjectSection
             title="Pain Points"
+            sectionId="pain-points"
             addButtonLabel="Add Pain Point"
             onAddClick={() => setIsCreatePainPointModalOpen(true)}
             isPending={isPainPointsPending}
@@ -221,15 +223,21 @@ export default function ProjectDetailView({
             />
           </ProjectSection>
 
-          <ChallengesSection projectId={projectId} enabled={canFetchSections} />
+          <ChallengesSection
+            projectId={projectId}
+            enabled={canFetchSections}
+            sectionId="current-challenges"
+          />
 
           <DomainKnowledgeSection
             projectId={projectId}
             enabled={canFetchSections}
+            sectionId="domain-knowledge"
           />
 
           <ProjectSection
             title="Requirements"
+            sectionId="requirements"
             addButtonLabel="Add Requirement"
             onAddClick={() => setIsCreateRequirementModalOpen(true)}
             isPending={isRequirementsPending}
@@ -271,6 +279,7 @@ export default function ProjectDetailView({
 
           <ProjectSection
             title="Features"
+            sectionId="features"
             addButtonLabel="Add Feature"
             onAddClick={() => setIsCreateFeatureModalOpen(true)}
             isPending={isFeaturesPending}
@@ -311,6 +320,7 @@ export default function ProjectDetailView({
 
           <ProjectSection
             title="Tools"
+            sectionId="tools"
             addButtonLabel="Add Tool"
             onAddClick={() => setIsCreateToolModalOpen(true)}
             isPending={isToolsPending}
@@ -347,7 +357,11 @@ export default function ProjectDetailView({
             />
           </ProjectSection>
 
-          <NotesSection projectId={projectId} enabled={canFetchSections} />
+          <NotesSection
+            projectId={projectId}
+            enabled={canFetchSections}
+            sectionId="notes"
+          />
           <CreateRequirementModal
             open={isCreateRequirementModalOpen}
             projectId={projectId}
