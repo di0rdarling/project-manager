@@ -13,9 +13,11 @@ import { useFetchFeatures } from "@/hooks/queries/useFetchFeatures";
 import { useFetchTools } from "@/hooks/queries/useFetchTools";
 import { useFetchCoreUsers } from "@/hooks/queries/useFetchCoreUsers";
 import { useFetchPainPoints } from "@/hooks/queries/useFetchPainPoints";
+import { useFetchChallenges } from "@/hooks/queries/useFetchChallenges";
 import { useFetchDomainKnowledge } from "@/hooks/queries/useFetchDomainKnowledge";
 import { formatDisplayDate } from "@/lib/dates";
 import CreatePainPointModal from "./modals/painPoints/CreatePainPointModal";
+import CreateChallengeModal from "./modals/challenges/CreateChallengeModal";
 import CreateDomainKnowledgeModal from "./modals/domainKnowledge/CreateDomainKnowledgeModal";
 import CreateRequirementModal from "./modals/requirements/CreateRequirementModal";
 import CreateFeatureModal from "./modals/features/CreateFeatureModal";
@@ -26,8 +28,10 @@ import DeleteFeatureModal from "./modals/features/DeleteFeatureModal";
 import DeleteToolModal from "./modals/tools/DeleteToolModal";
 import DeleteCoreUserModal from "./modals/coreUsers/DeleteCoreUserModal";
 import DeletePainPointModal from "./modals/painPoints/DeletePainPointModal";
+import DeleteChallengeModal from "./modals/challenges/DeleteChallengeModal";
 import DeleteDomainKnowledgeModal from "./modals/domainKnowledge/DeleteDomainKnowledgeModal";
 import EditPainPointModal from "./modals/painPoints/EditPainPointModal";
+import EditChallengeModal from "./modals/challenges/EditChallengeModal";
 import EditDomainKnowledgeModal from "./modals/domainKnowledge/EditDomainKnowledgeModal";
 import EditRequirementModal from "./modals/requirements/EditRequirementModal";
 import EditFeatureModal from "./modals/features/EditFeatureModal";
@@ -36,6 +40,7 @@ import EditCoreUserModal from "./modals/coreUsers/EditCoreUserModal";
 import ProjectItemsList from "./ProjectItemsList";
 import FeatureItemsList from "./FeatureItemsList";
 import DomainKnowledgeItemsList from "./DomainKnowledgeItemsList";
+import ChallengesItemsList from "./ChallengesItemsList";
 import ProjectSection from "./ProjectSection";
 import NotesSection from "./NotesSection";
 import AIProjectSummary from "./AIProjectSummary";
@@ -57,6 +62,8 @@ export default function ProjectDetailView({
   const [isCreateCoreUserModalOpen, setIsCreateCoreUserModalOpen] =
     useState(false);
   const [isCreatePainPointModalOpen, setIsCreatePainPointModalOpen] =
+    useState(false);
+  const [isCreateChallengeModalOpen, setIsCreateChallengeModalOpen] =
     useState(false);
   const [isCreateDomainKnowledgeModalOpen, setIsCreateDomainKnowledgeModalOpen] =
     useState(false);
@@ -101,6 +108,13 @@ export default function ProjectDetailView({
     isError: isPainPointsError,
     error: painPointsError,
   } = useFetchPainPoints(projectId, { enabled: canFetchSections });
+
+  const {
+    data: challenges = [],
+    isPending: isChallengesPending,
+    isError: isChallengesError,
+    error: challengesError,
+  } = useFetchChallenges(projectId, { enabled: canFetchSections });
 
   const {
     data: domainKnowledge = [],
@@ -225,6 +239,47 @@ export default function ProjectDetailView({
                   open={open}
                   projectId={projectId}
                   painPoint={item}
+                  onClose={onClose}
+                  onSuccess={onSuccess}
+                />
+              )}
+            />
+          </ProjectSection>
+
+          <ProjectSection
+            title="Current Challenges"
+            addButtonLabel="Add Challenge"
+            onAddClick={() => setIsCreateChallengeModalOpen(true)}
+            isPending={isChallengesPending}
+            isError={isChallengesError}
+            error={challengesError}
+            loadingMessage="Loading challenges..."
+            errorFallbackMessage="Failed to load challenges"
+            isEmpty={challenges.length === 0}
+            emptyMessage="No challenges recorded yet. Add any current issues or blockers you're facing."
+          >
+            <ChallengesItemsList
+              items={challenges}
+              onEditSuccess={() =>
+                toast.success("Challenge updated successfully.")
+              }
+              onDeleteSuccess={() =>
+                toast.success("Challenge deleted successfully.")
+              }
+              renderEditModal={({ open, item, onClose, onSuccess }) => (
+                <EditChallengeModal
+                  open={open}
+                  projectId={projectId}
+                  challenge={item}
+                  onClose={onClose}
+                  onSuccess={onSuccess}
+                />
+              )}
+              renderDeleteModal={({ open, item, onClose, onSuccess }) => (
+                <DeleteChallengeModal
+                  open={open}
+                  projectId={projectId}
+                  challenge={item}
                   onClose={onClose}
                   onSuccess={onSuccess}
                 />
@@ -428,6 +483,13 @@ export default function ProjectDetailView({
             projectId={projectId}
             onClose={() => setIsCreatePainPointModalOpen(false)}
             onSuccess={() => toast.success("Pain point added successfully.")}
+          />
+
+          <CreateChallengeModal
+            open={isCreateChallengeModalOpen}
+            projectId={projectId}
+            onClose={() => setIsCreateChallengeModalOpen(false)}
+            onSuccess={() => toast.success("Challenge added successfully.")}
           />
 
           <CreateDomainKnowledgeModal

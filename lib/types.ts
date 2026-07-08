@@ -38,6 +38,21 @@ type PainPointBase<TId> = {
 export type PainPoint = PainPointBase<ObjectId>;
 export type PainPointResponse = PainPointBase<string>;
 
+export type ChallengeStatus = "open" | "in_progress" | "resolved";
+
+type ChallengeBase<TId> = {
+  _id: TId;
+  projectId: TId;
+  title: string;
+  overview: string;
+  status: ChallengeStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Challenge = ChallengeBase<ObjectId>;
+export type ChallengeResponse = ChallengeBase<string>;
+
 type RequirementBase<TId> = {
   _id: TId;
   projectId: TId;

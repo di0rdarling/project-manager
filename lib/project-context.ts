@@ -3,7 +3,7 @@ import { buildChatProjectContext } from "@/lib/prompts/chat-project-context-prom
 import { parseConfidenceLevel } from "@/lib/domain-knowledge";
 import { stripRichText } from "@/lib/rich-text";
 import type { StoredProject } from "@/lib/serialize-project";
-import type { CoreUser, DomainKnowledge, Feature, Note, PainPoint, Requirement, Tool } from "@/lib/types";
+import type { CoreUser, DomainKnowledge, Feature, Note, PainPoint, Requirement, Tool, Challenge } from "@/lib/types";
 import { featureNotesFilter, projectLevelNotesFilter } from "@/lib/notes";
 
 type StoredRequirement = Omit<
@@ -23,6 +23,16 @@ type StoredFeature = Omit<
   _id: Feature["_id"];
   projectId: Feature["projectId"];
   requirementId: Feature["requirementId"];
+  createdAt: string | Date;
+  updatedAt: string | Date;
+};
+
+type StoredChallenge = Omit<
+  Challenge,
+  "_id" | "projectId" | "createdAt" | "updatedAt"
+> & {
+  _id: Challenge["_id"];
+  projectId: Challenge["projectId"];
   createdAt: string | Date;
   updatedAt: string | Date;
 };
@@ -128,7 +138,7 @@ export async function getProjectContext(
     return null;
   }
 
-  const [coreUsers, painPoints, domainKnowledge, requirements, features, tools, notes] =
+  const [coreUsers, painPoints, challenges, domainKnowledge, requirements, features, tools, notes] =
     await Promise.all([
     db
       .collection<StoredCoreUser>("coreUsers")
@@ -137,6 +147,11 @@ export async function getProjectContext(
       .toArray(),
     db
       .collection<StoredPainPoint>("painPoints")
+      .find({ projectId })
+      .sort({ createdAt: -1 })
+      .toArray(),
+    db
+      .collection<StoredChallenge>("challenges")
       .find({ projectId })
       .sort({ createdAt: -1 })
       .toArray(),
@@ -209,6 +224,11 @@ export async function getProjectContext(
     painPoints: painPoints.map((painPoint) => ({
       title: painPoint.title,
       content: painPoint.content,
+    })),
+    challenges: challenges.map((challenge) => ({
+      title: challenge.title,
+      overview: challenge.overview,
+      status: challenge.status,
     })),
     domainKnowledge: domainKnowledge.map((item) => ({
       name: item.name,

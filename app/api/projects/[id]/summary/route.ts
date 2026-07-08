@@ -5,7 +5,7 @@ import {
   serializeProject,
   type StoredProject,
 } from "@/lib/serialize-project";
-import type { CoreUser, DomainKnowledge, Feature, Note, PainPoint, Requirement, Tool } from "@/lib/types";
+import type { CoreUser, DomainKnowledge, Feature, Note, PainPoint, Requirement, Tool, Challenge } from "@/lib/types";
 import { projectLevelNotesFilter } from "@/lib/notes";
 import { buildProjectSummaryPrompt } from "@/lib/prompts/project-summary-prompt";
 
@@ -68,6 +68,16 @@ type StoredPainPoint = Omit<
   updatedAt: string | Date;
 };
 
+type StoredChallenge = Omit<
+  Challenge,
+  "_id" | "projectId" | "createdAt" | "updatedAt"
+> & {
+  _id: Challenge["_id"];
+  projectId: Challenge["projectId"];
+  createdAt: string | Date;
+  updatedAt: string | Date;
+};
+
 type StoredDomainKnowledge = Omit<
   DomainKnowledge,
   "_id" | "projectId" | "createdAt" | "updatedAt"
@@ -104,7 +114,7 @@ export async function POST(_request: Request, context: RouteContext) {
       return Response.json({ error: "Project not found" }, { status: 404 });
     }
 
-    const [coreUsers, painPoints, domainKnowledge, requirements, features, tools, notes] =
+    const [coreUsers, painPoints, challenges, domainKnowledge, requirements, features, tools, notes] =
       await Promise.all([
       db
         .collection<StoredCoreUser>("coreUsers")
@@ -113,6 +123,11 @@ export async function POST(_request: Request, context: RouteContext) {
         .toArray(),
       db
         .collection<StoredPainPoint>("painPoints")
+        .find({ projectId: projectObjectId })
+        .sort({ createdAt: -1 })
+        .toArray(),
+      db
+        .collection<StoredChallenge>("challenges")
         .find({ projectId: projectObjectId })
         .sort({ createdAt: -1 })
         .toArray(),
@@ -161,6 +176,11 @@ export async function POST(_request: Request, context: RouteContext) {
       painPoints: painPoints.map((painPoint) => ({
         title: painPoint.title,
         content: painPoint.content,
+      })),
+      challenges: challenges.map((challenge) => ({
+        title: challenge.title,
+        overview: challenge.overview,
+        status: challenge.status,
       })),
       domainKnowledge: domainKnowledge.map((item) => ({
         name: item.name,

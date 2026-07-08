@@ -1,6 +1,7 @@
 import { stripRichText } from "@/lib/rich-text";
+import { formatChallengeItems } from "@/lib/challenges";
 import { getConfidenceLevelLabel } from "@/lib/domain-knowledge";
-import type { DomainKnowledgeConfidenceLevel } from "@/lib/types";
+import type { ChallengeStatus, DomainKnowledgeConfidenceLevel } from "@/lib/types";
 
 type ProjectContextItem = {
   title?: string;
@@ -22,12 +23,19 @@ type FeatureContextItem = {
   linkedRequirementTitle?: string | null;
 };
 
+type ChallengeContextItem = {
+  title: string;
+  overview: string;
+  status: ChallengeStatus | string;
+};
+
 type BuildChatProjectContextInput = {
   name: string;
   description: string;
   aiSummary: string | null;
   coreUsers: ProjectContextItem[];
   painPoints: ProjectContextItem[];
+  challenges: ChallengeContextItem[];
   domainKnowledge: DomainKnowledgeContextItem[];
   requirements: ProjectContextItem[];
   features: FeatureContextItem[];
@@ -113,6 +121,7 @@ export function buildChatProjectContext({
   aiSummary,
   coreUsers,
   painPoints,
+  challenges,
   domainKnowledge,
   requirements,
   features,
@@ -134,6 +143,8 @@ export function buildChatProjectContext({
     formatContentItems("Core Users", coreUsers),
     "",
     formatContentItems("Pain Points", painPoints),
+    "",
+    formatChallengeItems(challenges),
     "",
     formatDomainKnowledgeItems(domainKnowledge),
     "",

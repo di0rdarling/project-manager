@@ -34,6 +34,11 @@ export const painPointKeys = {
     ["projects", projectId, "pain-points"] as const,
 };
 
+export const challengeKeys = {
+  all: (projectId: string) =>
+    ["projects", projectId, "challenges"] as const,
+};
+
 export const domainKnowledgeKeys = {
   all: (projectId: string) =>
     ["projects", projectId, "domain-knowledge"] as const,
