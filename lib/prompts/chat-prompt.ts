@@ -3,6 +3,7 @@ import { buildAiTeammatesRosterPrompt } from "@/lib/prompts/ai-teammates-roster"
 import {
   DEFAULT_CHAT_TEAMMATE_ID,
   getChatTeammatePersonalityTraits,
+  isCrossProjectTeammate,
   type ChatTeammateId,
 } from "@/lib/chat-teammates";
 
@@ -46,11 +47,19 @@ export function buildChatSystemPrompt(
   }
 
   if (projectContext?.trim()) {
-    sections.push(
-      "",
-      "The user started this chat to discuss the following project. Use this context to inform your replies:",
-      projectContext.trim(),
-    );
+    if (isCrossProjectTeammate(teammateId)) {
+      sections.push(
+        "",
+        "You have visibility across all of the user's projects. Use this cross-project context — notes, requirements, domain knowledge, and project details — to inform your replies:",
+        projectContext.trim(),
+      );
+    } else {
+      sections.push(
+        "",
+        "The user started this chat to discuss the following project. Use this context to inform your replies:",
+        projectContext.trim(),
+      );
+    }
   }
 
   return sections.join("\n");

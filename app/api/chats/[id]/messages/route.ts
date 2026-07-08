@@ -7,7 +7,7 @@ import {
 import { getOtherTeammatesMemories } from "@/lib/agent-memory-store";
 import { getTeammateChatSummaries } from "@/lib/chat-summaries";
 import getClientPromise from "@/lib/mongodb";
-import { getProjectContext } from "@/lib/project-context";
+import { getProjectContext, getAllProjectsContext } from "@/lib/project-context";
 import {
   buildChatConversationSummaryPrompt,
   RECENT_MESSAGE_WINDOW,
@@ -26,6 +26,7 @@ import {
   type StoredChatMessage,
 } from "@/lib/serialize-chat";
 import type { Chat, ChatMessage } from "@/lib/types";
+import { isCrossProjectTeammate } from "@/lib/chat-teammates";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -88,12 +89,14 @@ export async function POST(request: Request, context: RouteContext) {
 
     const chatResponse = serializeChat(result.chat);
 
-    const projectContext = result.chat.projectId
-      ? await getProjectContext(result.client.db(), result.chat.projectId, {
-          requirementId: result.chat.requirementId ?? null,
-          featureId: result.chat.featureId ?? null,
-        })
-      : null;
+    const projectContext = isCrossProjectTeammate(chatResponse.teammateId)
+      ? await getAllProjectsContext(result.client.db())
+      : result.chat.projectId
+        ? await getProjectContext(result.client.db(), result.chat.projectId, {
+            requirementId: result.chat.requirementId ?? null,
+            featureId: result.chat.featureId ?? null,
+          })
+        : null;
 
     const otherChatSummaries = await getTeammateChatSummaries(
       result.client.db(),
@@ -189,6 +192,7 @@ export async function POST(request: Request, context: RouteContext) {
 
       conversationSummary = await generateConversationSummary(
         buildChatConversationSummaryPrompt({
+          teammateId: chatResponse.teammateId,
           chatTitle: nextTitle,
           olderSummary: hasTruncatedMessages
             ? (result.chat.conversationSummary ?? null)

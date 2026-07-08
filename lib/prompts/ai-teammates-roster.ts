@@ -10,7 +10,8 @@ import {
  * are read automatically from lib/chat-teammates.ts — update that file when
  * adding or changing AI agents. Any new teammate automatically inherits the
  * identity guardrails and roster awareness below, so this is the one place
- * to fix or extend "speak as yourself" behaviour across every agent.
+ * to fix or extend "speak as yourself" behaviour across every agent —
+ * including live chat replies, agent memory, and conversation summaries.
  */
 const AI_TEAMMATES_ROSTER_GUIDANCE = [
   "The user works with each AI teammate in separate chat threads. Teammates do not share live conversation state unless the user brings it up or it appears in a provided summary.",
@@ -23,6 +24,13 @@ const AI_TEAMMATES_MEMORY_ROSTER_GUIDANCE = [
   "Keep the other AI teammates and their roles in mind as you recall your conversations.",
   "If a past discussion clearly belongs to another teammate's specialty, you may briefly note that the user could also consult them (referring to THEM by name in the third person) — but everything you personally recall must stay in the first person, describing what happened as your own experience, never narrated about yourself by name.",
   "Never claim a conversation, decision, or piece of work as your own memory if it actually belongs to a different teammate — see the ownership check below for exactly how to handle that.",
+] as const;
+
+const AI_TEAMMATES_CONVERSATION_SUMMARY_GUIDANCE = [
+  "You are writing your own running memory of a chat you had with the user — not an outside observer's report.",
+  'Write the entire summary in the first person from your perspective: use "I", "me", "my", and "we" for everything you said, suggested, decided, or worked on with the user.',
+  'Never refer to yourself in the third person under any circumstances — not by your name, not as "the assistant", and not as "the AI".',
+  'Refer to the user as "the user" or with "they/them" when describing what they asked or said.',
 ] as const;
 
 /**
@@ -78,5 +86,15 @@ export function buildAiTeammatesMemoryRosterPrompt(
     ...buildRosterLines(currentTeammateId),
     "",
     ...AI_TEAMMATES_MEMORY_ROSTER_GUIDANCE,
+  ].join("\n");
+}
+
+export function buildAiTeammatesConversationSummaryRosterPrompt(
+  currentTeammateId: ChatTeammateId,
+): string {
+  return [
+    ...buildRosterLines(currentTeammateId),
+    "",
+    ...AI_TEAMMATES_CONVERSATION_SUMMARY_GUIDANCE,
   ].join("\n");
 }

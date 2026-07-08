@@ -323,3 +323,38 @@ export async function getProjectContext(
 
   return focusSection ? `${projectContext}${focusSection}` : projectContext;
 }
+
+export async function getAllProjectsContext(db: Db): Promise<string | null> {
+  const projects = await db
+    .collection<StoredProject>("projects")
+    .find({})
+    .sort({ updatedAt: -1 })
+    .toArray();
+
+  if (projects.length === 0) {
+    return null;
+  }
+
+  const projectContexts = await Promise.all(
+    projects.map((project) => getProjectContext(db, project._id)),
+  );
+
+  const sections = projectContexts
+    .map((context, index) => {
+      if (!context?.trim()) {
+        return null;
+      }
+
+      const projectName =
+        projects[index]?.name.trim() || `Project ${index + 1}`;
+
+      return [`=== ${projectName} ===`, context.trim()].join("\n");
+    })
+    .filter((section): section is string => Boolean(section));
+
+  if (sections.length === 0) {
+    return null;
+  }
+
+  return sections.join("\n\n");
+}
