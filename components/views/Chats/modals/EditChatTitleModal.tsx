@@ -75,6 +75,10 @@ export default function EditChatTitleModal({
           required
           maxLength={200}
         />
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          Setting a title here keeps it fixed, so it won&apos;t be replaced by
+          an AI-generated title later in the conversation.
+        </p>
 
         {formError ? (
           <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>

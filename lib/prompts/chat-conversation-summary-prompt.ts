@@ -25,7 +25,9 @@ type BuildChatConversationSummaryPromptInput = {
   recentMessages: ConversationSummaryMessage[];
 };
 
-function formatTranscript(messages: ConversationSummaryMessage[]): string {
+export function formatTranscript(
+  messages: ConversationSummaryMessage[],
+): string {
   return messages
     .map((message) => {
       const speaker = message.role === "user" ? "User" : "Assistant";

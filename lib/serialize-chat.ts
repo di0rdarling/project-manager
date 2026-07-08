@@ -9,11 +9,19 @@ import type {
 
 export type StoredChat = Omit<
   Chat,
-  "createdAt" | "updatedAt" | "teammateId" | "requirementId" | "featureId"
+  | "createdAt"
+  | "updatedAt"
+  | "teammateId"
+  | "requirementId"
+  | "featureId"
+  | "titleIsCustom"
+  | "aiTitleGenerated"
 > & {
   requirementId?: Chat["requirementId"];
   featureId?: Chat["featureId"];
   teammateId?: Chat["teammateId"];
+  titleIsCustom?: Chat["titleIsCustom"];
+  aiTitleGenerated?: Chat["aiTitleGenerated"];
   createdAt: string | Date;
   updatedAt: string | Date;
 };
@@ -33,6 +41,8 @@ export function serializeChat(chat: StoredChat): ChatResponse {
       ? chat.teammateId
       : DEFAULT_CHAT_TEAMMATE_ID,
     title: chat.title,
+    titleIsCustom: chat.titleIsCustom ?? false,
+    aiTitleGenerated: chat.aiTitleGenerated ?? false,
     conversationSummary: chat.conversationSummary ?? null,
     createdAt: toIsoString(chat.createdAt),
     updatedAt: toIsoString(chat.updatedAt),

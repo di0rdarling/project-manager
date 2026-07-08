@@ -162,6 +162,8 @@ type ChatBase<TId> = {
   featureId: TId | null;
   teammateId: ChatTeammateId;
   title: string;
+  titleIsCustom: boolean;
+  aiTitleGenerated: boolean;
   conversationSummary: string | null;
   createdAt: string;
   updatedAt: string;

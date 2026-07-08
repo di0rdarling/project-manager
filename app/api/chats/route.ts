@@ -122,6 +122,8 @@ export async function POST(request: Request) {
       featureId: featureId ? new ObjectId(featureId) : null,
       teammateId,
       title: "New Chat",
+      titleIsCustom: false,
+      aiTitleGenerated: false,
       conversationSummary: null,
       createdAt: now,
       updatedAt: now,

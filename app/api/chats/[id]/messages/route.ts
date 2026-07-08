@@ -1,5 +1,9 @@
 import { ObjectId } from "mongodb";
-import { generateChatReply, generateConversationSummary } from "@/lib/gemini";
+import {
+  generateChatReply,
+  generateChatTitle,
+  generateConversationSummary,
+} from "@/lib/gemini";
 import { getTeammateChatSummaries } from "@/lib/chat-summaries";
 import getClientPromise from "@/lib/mongodb";
 import { getProjectContext } from "@/lib/project-context";
@@ -8,6 +12,10 @@ import {
   RECENT_MESSAGE_WINDOW,
 } from "@/lib/prompts/chat-conversation-summary-prompt";
 import { buildChatOtherConversationsContext } from "@/lib/prompts/chat-other-conversations-prompt";
+import {
+  buildChatTitlePrompt,
+  CHAT_TITLE_GENERATION_TURN_THRESHOLD,
+} from "@/lib/prompts/chat-title-prompt";
 import {
   buildChatTitleFromMessage,
   serializeChat,
@@ -131,20 +139,40 @@ export async function POST(request: Request, context: RouteContext) {
       .collection<Omit<ChatMessage, "_id">>("chat_messages")
       .insertOne(assistantMessage);
 
-    const shouldUpdateTitle =
-      existingMessages.length === 0 && result.chat.title === "New Chat";
-    const nextTitle = shouldUpdateTitle
-      ? buildChatTitleFromMessage(content)
-      : result.chat.title;
+    const fullTranscript = [
+      ...history,
+      { role: "user" as const, content },
+      { role: "model" as const, content: assistantReply.content },
+    ];
+
+    const titleIsCustom = result.chat.titleIsCustom ?? false;
+    const aiTitleGenerated = result.chat.aiTitleGenerated ?? false;
+    const completedTurnCount = fullTranscript.length / 2;
+    let nextTitle = result.chat.title;
+    let nextAiTitleGenerated = aiTitleGenerated;
+
+    if (!titleIsCustom && !aiTitleGenerated) {
+      if (existingMessages.length === 0) {
+        // First exchange: give the chat an immediate, readable title.
+        nextTitle = buildChatTitleFromMessage(content);
+      } else if (completedTurnCount >= CHAT_TITLE_GENERATION_TURN_THRESHOLD) {
+        // Enough context has accumulated (including existing chats that
+        // were already past the threshold before this feature existed):
+        // replace the placeholder title with an AI-generated summary.
+        try {
+          nextTitle = await generateChatTitle(
+            buildChatTitlePrompt(fullTranscript),
+          );
+          nextAiTitleGenerated = true;
+        } catch {
+          // Keep the current title and retry on the next message.
+        }
+      }
+    }
 
     let conversationSummary = result.chat.conversationSummary ?? null;
 
     try {
-      const fullTranscript = [
-        ...history,
-        { role: "user" as const, content },
-        { role: "model" as const, content: assistantReply.content },
-      ];
       const recentMessages = fullTranscript.slice(-RECENT_MESSAGE_WINDOW);
       const hasTruncatedMessages =
         fullTranscript.length > recentMessages.length;
@@ -164,9 +192,10 @@ export async function POST(request: Request, context: RouteContext) {
 
     const updatedChat: Pick<
       Chat,
-      "title" | "conversationSummary" | "updatedAt"
+      "title" | "aiTitleGenerated" | "conversationSummary" | "updatedAt"
     > = {
       title: nextTitle,
+      aiTitleGenerated: nextAiTitleGenerated,
       conversationSummary,
       updatedAt: now,
     };

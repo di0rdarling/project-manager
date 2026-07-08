@@ -240,6 +240,21 @@ export async function generateConversationSummary(
   return generateText(prompt);
 }
 
+export async function generateChatTitle(prompt: string): Promise<string> {
+  const rawTitle = await generateText(prompt);
+  const cleaned = rawTitle
+    .trim()
+    .replace(/^["'“”‘’]+|["'“”‘’]+$/g, "")
+    .replace(/\.+$/, "")
+    .trim();
+
+  if (!cleaned) {
+    throw new Error("Gemini returned an empty title");
+  }
+
+  return cleaned.length > 60 ? `${cleaned.slice(0, 57)}...` : cleaned;
+}
+
 export async function generateAgentMemory(prompt: string): Promise<string> {
   return generateText(prompt, getMemoryModelName());
 }

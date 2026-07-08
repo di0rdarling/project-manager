@@ -90,6 +90,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         {
           $set: {
             title,
+            titleIsCustom: true,
             updatedAt: new Date().toISOString(),
           },
         },
