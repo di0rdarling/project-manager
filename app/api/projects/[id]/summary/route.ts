@@ -8,6 +8,7 @@ import {
 import type { CoreUser, DomainKnowledge, Feature, Note, PainPoint, Requirement, Tool, Challenge } from "@/lib/types";
 import { projectLevelNotesFilter } from "@/lib/notes";
 import { projectLevelChallengesFilter } from "@/lib/challenges";
+import { projectLevelDomainKnowledgeFilter } from "@/lib/domain-knowledge";
 import { buildProjectSummaryPrompt } from "@/lib/prompts/project-summary-prompt";
 
 type RouteContext = {
@@ -134,7 +135,7 @@ export async function POST(_request: Request, context: RouteContext) {
         .toArray(),
       db
         .collection<StoredDomainKnowledge>("domainKnowledge")
-        .find({ projectId: projectObjectId })
+        .find(projectLevelDomainKnowledgeFilter(projectObjectId))
         .sort({ createdAt: -1 })
         .toArray(),
       db

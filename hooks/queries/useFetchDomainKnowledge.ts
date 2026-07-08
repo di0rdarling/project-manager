@@ -8,15 +8,19 @@ import type { DomainKnowledgeResponse } from "@/lib/types";
 type UseFetchDomainKnowledgeOptions = Omit<
   UseQueryOptions<DomainKnowledgeResponse[], Error>,
   "queryKey" | "queryFn"
->;
+> & {
+  featureId?: string | null;
+};
 
 export function useFetchDomainKnowledge(
   projectId: string,
   options?: UseFetchDomainKnowledgeOptions,
 ) {
+  const { featureId, ...queryOptions } = options ?? {};
+
   return useQuery({
-    queryKey: domainKnowledgeKeys.all(projectId),
-    queryFn: () => fetchDomainKnowledge(projectId),
-    ...options,
+    queryKey: domainKnowledgeKeys.list(projectId, featureId),
+    queryFn: () => fetchDomainKnowledge(projectId, featureId),
+    ...queryOptions,
   });
 }

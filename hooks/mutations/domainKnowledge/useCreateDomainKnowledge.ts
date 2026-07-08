@@ -31,7 +31,7 @@ export function useCreateDomainKnowledge(
     ...restOptions,
     onSuccess: (item, variables, onMutateResult, context) => {
       queryClient.setQueryData<DomainKnowledgeResponse[]>(
-        domainKnowledgeKeys.all(variables.projectId),
+        domainKnowledgeKeys.list(variables.projectId, item.featureId),
         (current) => (current ? [item, ...current] : [item]),
       );
       onSuccess?.(item, variables, onMutateResult, context);

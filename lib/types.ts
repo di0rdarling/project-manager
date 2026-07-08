@@ -113,6 +113,7 @@ export type DomainKnowledgeConfidenceLevel =
 type DomainKnowledgeBase<TId> = {
   _id: TId;
   projectId: TId;
+  featureId: TId | null;
   name: string;
   currentUnderstanding: string;
   openQuestions: string;

@@ -1,7 +1,11 @@
 import { stripRichText } from "@/lib/rich-text";
 import { formatChallengeItems } from "@/lib/challenges";
+import { formatDomainKnowledgeItems } from "@/lib/domain-knowledge";
 import { PLAIN_ENGLISH_STYLE_GUIDE } from "@/lib/prompts/style-guide";
-import type { ChallengeStatus } from "@/lib/types";
+import type {
+  ChallengeStatus,
+  DomainKnowledgeConfidenceLevel,
+} from "@/lib/types";
 
 type SummaryContentItem = {
   title?: string;
@@ -12,6 +16,13 @@ type SummaryChallengeItem = {
   title: string;
   overview: string;
   status: ChallengeStatus | string;
+};
+
+type SummaryDomainKnowledgeItem = {
+  name: string;
+  currentUnderstanding: string;
+  openQuestions: string;
+  confidenceLevel: DomainKnowledgeConfidenceLevel | null;
 };
 
 type LinkedRequirement = {
@@ -25,6 +36,7 @@ type BuildFeatureSummaryPromptInput = {
   title: string;
   content: string;
   linkedRequirement: LinkedRequirement;
+  domainKnowledge: SummaryDomainKnowledgeItem[];
   challenges: SummaryChallengeItem[];
   notes: SummaryContentItem[];
 };
@@ -66,13 +78,14 @@ export function buildFeatureSummaryPrompt({
   title,
   content,
   linkedRequirement,
+  domainKnowledge,
   challenges,
   notes,
 }: BuildFeatureSummaryPromptInput): string {
   const sections = [
     "You are a project management assistant.",
     "Write a concise 2-3 paragraph overview of the feature below.",
-    "Synthesize the feature's purpose, linked requirement, current challenges, and important notes.",
+    "Synthesize the feature's purpose, linked requirement, domain knowledge, current challenges, and important notes.",
     "Use the project context only as background when it helps explain the feature.",
     ...PLAIN_ENGLISH_STYLE_GUIDE,
     "Use clear plain text with no markdown or bullet lists.",
@@ -84,6 +97,8 @@ export function buildFeatureSummaryPrompt({
     `Feature Description: ${stripRichText(content) || "No description provided."}`,
     "",
     formatLinkedRequirement(linkedRequirement),
+    "",
+    formatDomainKnowledgeItems(domainKnowledge),
     "",
     formatChallengeItems(challenges, "Current Challenges"),
     "",

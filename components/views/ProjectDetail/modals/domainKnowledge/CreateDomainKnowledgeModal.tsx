@@ -16,6 +16,7 @@ import { isRichTextEmpty } from "@/lib/rich-text";
 type CreateDomainKnowledgeModalProps = {
   open: boolean;
   projectId: string;
+  featureId?: string;
   onClose: () => void;
   onSuccess: () => void;
 };
@@ -23,6 +24,7 @@ type CreateDomainKnowledgeModalProps = {
 export default function CreateDomainKnowledgeModal({
   open,
   projectId,
+  featureId,
   onClose,
   onSuccess,
 }: CreateDomainKnowledgeModalProps) {
@@ -64,6 +66,7 @@ export default function CreateDomainKnowledgeModal({
       currentUnderstanding,
       openQuestions,
       confidenceLevel: parseConfidenceLevel(confidenceLevel),
+      featureId,
     });
   }
 

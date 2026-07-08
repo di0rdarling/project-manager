@@ -8,6 +8,7 @@ import { RichTextContent } from "@/components/ui/inputs/richText/RichTextContent
 import PageContent from "@/components/layout/PageContent";
 import NotesSection from "@/components/views/ProjectDetail/NotesSection";
 import ChallengesSection from "@/components/views/ProjectDetail/ChallengesSection";
+import DomainKnowledgeSection from "@/components/views/ProjectDetail/DomainKnowledgeSection";
 import AIFeatureSummary from "@/components/views/FeatureDetail/AIFeatureSummary";
 import { useFetchFeature } from "@/hooks/queries/useFetchFeature";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
@@ -101,6 +102,12 @@ export default function FeatureDetailView({
             projectId={projectId}
             featureId={featureId}
             emptyMessage="No challenges recorded yet. Add any issues or blockers specific to this feature."
+          />
+
+          <DomainKnowledgeSection
+            projectId={projectId}
+            featureId={featureId}
+            emptyMessage="No domain knowledge yet. Capture terms, concepts, and open questions specific to this feature."
           />
 
           <NotesSection

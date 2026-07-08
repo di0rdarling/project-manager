@@ -3,13 +3,17 @@ import getClientPromise from "@/lib/mongodb";
 import { generateProjectSummary } from "@/lib/gemini";
 import { featureChallengesFilter } from "@/lib/challenges";
 import { featureNotesFilter } from "@/lib/notes";
+import {
+  featureDomainKnowledgeFilter,
+  parseConfidenceLevel,
+} from "@/lib/domain-knowledge";
 import { buildFeatureSummaryPrompt } from "@/lib/prompts/feature-summary-prompt";
 import {
   serializeFeature,
   type StoredFeature,
 } from "@/lib/serialize-feature";
 import type { StoredProject } from "@/lib/serialize-project";
-import type { Challenge, Note, Requirement } from "@/lib/types";
+import type { Challenge, DomainKnowledge, Note, Requirement } from "@/lib/types";
 
 type RouteContext = {
   params: Promise<{ id: string; featureId: string }>;
@@ -38,6 +42,16 @@ type StoredChallenge = Omit<
 > & {
   _id: Challenge["_id"];
   projectId: Challenge["projectId"];
+  createdAt: string | Date;
+  updatedAt: string | Date;
+};
+
+type StoredDomainKnowledge = Omit<
+  DomainKnowledge,
+  "_id" | "projectId" | "createdAt" | "updatedAt"
+> & {
+  _id: DomainKnowledge["_id"];
+  projectId: DomainKnowledge["projectId"];
   createdAt: string | Date;
   updatedAt: string | Date;
 };
@@ -81,13 +95,19 @@ export async function POST(_request: Request, context: RouteContext) {
       return Response.json({ error: "Feature not found" }, { status: 404 });
     }
 
-    const [linkedRequirement, challenges, notes] = await Promise.all([
+    const [linkedRequirement, domainKnowledge, challenges, notes] =
+      await Promise.all([
       feature.requirementId
         ? db.collection<StoredRequirement>("requirements").findOne({
             _id: feature.requirementId,
             projectId: projectObjectId,
           })
         : Promise.resolve(null),
+      db
+        .collection<StoredDomainKnowledge>("domainKnowledge")
+        .find(featureDomainKnowledgeFilter(projectObjectId, featureObjectId))
+        .sort({ createdAt: -1 })
+        .toArray(),
       db
         .collection<StoredChallenge>("challenges")
         .find(featureChallengesFilter(projectObjectId, featureObjectId))
@@ -111,6 +131,12 @@ export async function POST(_request: Request, context: RouteContext) {
             content: linkedRequirement.content,
           }
         : null,
+      domainKnowledge: domainKnowledge.map((item) => ({
+        name: item.name,
+        currentUnderstanding: item.currentUnderstanding,
+        openQuestions: item.openQuestions,
+        confidenceLevel: parseConfidenceLevel(item.confidenceLevel),
+      })),
       challenges: challenges.map((challenge) => ({
         title: challenge.title,
         overview: challenge.overview,

@@ -6,8 +6,15 @@ import { parseResponse } from "@/lib/api/response";
 
 export async function fetchDomainKnowledge(
   projectId: string,
+  featureId?: string | null,
 ): Promise<DomainKnowledgeResponse[]> {
-  const response = await fetch(`/api/projects/${projectId}/domain-knowledge`);
+  const params =
+    featureId !== undefined && featureId !== null
+      ? `?featureId=${encodeURIComponent(featureId)}`
+      : "";
+  const response = await fetch(
+    `/api/projects/${projectId}/domain-knowledge${params}`,
+  );
   return parseResponse<DomainKnowledgeResponse[]>(response);
 }
 
@@ -17,6 +24,7 @@ export async function createDomainKnowledge(input: {
   currentUnderstanding: string;
   openQuestions: string;
   confidenceLevel: DomainKnowledgeConfidenceLevel | null;
+  featureId?: string | null;
 }): Promise<DomainKnowledgeResponse> {
   const {
     projectId,
@@ -24,6 +32,7 @@ export async function createDomainKnowledge(input: {
     currentUnderstanding,
     openQuestions,
     confidenceLevel,
+    featureId,
   } = input;
   const response = await fetch(`/api/projects/${projectId}/domain-knowledge`, {
     method: "POST",
@@ -33,6 +42,7 @@ export async function createDomainKnowledge(input: {
       currentUnderstanding,
       openQuestions,
       confidenceLevel,
+      featureId,
     }),
   });
 
@@ -75,6 +85,7 @@ export async function updateDomainKnowledge(input: {
 export async function deleteDomainKnowledge(input: {
   projectId: string;
   domainKnowledgeId: string;
+  featureId?: string | null;
 }): Promise<void> {
   const { projectId, domainKnowledgeId } = input;
   const response = await fetch(

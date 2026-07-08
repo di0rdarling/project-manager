@@ -1,6 +1,10 @@
 import type { Db, ObjectId } from "mongodb";
 import { buildChatProjectContext } from "@/lib/prompts/chat-project-context-prompt";
-import { parseConfidenceLevel } from "@/lib/domain-knowledge";
+import {
+  featureDomainKnowledgeFilter,
+  parseConfidenceLevel,
+  projectLevelDomainKnowledgeFilter,
+} from "@/lib/domain-knowledge";
 import { stripRichText } from "@/lib/rich-text";
 import type { StoredProject } from "@/lib/serialize-project";
 import type { CoreUser, DomainKnowledge, Feature, Note, PainPoint, Requirement, Tool, Challenge } from "@/lib/types";
@@ -161,7 +165,7 @@ export async function getProjectContext(
       .toArray(),
     db
       .collection<StoredDomainKnowledge>("domainKnowledge")
-      .find({ projectId })
+      .find(projectLevelDomainKnowledgeFilter(projectId))
       .sort({ createdAt: -1 })
       .toArray(),
     db
@@ -193,8 +197,13 @@ export async function getProjectContext(
     ]),
   );
 
-  const [focusedRequirement, focusedFeature, focusedFeatureNotes, focusedFeatureChallenges] =
-    await Promise.all([
+  const [
+    focusedRequirement,
+    focusedFeature,
+    focusedFeatureNotes,
+    focusedFeatureChallenges,
+    focusedFeatureDomainKnowledge,
+  ] = await Promise.all([
       focus?.requirementId
         ? db.collection<StoredRequirement>("requirements").findOne({
             _id: focus.requirementId,
@@ -218,6 +227,13 @@ export async function getProjectContext(
         ? db
             .collection<StoredChallenge>("challenges")
             .find(featureChallengesFilter(projectId, focus.featureId))
+            .sort({ createdAt: -1 })
+            .toArray()
+        : Promise.resolve([]),
+      focus?.featureId
+        ? db
+            .collection<StoredDomainKnowledge>("domainKnowledge")
+            .find(featureDomainKnowledgeFilter(projectId, focus.featureId))
             .sort({ createdAt: -1 })
             .toArray()
         : Promise.resolve([]),
@@ -278,6 +294,14 @@ export async function getProjectContext(
           title: challenge.title,
           overview: challenge.overview,
           status: challenge.status,
+        }))
+      : undefined,
+    featureDomainKnowledge: focus?.featureId
+      ? focusedFeatureDomainKnowledge.map((item) => ({
+          name: item.name,
+          currentUnderstanding: item.currentUnderstanding,
+          openQuestions: item.openQuestions,
+          confidenceLevel: parseConfidenceLevel(item.confidenceLevel),
         }))
       : undefined,
   });

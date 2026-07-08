@@ -25,6 +25,7 @@ function serializeDomainKnowledge(
   return {
     _id: item._id.toString(),
     projectId: item.projectId.toString(),
+    featureId: item.featureId ? item.featureId.toString() : null,
     name: typeof item.name === "string" ? item.name : "",
     currentUnderstanding: item.currentUnderstanding,
     openQuestions: item.openQuestions,

@@ -35,6 +35,7 @@ export default function DeleteDomainKnowledgeModal({
     deleteDomainKnowledgeMutation.mutate({
       projectId,
       domainKnowledgeId: domainKnowledge._id,
+      featureId: domainKnowledge.featureId,
     });
   }
 

@@ -27,7 +27,7 @@ export function useDeleteDomainKnowledge(
     ...restOptions,
     onSuccess: (data, variables, onMutateResult, context) => {
       queryClient.setQueryData<DomainKnowledgeResponse[]>(
-        domainKnowledgeKeys.all(variables.projectId),
+        domainKnowledgeKeys.list(variables.projectId, variables.featureId),
         (current) =>
           current?.filter(
             (item) => item._id !== variables.domainKnowledgeId,

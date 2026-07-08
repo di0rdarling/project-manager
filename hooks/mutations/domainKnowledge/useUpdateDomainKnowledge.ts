@@ -31,7 +31,7 @@ export function useUpdateDomainKnowledge(
     ...restOptions,
     onSuccess: (item, variables, onMutateResult, context) => {
       queryClient.setQueryData<DomainKnowledgeResponse[]>(
-        domainKnowledgeKeys.all(variables.projectId),
+        domainKnowledgeKeys.list(variables.projectId, item.featureId),
         (current) =>
           current?.map((existing) =>
             existing._id === item._id ? item : existing,

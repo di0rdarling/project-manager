@@ -1,7 +1,11 @@
 import { ObjectId } from "mongodb";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
-import { parseConfidenceLevel } from "@/lib/domain-knowledge";
+import {
+  featureDomainKnowledgeFilter,
+  parseConfidenceLevel,
+  projectLevelDomainKnowledgeFilter,
+} from "@/lib/domain-knowledge";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import type { DomainKnowledge, DomainKnowledgeResponse } from "@/lib/types";
 
@@ -25,6 +29,7 @@ function serializeDomainKnowledge(
   return {
     _id: item._id.toString(),
     projectId: item.projectId.toString(),
+    featureId: item.featureId ? item.featureId.toString() : null,
     name: typeof item.name === "string" ? item.name : "",
     currentUnderstanding: item.currentUnderstanding,
     openQuestions: item.openQuestions,
@@ -58,7 +63,7 @@ async function getProjectOr404(projectId: string) {
   return { client };
 }
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
     const result = await getProjectOr404(id);
@@ -67,10 +72,38 @@ export async function GET(_request: Request, context: RouteContext) {
       return result.error;
     }
 
+    const featureId = new URL(request.url).searchParams.get("featureId");
+    const projectObjectId = new ObjectId(id);
+
+    if (featureId) {
+      if (!ObjectId.isValid(featureId)) {
+        return Response.json({ error: "Invalid feature id" }, { status: 400 });
+      }
+
+      const feature = await result.client
+        .db()
+        .collection("features")
+        .findOne({
+          _id: new ObjectId(featureId),
+          projectId: projectObjectId,
+        });
+
+      if (!feature) {
+        return Response.json({ error: "Feature not found" }, { status: 404 });
+      }
+    }
+
     const domainKnowledge = await result.client
       .db()
       .collection<StoredDomainKnowledge>("domainKnowledge")
-      .find({ projectId: new ObjectId(id) })
+      .find(
+        featureId
+          ? featureDomainKnowledgeFilter(
+              projectObjectId,
+              new ObjectId(featureId),
+            )
+          : projectLevelDomainKnowledgeFilter(projectObjectId),
+      )
       .sort({ createdAt: -1 })
       .toArray();
 
@@ -101,6 +134,10 @@ export async function POST(request: Request, context: RouteContext) {
     const openQuestions =
       typeof body.openQuestions === "string" ? body.openQuestions.trim() : "";
     const confidenceLevel = parseConfidenceLevel(body.confidenceLevel);
+    const featureId =
+      typeof body.featureId === "string" && body.featureId.trim()
+        ? body.featureId.trim()
+        : null;
 
     if (!name) {
       return Response.json(
@@ -116,9 +153,30 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
 
+    const projectObjectId = new ObjectId(id);
+
+    if (featureId) {
+      if (!ObjectId.isValid(featureId)) {
+        return Response.json({ error: "Invalid feature id" }, { status: 400 });
+      }
+
+      const feature = await result.client
+        .db()
+        .collection("features")
+        .findOne({
+          _id: new ObjectId(featureId),
+          projectId: projectObjectId,
+        });
+
+      if (!feature) {
+        return Response.json({ error: "Feature not found" }, { status: 404 });
+      }
+    }
+
     const now = new Date().toISOString();
     const domainKnowledge: Omit<DomainKnowledge, "_id"> = {
-      projectId: new ObjectId(id),
+      projectId: projectObjectId,
+      featureId: featureId ? new ObjectId(featureId) : null,
       name,
       currentUnderstanding,
       openQuestions,

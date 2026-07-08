@@ -1,6 +1,6 @@
 import { stripRichText } from "@/lib/rich-text";
 import { formatChallengeItems } from "@/lib/challenges";
-import { getConfidenceLevelLabel } from "@/lib/domain-knowledge";
+import { formatDomainKnowledgeItems } from "@/lib/domain-knowledge";
 import type { ChallengeStatus, DomainKnowledgeConfidenceLevel } from "@/lib/types";
 
 type ProjectContextItem = {
@@ -43,6 +43,7 @@ type BuildChatProjectContextInput = {
   notes: ProjectContextItem[];
   featureNotes?: ProjectContextItem[];
   featureChallenges?: ChallengeContextItem[];
+  featureDomainKnowledge?: DomainKnowledgeContextItem[];
 };
 
 function formatContentItems(
@@ -67,32 +68,6 @@ function formatContentItems(
     .join("\n");
 
   return `${label}:\n${formattedItems}`;
-}
-
-function formatDomainKnowledgeItems(items: DomainKnowledgeContextItem[]): string {
-  if (items.length === 0) {
-    return "Domain Knowledge: None";
-  }
-
-  const formattedItems = items
-    .map((item, index) => {
-      const name = item.name.trim() || "Untitled concept";
-      const confidenceLabel = getConfidenceLevelLabel(item.confidenceLevel);
-      const confidenceLine = confidenceLabel
-        ? `\n   Confidence: ${confidenceLabel}`
-        : "";
-      const currentUnderstanding =
-        stripRichText(item.currentUnderstanding) || "No understanding recorded.";
-      const openQuestions = stripRichText(item.openQuestions);
-      const openQuestionsLine = openQuestions
-        ? `\n   Open questions: ${openQuestions}`
-        : "";
-
-      return `${index + 1}. ${name}${confidenceLine}\n   Current understanding: ${currentUnderstanding}${openQuestionsLine}`;
-    })
-    .join("\n");
-
-  return `Domain Knowledge:\n${formattedItems}`;
 }
 
 function formatFeatureItems(items: FeatureContextItem[]): string {
@@ -130,6 +105,7 @@ export function buildChatProjectContext({
   notes,
   featureNotes,
   featureChallenges,
+  featureDomainKnowledge,
 }: BuildChatProjectContextInput): string {
   const sections = [
     `Project Name: ${name}`,
@@ -165,6 +141,13 @@ export function buildChatProjectContext({
 
   if (featureChallenges !== undefined) {
     sections.push("", formatChallengeItems(featureChallenges, "Feature Challenges"));
+  }
+
+  if (featureDomainKnowledge !== undefined) {
+    sections.push(
+      "",
+      formatDomainKnowledgeItems(featureDomainKnowledge, "Feature Domain Knowledge"),
+    );
   }
 
   return sections.join("\n");

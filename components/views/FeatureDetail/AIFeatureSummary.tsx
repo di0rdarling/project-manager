@@ -13,7 +13,7 @@ import { useFetchFeature } from "@/hooks/queries/useFetchFeature";
 
 const FEATURE_SUMMARY_MESSAGES: AISummaryMessages = {
   emptyDescription:
-    "Generate an AI overview that synthesizes this feature's description, linked requirement, current challenges, and notes.",
+    "Generate an AI overview that synthesizes this feature's description, linked requirement, domain knowledge, current challenges, and notes.",
   generating: "Generating feature summary...",
   regenerating: "Regenerating feature summary...",
   generateError: "Failed to generate feature summary",

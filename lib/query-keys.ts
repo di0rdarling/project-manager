@@ -42,8 +42,10 @@ export const challengeKeys = {
 };
 
 export const domainKnowledgeKeys = {
-  all: (projectId: string) =>
-    ["projects", projectId, "domain-knowledge"] as const,
+  list: (projectId: string, featureId?: string | null) =>
+    featureId
+      ? (["projects", projectId, "features", featureId, "domain-knowledge"] as const)
+      : (["projects", projectId, "domain-knowledge"] as const),
 };
 
 export const chatKeys = {
