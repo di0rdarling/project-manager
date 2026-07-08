@@ -16,6 +16,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { MarkdownContent } from "@/components/ui/MarkdownContent";
 import EditChatTitleModal from "@/components/views/Chats/modals/EditChatTitleModal";
+import ChatMessageGrounding from "@/components/views/Chats/ChatMessageGrounding";
 import ChatSummaryModal from "@/components/views/Chats/modals/ChatSummaryModal";
 import { useSendChatMessage } from "@/hooks/mutations/chats/useSendChatMessage";
 import { useFetchChat } from "@/hooks/queries/useFetchChat";
@@ -78,6 +79,7 @@ function ChatMessageBubble({
       <TeammateAvatar teammate={teammate} className="mt-1" />
       <div className="max-w-[85%] rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
         <MarkdownContent content={message.content} variant="default" />
+        <ChatMessageGrounding message={message} />
         <time
           dateTime={message.createdAt}
           className="mt-2 block text-xs text-zinc-500 dark:text-zinc-400"

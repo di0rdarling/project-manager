@@ -136,11 +136,19 @@ export type ProjectContentItem = {
 
 export type ChatMessageRole = "user" | "model";
 
+export type ChatGroundingSource = {
+  title?: string;
+  uri?: string;
+};
+
 type ChatMessageBase<TId> = {
   _id: TId;
   chatId: TId;
   role: ChatMessageRole;
   content: string;
+  sources?: ChatGroundingSource[];
+  webSearchQueries?: string[];
+  searchSuggestionsHtml?: string;
   createdAt: string;
 };
 

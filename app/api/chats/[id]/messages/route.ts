@@ -90,7 +90,7 @@ export async function POST(request: Request, context: RouteContext) {
     const otherConversationsContext =
       buildChatOtherConversationsContext(otherChatSummaries) ?? undefined;
 
-    const assistantContent = await generateChatReply(
+    const assistantReply = await generateChatReply(
       history,
       content,
       chatResponse.teammateId,
@@ -107,7 +107,16 @@ export async function POST(request: Request, context: RouteContext) {
     const assistantMessage: Omit<ChatMessage, "_id"> = {
       chatId: result.chatObjectId,
       role: "model",
-      content: assistantContent,
+      content: assistantReply.content,
+      ...(assistantReply.sources?.length
+        ? { sources: assistantReply.sources }
+        : {}),
+      ...(assistantReply.webSearchQueries?.length
+        ? { webSearchQueries: assistantReply.webSearchQueries }
+        : {}),
+      ...(assistantReply.searchSuggestionsHtml
+        ? { searchSuggestionsHtml: assistantReply.searchSuggestionsHtml }
+        : {}),
       createdAt: now,
     };
 
@@ -133,7 +142,7 @@ export async function POST(request: Request, context: RouteContext) {
           chatTitle: nextTitle,
           previousSummary: result.chat.conversationSummary ?? null,
           userMessage: content,
-          assistantMessage: assistantContent,
+          assistantMessage: assistantReply.content,
         }),
       );
     } catch {

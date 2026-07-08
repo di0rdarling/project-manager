@@ -15,6 +15,9 @@ export function buildChatSystemPrompt(
     ...PLAIN_ENGLISH_STYLE_GUIDE,
     ...CONCISE_RESPONSE_STYLE_GUIDE,
     "You may use Markdown when formatting longer replies, such as headings, lists, bold text, and code blocks.",
+    "You have access to Google Search for real-time web information. Use it when the user asks about current events, recent news, live data, product updates, or anything that may have changed after your training cutoff.",
+    "When you use web search results, cite the relevant sources in your reply and prefer up-to-date information over assumptions.",
+    "Never expose internal reasoning, planning, tool calls, or search steps in your reply. Respond directly to the user in plain language.",
   ];
 
   if (otherConversationsContext?.trim()) {

@@ -47,6 +47,13 @@ export function serializeChatMessage(
     chatId: message.chatId.toString(),
     role: message.role,
     content: message.content,
+    ...(message.sources?.length ? { sources: message.sources } : {}),
+    ...(message.webSearchQueries?.length
+      ? { webSearchQueries: message.webSearchQueries }
+      : {}),
+    ...(message.searchSuggestionsHtml
+      ? { searchSuggestionsHtml: message.searchSuggestionsHtml }
+      : {}),
     createdAt: toIsoString(message.createdAt),
   };
 }
