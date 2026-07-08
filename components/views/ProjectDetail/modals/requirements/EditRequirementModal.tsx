@@ -4,8 +4,13 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/inputs/Input";
+import { Select } from "@/components/ui/inputs/Select";
 import { RichTextEditor } from "@/components/ui/inputs/richText/RichTextEditor";
 import { useUpdateRequirement } from "@/hooks/mutations/requirements/useUpdateRequirement";
+import {
+  parseRequirementPriority,
+  REQUIREMENT_PRIORITY_OPTIONS,
+} from "@/lib/requirements";
 import type { RequirementResponse } from "@/lib/types";
 import { isRichTextEmpty } from "@/lib/rich-text";
 
@@ -26,12 +31,14 @@ export default function EditRequirementModal({
 }: EditRequirementModalProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [priority, setPriority] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (requirement) {
       setTitle(requirement.title);
       setContent(requirement.content);
+      setPriority(requirement.priority ?? "");
       setValidationError(null);
     }
   }, [requirement]);
@@ -66,6 +73,7 @@ export default function EditRequirementModal({
       requirementId: requirement._id,
       title: title.trim(),
       content,
+      priority: parseRequirementPriority(priority),
     });
   }
 
@@ -107,6 +115,17 @@ export default function EditRequirementModal({
           label="Requirement"
           value={content}
           onChange={setContent}
+        />
+
+        <Select
+          id="edit-requirement-priority"
+          label="Priority (optional)"
+          value={priority}
+          onChange={(event) => setPriority(event.target.value)}
+          options={[
+            { value: "", label: "No priority" },
+            ...REQUIREMENT_PRIORITY_OPTIONS,
+          ]}
         />
 
         {formError ? (

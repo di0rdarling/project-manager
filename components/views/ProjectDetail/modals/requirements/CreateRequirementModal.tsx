@@ -4,8 +4,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/inputs/Input";
+import { Select } from "@/components/ui/inputs/Select";
 import { RichTextEditor } from "@/components/ui/inputs/richText/RichTextEditor";
 import { useCreateRequirement } from "@/hooks/mutations/requirements/useCreateRequirement";
+import {
+  parseRequirementPriority,
+  REQUIREMENT_PRIORITY_OPTIONS,
+} from "@/lib/requirements";
 import { isRichTextEmpty } from "@/lib/rich-text";
 
 type CreateRequirementModalProps = {
@@ -23,12 +28,14 @@ export default function CreateRequirementModal({
 }: CreateRequirementModalProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [priority, setPriority] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const createRequirementMutation = useCreateRequirement({
     onSuccess: () => {
       setTitle("");
       setContent("");
+      setPriority("");
       setValidationError(null);
       onSuccess();
       onClose();
@@ -53,6 +60,7 @@ export default function CreateRequirementModal({
       projectId,
       title: title.trim(),
       content,
+      priority: parseRequirementPriority(priority),
     });
   }
 
@@ -63,6 +71,7 @@ export default function CreateRequirementModal({
 
     setTitle("");
     setContent("");
+    setPriority("");
     setValidationError(null);
     createRequirementMutation.reset();
     onClose();
@@ -96,6 +105,17 @@ export default function CreateRequirementModal({
           label="Requirement"
           value={content}
           onChange={setContent}
+        />
+
+        <Select
+          id="requirement-priority"
+          label="Priority (optional)"
+          value={priority}
+          onChange={(event) => setPriority(event.target.value)}
+          options={[
+            { value: "", label: "No priority" },
+            ...REQUIREMENT_PRIORITY_OPTIONS,
+          ]}
         />
 
         {formError ? (

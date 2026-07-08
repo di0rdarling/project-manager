@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
 import { isRichTextEmpty } from "@/lib/rich-text";
+import { parseRequirementPriority } from "@/lib/requirements";
 import type { Requirement, RequirementResponse } from "@/lib/types";
 
 type RouteContext = {
@@ -26,6 +27,7 @@ function serializeRequirement(
     projectId: requirement.projectId.toString(),
     title: typeof requirement.title === "string" ? requirement.title : "",
     content: requirement.content,
+    priority: parseRequirementPriority(requirement.priority),
     createdAt: toIsoString(requirement.createdAt),
     updatedAt: requirement.updatedAt
       ? toIsoString(requirement.updatedAt)
@@ -52,6 +54,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const title = typeof body.title === "string" ? body.title.trim() : "";
     const content =
       typeof body.content === "string" ? body.content.trim() : "";
+    const priority = parseRequirementPriority(body.priority);
 
     if (!title) {
       return Response.json(
@@ -80,6 +83,7 @@ export async function PATCH(request: Request, context: RouteContext) {
           $set: {
             title,
             content,
+            priority,
             updatedAt: new Date().toISOString(),
           },
         },

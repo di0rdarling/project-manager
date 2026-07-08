@@ -30,6 +30,7 @@ import EditFeatureModal from "./modals/features/EditFeatureModal";
 import EditToolModal from "./modals/tools/EditToolModal";
 import EditCoreUserModal from "./modals/coreUsers/EditCoreUserModal";
 import ProjectItemsList from "./ProjectItemsList";
+import RequirementsItemsList from "./RequirementsItemsList";
 import FeatureItemsList from "./FeatureItemsList";
 import ChallengesSection from "./ChallengesSection";
 import DomainKnowledgeSection from "./DomainKnowledgeSection";
@@ -239,9 +240,8 @@ export default function ProjectDetailView({
             isEmpty={requirements.length === 0}
             emptyMessage="No requirements yet. Add your first one to get started."
           >
-            <ProjectItemsList
+            <RequirementsItemsList
               items={requirements}
-              itemLabel="requirement"
               onEditSuccess={() =>
                 toast.success("Requirement updated successfully.")
               }

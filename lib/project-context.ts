@@ -6,6 +6,10 @@ import {
   projectLevelDomainKnowledgeFilter,
 } from "@/lib/domain-knowledge";
 import { stripRichText } from "@/lib/rich-text";
+import {
+  getRequirementPriorityLabel,
+  parseRequirementPriority,
+} from "@/lib/requirements";
 import type { StoredProject } from "@/lib/serialize-project";
 import type { CoreUser, DomainKnowledge, Feature, Note, PainPoint, Requirement, Tool, Challenge } from "@/lib/types";
 import { featureNotesFilter, projectLevelNotesFilter } from "@/lib/notes";
@@ -105,9 +109,14 @@ function buildChatFocusSection(
   const sections = ["", "Chat Focus:"];
 
   if (requirement) {
+    const priority = parseRequirementPriority(requirement.priority);
+    const priorityLine = priority
+      ? `\nPriority: ${getRequirementPriorityLabel(priority)}`
+      : "";
+
     sections.push(
       "The user started this chat to discuss the following requirement. Prioritize this topic in your replies:",
-      `Requirement: ${requirement.title.trim() || "Untitled requirement"}`,
+      `Requirement: ${requirement.title.trim() || "Untitled requirement"}${priorityLine}`,
       stripRichText(requirement.content) || "No content provided.",
     );
   }
@@ -266,6 +275,7 @@ export async function getProjectContext(
     requirements: requirements.map((requirement) => ({
       title: requirement.title,
       content: requirement.content,
+      priority: parseRequirementPriority(requirement.priority),
     })),
     features: features.map((feature) => ({
       title: feature.title,

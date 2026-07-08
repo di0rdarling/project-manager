@@ -54,11 +54,14 @@ type ChallengeBase<TId> = {
 export type Challenge = ChallengeBase<ObjectId>;
 export type ChallengeResponse = ChallengeBase<string>;
 
+export type RequirementPriority = "must_have" | "should_have" | "could_have";
+
 type RequirementBase<TId> = {
   _id: TId;
   projectId: TId;
   title: string;
   content: string;
+  priority: RequirementPriority | null;
   createdAt: string;
   updatedAt: string;
 };

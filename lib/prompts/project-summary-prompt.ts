@@ -1,8 +1,13 @@
 import { stripRichText } from "@/lib/rich-text";
 import { formatChallengeItems } from "@/lib/challenges";
 import { formatDomainKnowledgeItems } from "@/lib/domain-knowledge";
+import { formatRequirementItems } from "@/lib/requirements";
 import { PLAIN_ENGLISH_STYLE_GUIDE } from "@/lib/prompts/style-guide";
-import type { ChallengeStatus, DomainKnowledgeConfidenceLevel } from "@/lib/types";
+import type {
+  ChallengeStatus,
+  DomainKnowledgeConfidenceLevel,
+  RequirementPriority,
+} from "@/lib/types";
 
 type SummaryContentItem = {
   title?: string;
@@ -16,6 +21,12 @@ type SummaryDomainKnowledgeItem = {
   currentUnderstanding: string;
   openQuestions: string;
   confidenceLevel: DomainKnowledgeConfidenceLevel | null;
+};
+
+type SummaryRequirementItem = {
+  title: string;
+  content: string;
+  priority: RequirementPriority | null;
 };
 
 type SummaryFeatureItem = {
@@ -37,7 +48,7 @@ type BuildProjectSummaryPromptInput = {
   painPoints: SummaryContentItem[];
   challenges: SummaryChallengeItem[];
   domainKnowledge: SummaryDomainKnowledgeItem[];
-  requirements: SummaryContentItem[];
+  requirements: SummaryRequirementItem[];
   features: SummaryFeatureItem[];
   tools: SummaryContentItem[];
   notes: SummaryContentItem[];
@@ -118,7 +129,7 @@ export function buildProjectSummaryPrompt({
     "",
     formatDomainKnowledgeItems(domainKnowledge),
     "",
-    formatContentItems("Requirements", requirements),
+    formatRequirementItems(requirements),
     "",
     formatFeatureItems(features),
     "",

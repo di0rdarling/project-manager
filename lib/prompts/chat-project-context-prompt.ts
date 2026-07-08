@@ -1,7 +1,12 @@
 import { stripRichText } from "@/lib/rich-text";
 import { formatChallengeItems } from "@/lib/challenges";
 import { formatDomainKnowledgeItems } from "@/lib/domain-knowledge";
-import type { ChallengeStatus, DomainKnowledgeConfidenceLevel } from "@/lib/types";
+import { formatRequirementItems } from "@/lib/requirements";
+import type {
+  ChallengeStatus,
+  DomainKnowledgeConfidenceLevel,
+  RequirementPriority,
+} from "@/lib/types";
 
 type ProjectContextItem = {
   title?: string;
@@ -15,6 +20,12 @@ type DomainKnowledgeContextItem = {
   currentUnderstanding: string;
   openQuestions: string;
   confidenceLevel: DomainKnowledgeConfidenceLevel | null;
+};
+
+type RequirementContextItem = {
+  title: string;
+  content: string;
+  priority: RequirementPriority | null;
 };
 
 type FeatureContextItem = {
@@ -37,7 +48,7 @@ type BuildChatProjectContextInput = {
   painPoints: ProjectContextItem[];
   challenges: ChallengeContextItem[];
   domainKnowledge: DomainKnowledgeContextItem[];
-  requirements: ProjectContextItem[];
+  requirements: RequirementContextItem[];
   features: FeatureContextItem[];
   tools: ProjectContextItem[];
   notes: ProjectContextItem[];
@@ -126,7 +137,7 @@ export function buildChatProjectContext({
     "",
     formatDomainKnowledgeItems(domainKnowledge),
     "",
-    formatContentItems("Requirements", requirements),
+    formatRequirementItems(requirements),
     "",
     formatFeatureItems(features),
     "",

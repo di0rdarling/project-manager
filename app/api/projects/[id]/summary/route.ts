@@ -9,6 +9,7 @@ import type { CoreUser, DomainKnowledge, Feature, Note, PainPoint, Requirement, 
 import { projectLevelNotesFilter } from "@/lib/notes";
 import { projectLevelChallengesFilter } from "@/lib/challenges";
 import { projectLevelDomainKnowledgeFilter } from "@/lib/domain-knowledge";
+import { parseRequirementPriority } from "@/lib/requirements";
 import { buildProjectSummaryPrompt } from "@/lib/prompts/project-summary-prompt";
 
 type RouteContext = {
@@ -193,6 +194,7 @@ export async function POST(_request: Request, context: RouteContext) {
       requirements: requirements.map((requirement) => ({
         title: requirement.title,
         content: requirement.content,
+        priority: parseRequirementPriority(requirement.priority),
       })),
       features: features.map((feature) => ({
         title: feature.title,

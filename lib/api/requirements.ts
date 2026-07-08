@@ -1,4 +1,4 @@
-import type { RequirementResponse } from "@/lib/types";
+import type { RequirementPriority, RequirementResponse } from "@/lib/types";
 import { parseResponse } from "@/lib/api/response";
 
 export async function fetchRequirements(
@@ -12,12 +12,13 @@ export async function createRequirement(input: {
   projectId: string;
   title: string;
   content: string;
+  priority?: RequirementPriority | null;
 }): Promise<RequirementResponse> {
-  const { projectId, title, content } = input;
+  const { projectId, title, content, priority = null } = input;
   const response = await fetch(`/api/projects/${projectId}/requirements`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, content }),
+    body: JSON.stringify({ title, content, priority }),
   });
 
   return parseResponse<RequirementResponse>(response);
@@ -28,14 +29,15 @@ export async function updateRequirement(input: {
   requirementId: string;
   title: string;
   content: string;
+  priority?: RequirementPriority | null;
 }): Promise<RequirementResponse> {
-  const { projectId, requirementId, title, content } = input;
+  const { projectId, requirementId, title, content, priority = null } = input;
   const response = await fetch(
     `/api/projects/${projectId}/requirements/${requirementId}`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, content }),
+      body: JSON.stringify({ title, content, priority }),
     },
   );
 
