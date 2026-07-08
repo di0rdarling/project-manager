@@ -7,29 +7,31 @@ import {
   type AISummaryMessages,
 } from "@/components/ui/AISummarySection";
 import { DeleteAISummaryModal } from "@/components/ui/DeleteAISummaryModal";
-import { useGenerateProjectSummary } from "@/hooks/mutations/projects/useGenerateProjectSummary";
-import { useDeleteProjectSummary } from "@/hooks/mutations/projects/useDeleteProjectSummary";
-import { useFetchProject } from "@/hooks/queries/useFetchProject";
+import { useGenerateFeatureSummary } from "@/hooks/mutations/features/useGenerateFeatureSummary";
+import { useDeleteFeatureSummary } from "@/hooks/mutations/features/useDeleteFeatureSummary";
+import { useFetchFeature } from "@/hooks/queries/useFetchFeature";
 
-const PROJECT_SUMMARY_MESSAGES: AISummaryMessages = {
+const FEATURE_SUMMARY_MESSAGES: AISummaryMessages = {
   emptyDescription:
-    "Generate an AI overview that synthesizes this project's description, core users, pain points, current challenges, requirements, tools, and notes.",
-  generating: "Generating project summary...",
-  regenerating: "Regenerating project summary...",
-  generateError: "Failed to generate project summary",
-  regenerateError: "Failed to regenerate project summary",
+    "Generate an AI overview that synthesizes this feature's description, linked requirement, current challenges, and notes.",
+  generating: "Generating feature summary...",
+  regenerating: "Regenerating feature summary...",
+  generateError: "Failed to generate feature summary",
+  regenerateError: "Failed to regenerate feature summary",
 };
 
-interface AIProjectSummaryProps {
+interface AIFeatureSummaryProps {
   projectId: string;
+  featureId: string;
 }
 
-export default function AIProjectSummary({
+export default function AIFeatureSummary({
   projectId,
-}: Readonly<AIProjectSummaryProps>) {
+  featureId,
+}: Readonly<AIFeatureSummaryProps>) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const isRegeneratingRef = useRef(false);
-  const { data: project, isFetching } = useFetchProject(projectId);
+  const { data: feature, isFetching } = useFetchFeature(projectId, featureId);
   const {
     mutate: generateSummary,
     isPending: isGenerating,
@@ -37,18 +39,18 @@ export default function AIProjectSummary({
     isError: isGenerateError,
     error: generateError,
     reset: resetGenerate,
-  } = useGenerateProjectSummary({
+  } = useGenerateFeatureSummary({
     onSuccess: () => {
       toast.success(
         isRegeneratingRef.current
-          ? "Project summary regenerated successfully."
-          : "Project summary generated successfully.",
+          ? "Feature summary regenerated successfully."
+          : "Feature summary generated successfully.",
       );
     },
   });
-  const deleteSummaryMutation = useDeleteProjectSummary({
+  const deleteSummaryMutation = useDeleteFeatureSummary({
     onSuccess: () => {
-      toast.success("Project summary deleted successfully.");
+      toast.success("Feature summary deleted successfully.");
       setIsDeleteModalOpen(false);
     },
   });
@@ -56,7 +58,7 @@ export default function AIProjectSummary({
   function handleGenerate(isRegenerate: boolean) {
     isRegeneratingRef.current = isRegenerate;
     resetGenerate();
-    generateSummary(projectId);
+    generateSummary({ projectId, featureId });
   }
 
   function handleDeleteModalClose() {
@@ -71,24 +73,26 @@ export default function AIProjectSummary({
   return (
     <>
       <AISummarySection
-        summary={project?.aiSummary ?? null}
+        summary={feature?.aiSummary ?? null}
         isFetching={isFetching}
         isGenerating={isGenerating}
         isGenerateError={isGenerateError}
         generateError={generateError}
         isSuccess={isSuccess}
-        messages={PROJECT_SUMMARY_MESSAGES}
+        messages={FEATURE_SUMMARY_MESSAGES}
         onGenerate={handleGenerate}
         onDeleteClick={() => setIsDeleteModalOpen(true)}
       />
 
       <DeleteAISummaryModal
         open={isDeleteModalOpen}
-        description="Are you sure you want to delete this AI-generated project summary? You can generate a new one at any time."
+        description="Are you sure you want to delete this AI-generated feature summary? You can generate a new one at any time."
         isPending={deleteSummaryMutation.isPending}
         error={deleteSummaryMutation.error}
         onClose={handleDeleteModalClose}
-        onConfirm={() => deleteSummaryMutation.mutate(projectId)}
+        onConfirm={() =>
+          deleteSummaryMutation.mutate({ projectId, featureId })
+        }
       />
     </>
   );

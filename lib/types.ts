@@ -72,6 +72,7 @@ type FeatureBase<TId> = {
   title: string;
   content: string;
   requirementId: TId | null;
+  aiSummary: string | null;
   createdAt: string;
   updatedAt: string;
 };

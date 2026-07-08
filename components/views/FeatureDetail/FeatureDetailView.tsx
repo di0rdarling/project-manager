@@ -8,6 +8,7 @@ import { RichTextContent } from "@/components/ui/inputs/richText/RichTextContent
 import PageContent from "@/components/layout/PageContent";
 import NotesSection from "@/components/views/ProjectDetail/NotesSection";
 import ChallengesSection from "@/components/views/ProjectDetail/ChallengesSection";
+import AIFeatureSummary from "@/components/views/FeatureDetail/AIFeatureSummary";
 import { useFetchFeature } from "@/hooks/queries/useFetchFeature";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
 import { useFetchRequirements } from "@/hooks/queries/useFetchRequirements";
@@ -81,6 +82,8 @@ export default function FeatureDetailView({
               Created {formatDisplayDate(feature.createdAt)}
             </p>
           </div>
+
+          <AIFeatureSummary projectId={projectId} featureId={featureId} />
 
           <section className="space-y-3">
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
