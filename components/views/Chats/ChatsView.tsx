@@ -8,6 +8,7 @@ import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useFetchChats } from "@/hooks/queries/useFetchChats";
 import PageContent from "@/components/layout/PageContent";
+import ChatAgentsRow from "./ChatAgentsRow";
 import ChatsList from "./ChatsList";
 import CreateChatModal from "./modals/CreateChatModal";
 
@@ -36,6 +37,8 @@ export default function ChatsView() {
           </p>
         </div>
       </div>
+
+      <ChatAgentsRow />
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
