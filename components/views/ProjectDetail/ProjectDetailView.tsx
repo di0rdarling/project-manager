@@ -10,6 +10,7 @@ import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useFetchNotes } from "@/hooks/queries/useFetchNotes";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
 import { useFetchRequirements } from "@/hooks/queries/useFetchRequirements";
+import { useFetchFeatures } from "@/hooks/queries/useFetchFeatures";
 import { useFetchTools } from "@/hooks/queries/useFetchTools";
 import { useFetchCoreUsers } from "@/hooks/queries/useFetchCoreUsers";
 import { useFetchPainPoints } from "@/hooks/queries/useFetchPainPoints";
@@ -19,10 +20,12 @@ import CreateNoteModal from "./modals/notes/CreateNoteModal";
 import CreatePainPointModal from "./modals/painPoints/CreatePainPointModal";
 import CreateDomainKnowledgeModal from "./modals/domainKnowledge/CreateDomainKnowledgeModal";
 import CreateRequirementModal from "./modals/requirements/CreateRequirementModal";
+import CreateFeatureModal from "./modals/features/CreateFeatureModal";
 import CreateToolModal from "./modals/tools/CreateToolModal";
 import CreateCoreUserModal from "./modals/coreUsers/CreateCoreUserModal";
 import DeleteNoteModal from "./modals/notes/DeleteNoteModal";
 import DeleteRequirementModal from "./modals/requirements/DeleteRequirementModal";
+import DeleteFeatureModal from "./modals/features/DeleteFeatureModal";
 import DeleteToolModal from "./modals/tools/DeleteToolModal";
 import DeleteCoreUserModal from "./modals/coreUsers/DeleteCoreUserModal";
 import DeletePainPointModal from "./modals/painPoints/DeletePainPointModal";
@@ -31,9 +34,11 @@ import EditNoteModal from "./modals/notes/EditNoteModal";
 import EditPainPointModal from "./modals/painPoints/EditPainPointModal";
 import EditDomainKnowledgeModal from "./modals/domainKnowledge/EditDomainKnowledgeModal";
 import EditRequirementModal from "./modals/requirements/EditRequirementModal";
+import EditFeatureModal from "./modals/features/EditFeatureModal";
 import EditToolModal from "./modals/tools/EditToolModal";
 import EditCoreUserModal from "./modals/coreUsers/EditCoreUserModal";
 import ProjectItemsList from "./ProjectItemsList";
+import FeatureItemsList from "./FeatureItemsList";
 import DomainKnowledgeItemsList from "./DomainKnowledgeItemsList";
 import ProjectSection from "./ProjectSection";
 import AIProjectSummary from "./AIProjectSummary";
@@ -48,6 +53,8 @@ export default function ProjectDetailView({
 }: Readonly<ProjectDetailViewProps>) {
   const [isCreateNoteModalOpen, setIsCreateNoteModalOpen] = useState(false);
   const [isCreateRequirementModalOpen, setIsCreateRequirementModalOpen] =
+    useState(false);
+  const [isCreateFeatureModalOpen, setIsCreateFeatureModalOpen] =
     useState(false);
   const [isCreateToolModalOpen, setIsCreateToolModalOpen] = useState(false);
   const [isCreateCoreUserModalOpen, setIsCreateCoreUserModalOpen] =
@@ -76,6 +83,13 @@ export default function ProjectDetailView({
     isError: isRequirementsError,
     error: requirementsError,
   } = useFetchRequirements(projectId, { enabled: canFetchSections });
+
+  const {
+    data: features = [],
+    isPending: isFeaturesPending,
+    isError: isFeaturesError,
+    error: featuresError,
+  } = useFetchFeatures(projectId, { enabled: canFetchSections });
 
   const {
     data: tools = [],
@@ -312,6 +326,45 @@ export default function ProjectDetailView({
           </ProjectSection>
 
           <ProjectSection
+            title="Features"
+            addButtonLabel="Add Feature"
+            onAddClick={() => setIsCreateFeatureModalOpen(true)}
+            isPending={isFeaturesPending}
+            isError={isFeaturesError}
+            error={featuresError}
+            loadingMessage="Loading features..."
+            errorFallbackMessage="Failed to load features"
+            isEmpty={features.length === 0}
+            emptyMessage="No features yet. Add your first one to get started."
+          >
+            <FeatureItemsList
+              items={features}
+              requirements={requirements}
+              onEditSuccess={() => toast.success("Feature updated successfully.")}
+              onDeleteSuccess={() => toast.success("Feature deleted successfully.")}
+              renderEditModal={({ open, item, onClose, onSuccess }) => (
+                <EditFeatureModal
+                  open={open}
+                  projectId={projectId}
+                  feature={item}
+                  requirements={requirements}
+                  onClose={onClose}
+                  onSuccess={onSuccess}
+                />
+              )}
+              renderDeleteModal={({ open, item, onClose, onSuccess }) => (
+                <DeleteFeatureModal
+                  open={open}
+                  projectId={projectId}
+                  feature={item}
+                  onClose={onClose}
+                  onSuccess={onSuccess}
+                />
+              )}
+            />
+          </ProjectSection>
+
+          <ProjectSection
             title="Tools"
             addButtonLabel="Add Tool"
             onAddClick={() => setIsCreateToolModalOpen(true)}
@@ -398,6 +451,14 @@ export default function ProjectDetailView({
             projectId={projectId}
             onClose={() => setIsCreateRequirementModalOpen(false)}
             onSuccess={() => toast.success("Requirement added successfully.")}
+          />
+
+          <CreateFeatureModal
+            open={isCreateFeatureModalOpen}
+            projectId={projectId}
+            requirements={requirements}
+            onClose={() => setIsCreateFeatureModalOpen(false)}
+            onSuccess={() => toast.success("Feature added successfully.")}
           />
 
           <CreateToolModal

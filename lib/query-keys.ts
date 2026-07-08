@@ -12,6 +12,10 @@ export const requirementKeys = {
     ["projects", projectId, "requirements"] as const,
 };
 
+export const featureKeys = {
+  all: (projectId: string) => ["projects", projectId, "features"] as const,
+};
+
 export const toolKeys = {
   all: (projectId: string) => ["projects", projectId, "tools"] as const,
 };
