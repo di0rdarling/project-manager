@@ -11,6 +11,7 @@ import {
   isChatTeammateId,
 } from "@/lib/chat-teammates";
 import AIAgentMemory from "@/components/views/Chats/AIAgentMemory";
+import AIAgentNotesSection from "@/components/views/Chats/AIAgentNotesSection";
 
 interface ChatAgentProfileViewProps {
   teammateId: string;
@@ -71,6 +72,7 @@ export default function ChatAgentProfileView({
         </div>
       </div>
       <AIAgentMemory teammateId={teammateId} />
+      <AIAgentNotesSection teammateId={teammateId} agentName={teammate.name} />
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Personality &amp; approach</h2>
         <ul className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">

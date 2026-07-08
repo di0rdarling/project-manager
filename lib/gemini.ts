@@ -197,6 +197,7 @@ export async function generateChatReply(
   projectContext?: string,
   otherConversationsContext?: string,
   otherTeammatesContext?: string,
+  agentNotesContext?: string,
 ): Promise<GenerateChatReplyResult> {
   const chat = getGenAIClient().chats.create({
     model: getChatModelName(),
@@ -206,6 +207,7 @@ export async function generateChatReply(
         projectContext,
         otherConversationsContext,
         otherTeammatesContext,
+        agentNotesContext,
       ),
       tools: [{ googleSearch: {} }],
       thinkingConfig: {

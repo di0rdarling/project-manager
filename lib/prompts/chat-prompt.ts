@@ -12,6 +12,7 @@ export function buildChatSystemPrompt(
   projectContext?: string,
   otherConversationsContext?: string,
   otherTeammatesContext?: string,
+  agentNotesContext?: string,
 ): string {
   const sections = [
     buildAiTeammatesRosterPrompt(teammateId),
@@ -24,6 +25,10 @@ export function buildChatSystemPrompt(
     "When you use web search results, cite the relevant sources in your reply and prefer up-to-date information over assumptions.",
     "Never expose internal reasoning, planning, tool calls, or search steps in your reply. Respond directly to the user in plain language.",
   ];
+
+  if (agentNotesContext?.trim()) {
+    sections.push("", agentNotesContext.trim());
+  }
 
   if (otherConversationsContext?.trim()) {
     sections.push(

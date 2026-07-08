@@ -29,12 +29,14 @@ export const DEFAULT_CHAT_TEAMMATE_ID: ChatTeammateId = "general";
 
 export const CHAT_TEAMMATES: ChatTeammate[] = [
   {
-    id: "general",
-    name: "General Assistant",
-    role: "AI Assistant",
-    description: "A helpful all-purpose assistant for any project question.",
-    avatarInitials: "AI",
-    avatarColorClassName: "bg-zinc-700 dark:bg-zinc-600",
+    id: "jordan",
+    name: "Jordan",
+    role: "Chief of Staff",
+    description:
+      "Synthesizes what's happening across all your projects — surfacing what needs attention, what's stalled, and what you said you'd follow up on.",
+    avatarInitials: "JO",
+    avatarImageSrc: "/jordan.png",
+    avatarColorClassName: "bg-emerald-600 dark:bg-emerald-500",
   },
   {
     id: "sandy",
@@ -45,16 +47,6 @@ export const CHAT_TEAMMATES: ChatTeammate[] = [
     avatarInitials: "SA",
     avatarImageSrc: "/sandy_2.png",
     avatarColorClassName: "bg-violet-600 dark:bg-violet-500",
-  },
-  {
-    id: "theo",
-    name: "Theo",
-    role: "Domain Expert",
-    description:
-      "Helps you deeply understand the domain — terminology, concepts, pitfalls, and the context experienced practitioners know.",
-    avatarInitials: "TH",
-    avatarImageSrc: "/theo.png",
-    avatarColorClassName: "bg-amber-600 dark:bg-amber-500",
   },
   {
     id: "arlo",
@@ -77,14 +69,22 @@ export const CHAT_TEAMMATES: ChatTeammate[] = [
     avatarColorClassName: "bg-rose-600 dark:bg-rose-500",
   },
   {
-    id: "jordan",
-    name: "Jordan",
-    role: "Chief of Staff",
+    id: "theo",
+    name: "Theo",
+    role: "Domain Expert",
     description:
-      "Synthesizes what's happening across all your projects — surfacing what needs attention, what's stalled, and what you said you'd follow up on.",
-    avatarInitials: "JO",
-    avatarImageSrc: "/jordan.png",
-    avatarColorClassName: "bg-emerald-600 dark:bg-emerald-500",
+      "Helps you deeply understand the domain — terminology, concepts, pitfalls, and the context experienced practitioners know.",
+    avatarInitials: "TH",
+    avatarImageSrc: "/theo.png",
+    avatarColorClassName: "bg-amber-600 dark:bg-amber-500",
+  },
+  {
+    id: "general",
+    name: "General Assistant",
+    role: "AI Assistant",
+    description: "A helpful all-purpose assistant for any project question.",
+    avatarInitials: "AI",
+    avatarColorClassName: "bg-zinc-700 dark:bg-zinc-600",
   },
 ];
 

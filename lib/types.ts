@@ -26,6 +26,18 @@ type NoteBase<TId> = {
 export type Note = NoteBase<ObjectId>;
 export type NoteResponse = NoteBase<string>;
 
+type AgentNoteBase<TId> = {
+  _id: TId;
+  teammateId: ChatTeammateId;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AgentNote = AgentNoteBase<ObjectId>;
+export type AgentNoteResponse = AgentNoteBase<string>;
+
 type PainPointBase<TId> = {
   _id: TId;
   projectId: TId;
