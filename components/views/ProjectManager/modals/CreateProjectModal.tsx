@@ -52,7 +52,7 @@ export default function CreateProjectModal({
       : null;
 
   return (
-    <Modal open={open} onClose={handleClose} title="New Project">
+    <Modal open={open} onClose={handleClose} title="New Project" size="narrow">
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           id="name"

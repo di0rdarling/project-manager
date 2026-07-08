@@ -54,7 +54,7 @@ export default function DeleteDomainKnowledgeModal({
       : null;
 
   return (
-    <Modal open={open} onClose={handleClose} title="Delete domain knowledge">
+    <Modal open={open} onClose={handleClose} title="Delete domain knowledge" size="narrow">
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
         Are you sure you want to delete this domain knowledge item
         {domainKnowledge ? (

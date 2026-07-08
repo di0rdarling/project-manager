@@ -55,7 +55,7 @@ export default function DeleteChallengeModal({
       : null;
 
   return (
-    <Modal open={open} onClose={handleClose} title="Delete challenge">
+    <Modal open={open} onClose={handleClose} title="Delete challenge" size="narrow">
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
         Are you sure you want to delete this challenge
         {challenge ? (

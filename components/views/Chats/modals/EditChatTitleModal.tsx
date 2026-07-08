@@ -63,7 +63,7 @@ export default function EditChatTitleModal({
       : null;
 
   return (
-    <Modal open={open} onClose={handleClose} title="Edit chat title">
+    <Modal open={open} onClose={handleClose} title="Edit chat title" size="narrow">
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           id="edit-chat-title"

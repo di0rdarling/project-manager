@@ -51,7 +51,7 @@ export default function DeleteToolModal({
       : null;
 
   return (
-    <Modal open={open} onClose={handleClose} title="Delete tool">
+    <Modal open={open} onClose={handleClose} title="Delete tool" size="narrow">
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
         Are you sure you want to delete this tool
         {tool ? (

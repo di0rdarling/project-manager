@@ -67,7 +67,7 @@ export default function EditProjectModal({
       : null;
 
   return (
-    <Modal open={open} onClose={handleClose} title="Edit project">
+    <Modal open={open} onClose={handleClose} title="Edit project" size="narrow">
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           id="edit-name"

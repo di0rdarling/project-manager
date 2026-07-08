@@ -54,7 +54,7 @@ export default function DeleteCoreUserModal({
       : null;
 
   return (
-    <Modal open={open} onClose={handleClose} title="Delete core user">
+    <Modal open={open} onClose={handleClose} title="Delete core user" size="narrow">
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
         Are you sure you want to delete this core user
         {coreUser ? (

@@ -12,6 +12,7 @@ import PageContent, { pageInnerClassName } from "@/components/layout/PageContent
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
+import { CopyToClipboardButton } from "@/components/ui/CopyToClipboardButton";
 import { IconButton } from "@/components/ui/IconButton";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { MarkdownContent } from "@/components/ui/MarkdownContent";
@@ -63,12 +64,19 @@ function ChatMessageBubble({
       <div className="flex justify-end">
         <div className="max-w-[85%] rounded-2xl bg-zinc-900 px-4 py-3 text-sm text-white dark:bg-zinc-100 dark:text-zinc-900">
           <MarkdownContent content={message.content} variant="inverted" />
-          <time
-            dateTime={message.createdAt}
-            className="mt-2 block text-xs text-zinc-300 dark:text-zinc-600"
-          >
-            {formatDisplayDateTime(message.createdAt)}
-          </time>
+          <div className="mt-2 flex items-center justify-end gap-1">
+            <time
+              dateTime={message.createdAt}
+              className="text-xs text-zinc-300 dark:text-zinc-600"
+            >
+              {formatDisplayDateTime(message.createdAt)}
+            </time>
+            <CopyToClipboardButton
+              text={message.content}
+              ariaLabel="Copy your message"
+              className="p-1 text-zinc-300 hover:bg-zinc-800 hover:text-white dark:text-zinc-600 dark:hover:bg-zinc-200 dark:hover:text-zinc-900"
+            />
+          </div>
         </div>
       </div>
     );
@@ -80,12 +88,19 @@ function ChatMessageBubble({
       <div className="max-w-[85%] rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
         <MarkdownContent content={message.content} variant="default" />
         <ChatMessageGrounding message={message} />
-        <time
-          dateTime={message.createdAt}
-          className="mt-2 block text-xs text-zinc-500 dark:text-zinc-400"
-        >
-          {formatDisplayDateTime(message.createdAt)}
-        </time>
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <time
+            dateTime={message.createdAt}
+            className="text-xs text-zinc-500 dark:text-zinc-400"
+          >
+            {formatDisplayDateTime(message.createdAt)}
+          </time>
+          <CopyToClipboardButton
+            text={message.content}
+            ariaLabel={`Copy ${teammate.name}'s response`}
+            className="p-1"
+          />
+        </div>
       </div>
     </div>
   );

@@ -31,7 +31,7 @@ export function DeleteAISummaryModal({
   const formError = error instanceof Error ? error.message : null;
 
   return (
-    <Modal open={open} onClose={handleClose} title="Delete summary">
+    <Modal open={open} onClose={handleClose} title="Delete summary" size="narrow">
       <p className="text-sm text-zinc-600 dark:text-zinc-400">{description}</p>
 
       {formError ? (

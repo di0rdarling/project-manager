@@ -50,7 +50,7 @@ export default function DeleteProjectModal({
       : null;
 
   return (
-    <Modal open={open} onClose={handleClose} title="Delete project">
+    <Modal open={open} onClose={handleClose} title="Delete project" size="narrow">
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
         Are you sure you want to delete{" "}
         <span className="font-medium text-zinc-900 dark:text-zinc-100">
