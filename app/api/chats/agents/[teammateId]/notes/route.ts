@@ -1,9 +1,9 @@
-import { ObjectId } from "mongodb";
 import { isChatTeammateId } from "@/lib/chat-teammates";
 import {
   AGENT_NOTES_COLLECTION,
   serializeAgentNote,
 } from "@/lib/agent-notes-store";
+import { agentNotesVisibilityFilter } from "@/lib/agent-notes";
 import getClientPromise from "@/lib/mongodb";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import type { AgentNote } from "@/lib/types";
@@ -41,7 +41,7 @@ export async function GET(_request: Request, context: RouteContext) {
     const notes = await client
       .db()
       .collection<StoredAgentNote>(AGENT_NOTES_COLLECTION)
-      .find({ teammateId: parsed.teammateId })
+      .find(agentNotesVisibilityFilter(parsed.teammateId))
       .sort({ createdAt: -1 })
       .toArray();
 
@@ -76,6 +76,7 @@ export async function POST(request: Request, context: RouteContext) {
     const now = new Date().toISOString();
     const note: Omit<AgentNote, "_id"> = {
       teammateId: parsed.teammateId,
+      sharedWithTeammateIds: [],
       title,
       content,
       createdAt: now,

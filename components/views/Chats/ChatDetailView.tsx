@@ -9,7 +9,6 @@ import {
   PencilIcon,
 } from "@heroicons/react/24/outline";
 import PageContent, { pageInnerClassName } from "@/components/layout/PageContent";
-import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { CopyToClipboardButton } from "@/components/ui/CopyToClipboardButton";
@@ -19,6 +18,10 @@ import { MarkdownContent } from "@/components/ui/MarkdownContent";
 import EditChatTitleModal from "@/components/views/Chats/modals/EditChatTitleModal";
 import ChatMessageGrounding from "@/components/views/Chats/ChatMessageGrounding";
 import ChatSummaryModal from "@/components/views/Chats/modals/ChatSummaryModal";
+import {
+  TeammateProfileAvatarLink,
+  TeammateProfileLink,
+} from "@/components/views/Chats/TeammateProfileLink";
 import { useSendChatMessage } from "@/hooks/mutations/chats/useSendChatMessage";
 import { useFetchChat } from "@/hooks/queries/useFetchChat";
 import { getChatTeammate, type ChatTeammate } from "@/lib/chat-teammates";
@@ -39,11 +42,8 @@ function TeammateAvatar({
   className?: string;
 }) {
   return (
-    <Avatar
-      initials={teammate.avatarInitials}
-      src={teammate.avatarImageSrc}
-      alt={teammate.name}
-      colorClassName={teammate.avatarColorClassName}
+    <TeammateProfileAvatarLink
+      teammate={teammate}
       size={size}
       className={className}
     />
@@ -222,7 +222,14 @@ export default function ChatDetailView({
                 </IconButton>
               </div>
               <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
-                {teammate.name} · {teammate.role}
+                <TeammateProfileLink
+                  teammate={teammate}
+                  className="font-medium text-zinc-700 transition hover:text-zinc-900 hover:underline dark:text-zinc-300 dark:hover:text-zinc-100"
+                >
+                  {teammate.name}
+                </TeammateProfileLink>
+                {" · "}
+                {teammate.role}
               </p>
             </div>
           </div>

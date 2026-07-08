@@ -1,7 +1,9 @@
 import { ObjectId } from "mongodb";
 import { isChatTeammateId } from "@/lib/chat-teammates";
+import { parseSharedWithTeammateIds } from "@/lib/agent-notes";
 import {
   AGENT_NOTES_COLLECTION,
+  getOwnedAgentNote,
   serializeAgentNote,
 } from "@/lib/agent-notes-store";
 import getClientPromise from "@/lib/mongodb";
@@ -45,19 +47,64 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const body = await request.json();
-    const title = typeof body.title === "string" ? body.title.trim() : "";
-    const content =
-      typeof body.content === "string" ? body.content.trim() : "";
+    const hasTitle = typeof body.title === "string";
+    const hasContent = typeof body.content === "string";
+    const hasSharedWith = Array.isArray(body.sharedWithTeammateIds);
 
-    if (!title) {
-      return Response.json({ error: "Note title is required" }, { status: 400 });
-    }
-
-    if (isRichTextEmpty(content)) {
-      return Response.json({ error: "Note content is required" }, { status: 400 });
+    if (!hasTitle && !hasContent && !hasSharedWith) {
+      return Response.json(
+        { error: "No valid fields provided to update" },
+        { status: 400 },
+      );
     }
 
     const client = await getClientPromise();
+    const existingNote = await getOwnedAgentNote(
+      client.db(),
+      parsed.teammateId,
+      new ObjectId(parsed.noteId),
+    );
+
+    if (!existingNote) {
+      return Response.json({ error: "Note not found" }, { status: 404 });
+    }
+
+    const updates: Record<string, unknown> = {
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (hasTitle || hasContent) {
+      const title = hasTitle ? body.title.trim() : existingNote.title;
+      const content = hasContent ? body.content.trim() : existingNote.content;
+
+      if (!title) {
+        return Response.json({ error: "Note title is required" }, { status: 400 });
+      }
+
+      if (isRichTextEmpty(content)) {
+        return Response.json({ error: "Note content is required" }, { status: 400 });
+      }
+
+      updates.title = title;
+      updates.content = content;
+    }
+
+    if (hasSharedWith) {
+      const sharedWithTeammateIds = parseSharedWithTeammateIds(
+        body.sharedWithTeammateIds,
+        parsed.teammateId,
+      );
+
+      if (!sharedWithTeammateIds) {
+        return Response.json(
+          { error: "Invalid shared teammate ids" },
+          { status: 400 },
+        );
+      }
+
+      updates.sharedWithTeammateIds = sharedWithTeammateIds;
+    }
+
     const result = await client
       .db()
       .collection<StoredAgentNote>(AGENT_NOTES_COLLECTION)
@@ -66,13 +113,7 @@ export async function PATCH(request: Request, context: RouteContext) {
           _id: new ObjectId(parsed.noteId),
           teammateId: parsed.teammateId,
         },
-        {
-          $set: {
-            title,
-            content,
-            updatedAt: new Date().toISOString(),
-          },
-        },
+        { $set: updates },
         { returnDocument: "after" },
       );
 

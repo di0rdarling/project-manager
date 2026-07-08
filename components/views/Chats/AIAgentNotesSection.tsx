@@ -9,6 +9,7 @@ import AIAgentNotesList from "./AIAgentNotesList";
 import CreateAgentNoteModal from "./modals/agent-notes/CreateAgentNoteModal";
 import DeleteAgentNoteModal from "./modals/agent-notes/DeleteAgentNoteModal";
 import EditAgentNoteModal from "./modals/agent-notes/EditAgentNoteModal";
+import ShareAgentNoteModal from "./modals/agent-notes/ShareAgentNoteModal";
 
 type AIAgentNotesSectionProps = {
   teammateId: ChatTeammateId;
@@ -32,7 +33,7 @@ export default function AIAgentNotesSection({
     <>
       <AgentSection
         title="Notes"
-        description={`Private notes for ${agentName} only. They are included in every conversation you have with this teammate.`}
+        description={`Notes the user has left for ${agentName}, plus any notes the user has shared with ${agentName} from other teammates' profiles. They are included in every conversation you have with this teammate.`}
         addButtonLabel="Add Note"
         onAddClick={() => setIsCreateNoteModalOpen(true)}
         isPending={isPending}
@@ -41,12 +42,14 @@ export default function AIAgentNotesSection({
         loadingMessage="Loading notes..."
         errorFallbackMessage="Failed to load notes"
         isEmpty={notes.length === 0}
-        emptyMessage={`No notes for ${agentName} yet. Add context, preferences, or standing instructions you want this teammate to remember.`}
+        emptyMessage={`No notes for ${agentName} yet. Add context, preferences, or standing instructions you want this teammate to remember. You can also share notes with other teammates later.`}
       >
         <AIAgentNotesList
+          teammateId={teammateId}
           notes={notes}
           onEditSuccess={() => toast.success("Note updated successfully.")}
           onDeleteSuccess={() => toast.success("Note deleted successfully.")}
+          onShareSuccess={() => toast.success("Note sharing updated.")}
           renderEditModal={({ open, item, onClose, onSuccess }) => (
             <EditAgentNoteModal
               open={open}
@@ -58,6 +61,15 @@ export default function AIAgentNotesSection({
           )}
           renderDeleteModal={({ open, item, onClose, onSuccess }) => (
             <DeleteAgentNoteModal
+              open={open}
+              teammateId={teammateId}
+              note={item}
+              onClose={onClose}
+              onSuccess={onSuccess}
+            />
+          )}
+          renderShareModal={({ open, item, onClose, onSuccess }) => (
+            <ShareAgentNoteModal
               open={open}
               teammateId={teammateId}
               note={item}

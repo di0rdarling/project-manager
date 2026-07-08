@@ -36,6 +36,7 @@ export default function DeleteAgentNoteModal({
     deleteAgentNoteMutation.mutate({
       teammateId,
       noteId: note._id,
+      sharedWithTeammateIds: note.sharedWithTeammateIds,
     });
   }
 

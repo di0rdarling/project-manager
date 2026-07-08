@@ -5,37 +5,40 @@ import {
   useQueryClient,
   type UseMutationOptions,
 } from "@tanstack/react-query";
-import { deleteAgentNote } from "@/lib/api/agent-notes";
+import { shareAgentNote } from "@/lib/api/agent-notes";
 import { agentNoteKeys } from "@/lib/query-keys";
 import type { AgentNoteResponse } from "@/lib/types";
 import type { ChatTeammateId } from "@/lib/chat-teammates";
 
-type DeleteAgentNoteInput = Parameters<typeof deleteAgentNote>[0] & {
-  sharedWithTeammateIds?: ChatTeammateId[];
+type ShareAgentNoteInput = Parameters<typeof shareAgentNote>[0] & {
+  previousSharedWithTeammateIds?: ChatTeammateId[];
 };
 
-type UseDeleteAgentNoteOptions = Omit<
-  UseMutationOptions<void, Error, DeleteAgentNoteInput>,
+type UseShareAgentNoteOptions = Omit<
+  UseMutationOptions<AgentNoteResponse, Error, ShareAgentNoteInput>,
   "mutationFn"
 >;
 
-export function useDeleteAgentNote(options?: UseDeleteAgentNoteOptions) {
+export function useShareAgentNote(options?: UseShareAgentNoteOptions) {
   const queryClient = useQueryClient();
   const { onSuccess, ...restOptions } = options ?? {};
 
   return useMutation({
-    mutationFn: deleteAgentNote,
+    mutationFn: shareAgentNote,
     ...restOptions,
-    onSuccess: (data, variables, onMutateResult, context) => {
+    onSuccess: (note, variables, onMutateResult, context) => {
       queryClient.setQueryData<AgentNoteResponse[]>(
         agentNoteKeys.list(variables.teammateId),
         (current) =>
-          current?.filter((note) => note._id !== variables.noteId),
+          current?.map((existing) =>
+            existing._id === note._id ? note : existing,
+          ),
       );
 
       const affectedTeammateIds = new Set<ChatTeammateId>([
         variables.teammateId,
-        ...(variables.sharedWithTeammateIds ?? []),
+        ...note.sharedWithTeammateIds,
+        ...(variables.previousSharedWithTeammateIds ?? []),
       ]);
 
       for (const teammateId of affectedTeammateIds) {
@@ -44,7 +47,7 @@ export function useDeleteAgentNote(options?: UseDeleteAgentNoteOptions) {
         });
       }
 
-      onSuccess?.(data, variables, onMutateResult, context);
+      onSuccess?.(note, variables, onMutateResult, context);
     },
   });
 }

@@ -1,4 +1,5 @@
 import type { AgentNoteResponse } from "@/lib/types";
+import type { ChatTeammateId } from "@/lib/chat-teammates";
 import { parseResponse } from "@/lib/api/response";
 
 export async function fetchAgentNotes(
@@ -36,6 +37,24 @@ export async function updateAgentNote(input: {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, content }),
+    },
+  );
+
+  return parseResponse<AgentNoteResponse>(response);
+}
+
+export async function shareAgentNote(input: {
+  teammateId: string;
+  noteId: string;
+  sharedWithTeammateIds: ChatTeammateId[];
+}): Promise<AgentNoteResponse> {
+  const { teammateId, noteId, sharedWithTeammateIds } = input;
+  const response = await fetch(
+    `/api/chats/agents/${teammateId}/notes/${noteId}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sharedWithTeammateIds }),
     },
   );
 

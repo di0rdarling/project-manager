@@ -29,6 +29,7 @@ export type NoteResponse = NoteBase<string>;
 type AgentNoteBase<TId> = {
   _id: TId;
   teammateId: ChatTeammateId;
+  sharedWithTeammateIds: ChatTeammateId[];
   title: string;
   content: string;
   createdAt: string;
