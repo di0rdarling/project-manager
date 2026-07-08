@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import PageContent, { pageInnerClassName } from "@/components/layout/PageContent";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
@@ -155,7 +156,7 @@ export default function ChatDetailView({
 
   if (isError || !chat) {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-12">
+      <PageContent className="gap-6">
         <Link
           href="/chats"
           className="inline-flex w-fit items-center gap-2 text-sm font-medium text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
@@ -164,7 +165,7 @@ export default function ChatDetailView({
           Back to chats
         </Link>
         <ErrorMessage error={error} fallbackMessage="Failed to load chat" />
-      </div>
+      </PageContent>
     );
   }
 
@@ -173,7 +174,7 @@ export default function ChatDetailView({
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="shrink-0 border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="mx-auto flex w-full max-w-3xl items-center gap-4">
+        <div className={`flex items-center gap-4 ${pageInnerClassName}`}>
           <Link
             href="/chats"
             className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
@@ -194,7 +195,7 @@ export default function ChatDetailView({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
-        <div className="mx-auto flex w-full min-h-full max-w-3xl flex-col justify-end gap-4">
+        <div className={`flex min-h-full flex-col justify-end gap-4 ${pageInnerClassName}`}>
           {chat.messages.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-zinc-300 px-4 py-8 text-center dark:border-zinc-700">
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -222,7 +223,7 @@ export default function ChatDetailView({
       <div className="shrink-0 border-t border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
         <form
           onSubmit={handleSubmit}
-          className="mx-auto flex w-full max-w-3xl items-end gap-3"
+          className={`flex items-end gap-3 ${pageInnerClassName}`}
         >
           <textarea
             value={message}

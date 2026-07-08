@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useFetchProjects } from "@/hooks/queries/useFetchProjects";
+import PageContent from "@/components/layout/PageContent";
 import CreateProjectModal from "./modals/CreateProjectModal";
 import ProjectManagerList from "./ProjectManagerList";
 
@@ -24,7 +25,7 @@ export default function ProjectManagerView() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-6 py-12">
+    <PageContent>
       <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
         <div className="space-y-2">
           <h1 className="text-4xl font-bold tracking-tight">Project Manager</h1>
@@ -83,6 +84,6 @@ export default function ProjectManagerView() {
           toast.success(`Project "${projectName}" created successfully.`)
         }
       />
-    </div>
+    </PageContent>
   );
 }

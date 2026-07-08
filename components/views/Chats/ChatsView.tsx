@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useFetchChats } from "@/hooks/queries/useFetchChats";
+import PageContent from "@/components/layout/PageContent";
 import ChatsList from "./ChatsList";
 import CreateChatModal from "./modals/CreateChatModal";
 
@@ -26,7 +27,7 @@ export default function ChatsView() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-6 py-12">
+    <PageContent>
       <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
         <div className="space-y-2">
           <h1 className="text-4xl font-bold tracking-tight">AI Chats</h1>
@@ -77,6 +78,6 @@ export default function ChatsView() {
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={(chatId) => router.push(`/chats/${chatId}`)}
       />
-    </div>
+    </PageContent>
   );
 }

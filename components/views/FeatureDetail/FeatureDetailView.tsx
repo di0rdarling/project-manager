@@ -5,6 +5,7 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { RichTextContent } from "@/components/ui/inputs/richText/RichTextContent";
+import PageContent from "@/components/layout/PageContent";
 import NotesSection from "@/components/views/ProjectDetail/NotesSection";
 import { useFetchFeature } from "@/hooks/queries/useFetchFeature";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
@@ -47,7 +48,7 @@ export default function FeatureDetailView({
     : null;
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-6 py-12">
+    <PageContent>
       <Link
         href={`/projects/${projectId}`}
         className="inline-flex w-fit items-center gap-2 text-sm text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
@@ -99,6 +100,6 @@ export default function FeatureDetailView({
           />
         </>
       )}
-    </div>
+    </PageContent>
   );
 }
