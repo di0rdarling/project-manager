@@ -25,7 +25,7 @@ export function useCreateNote(options?: UseCreateNoteOptions) {
     ...restOptions,
     onSuccess: (note, variables, onMutateResult, context) => {
       queryClient.setQueryData<NoteResponse[]>(
-        noteKeys.all(variables.projectId),
+        noteKeys.list(variables.projectId, note.featureId),
         (current) => (current ? [note, ...current] : [note]),
       );
       onSuccess?.(note, variables, onMutateResult, context);

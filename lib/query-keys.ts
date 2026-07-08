@@ -4,7 +4,10 @@ export const projectKeys = {
 };
 
 export const noteKeys = {
-  all: (projectId: string) => ["projects", projectId, "notes"] as const,
+  list: (projectId: string, featureId?: string | null) =>
+    featureId
+      ? (["projects", projectId, "features", featureId, "notes"] as const)
+      : (["projects", projectId, "notes"] as const),
 };
 
 export const requirementKeys = {

@@ -7,7 +7,6 @@ import { ArrowLeftIcon, PencilIcon } from "@heroicons/react/24/outline";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { IconButton } from "@/components/ui/IconButton";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
-import { useFetchNotes } from "@/hooks/queries/useFetchNotes";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
 import { useFetchRequirements } from "@/hooks/queries/useFetchRequirements";
 import { useFetchFeatures } from "@/hooks/queries/useFetchFeatures";
@@ -16,21 +15,18 @@ import { useFetchCoreUsers } from "@/hooks/queries/useFetchCoreUsers";
 import { useFetchPainPoints } from "@/hooks/queries/useFetchPainPoints";
 import { useFetchDomainKnowledge } from "@/hooks/queries/useFetchDomainKnowledge";
 import { formatDisplayDate } from "@/lib/dates";
-import CreateNoteModal from "./modals/notes/CreateNoteModal";
 import CreatePainPointModal from "./modals/painPoints/CreatePainPointModal";
 import CreateDomainKnowledgeModal from "./modals/domainKnowledge/CreateDomainKnowledgeModal";
 import CreateRequirementModal from "./modals/requirements/CreateRequirementModal";
 import CreateFeatureModal from "./modals/features/CreateFeatureModal";
 import CreateToolModal from "./modals/tools/CreateToolModal";
 import CreateCoreUserModal from "./modals/coreUsers/CreateCoreUserModal";
-import DeleteNoteModal from "./modals/notes/DeleteNoteModal";
 import DeleteRequirementModal from "./modals/requirements/DeleteRequirementModal";
 import DeleteFeatureModal from "./modals/features/DeleteFeatureModal";
 import DeleteToolModal from "./modals/tools/DeleteToolModal";
 import DeleteCoreUserModal from "./modals/coreUsers/DeleteCoreUserModal";
 import DeletePainPointModal from "./modals/painPoints/DeletePainPointModal";
 import DeleteDomainKnowledgeModal from "./modals/domainKnowledge/DeleteDomainKnowledgeModal";
-import EditNoteModal from "./modals/notes/EditNoteModal";
 import EditPainPointModal from "./modals/painPoints/EditPainPointModal";
 import EditDomainKnowledgeModal from "./modals/domainKnowledge/EditDomainKnowledgeModal";
 import EditRequirementModal from "./modals/requirements/EditRequirementModal";
@@ -41,6 +37,7 @@ import ProjectItemsList from "./ProjectItemsList";
 import FeatureItemsList from "./FeatureItemsList";
 import DomainKnowledgeItemsList from "./DomainKnowledgeItemsList";
 import ProjectSection from "./ProjectSection";
+import NotesSection from "./NotesSection";
 import AIProjectSummary from "./AIProjectSummary";
 import EditProjectModal from "../ProjectManager/modals/EditProjectModal";
 
@@ -51,7 +48,6 @@ interface ProjectDetailViewProps {
 export default function ProjectDetailView({
   projectId,
 }: Readonly<ProjectDetailViewProps>) {
-  const [isCreateNoteModalOpen, setIsCreateNoteModalOpen] = useState(false);
   const [isCreateRequirementModalOpen, setIsCreateRequirementModalOpen] =
     useState(false);
   const [isCreateFeatureModalOpen, setIsCreateFeatureModalOpen] =
@@ -69,13 +65,6 @@ export default function ProjectDetailView({
     useFetchProject(projectId);
 
   const canFetchSections = !isPending && !isError;
-
-  const {
-    data: notes = [],
-    isPending: isNotesPending,
-    isError: isNotesError,
-    error: notesError,
-  } = useFetchNotes(projectId, { enabled: canFetchSections });
 
   const {
     data: requirements = [],
@@ -403,50 +392,7 @@ export default function ProjectDetailView({
             />
           </ProjectSection>
 
-          <ProjectSection
-            title="Notes"
-            addButtonLabel="Add Note"
-            onAddClick={() => setIsCreateNoteModalOpen(true)}
-            isPending={isNotesPending}
-            isError={isNotesError}
-            error={notesError}
-            loadingMessage="Loading notes..."
-            errorFallbackMessage="Failed to load notes"
-            isEmpty={notes.length === 0}
-            emptyMessage="No notes yet. Add your first one to get started."
-          >
-            <ProjectItemsList
-              items={notes}
-              itemLabel="note"
-              onEditSuccess={() => toast.success("Note updated successfully.")}
-              onDeleteSuccess={() => toast.success("Note deleted successfully.")}
-              renderEditModal={({ open, item, onClose, onSuccess }) => (
-                <EditNoteModal
-                  open={open}
-                  projectId={projectId}
-                  note={item}
-                  onClose={onClose}
-                  onSuccess={onSuccess}
-                />
-              )}
-              renderDeleteModal={({ open, item, onClose, onSuccess }) => (
-                <DeleteNoteModal
-                  open={open}
-                  projectId={projectId}
-                  note={item}
-                  onClose={onClose}
-                  onSuccess={onSuccess}
-                />
-              )}
-            />
-          </ProjectSection>
-          <CreateNoteModal
-            open={isCreateNoteModalOpen}
-            projectId={projectId}
-            onClose={() => setIsCreateNoteModalOpen(false)}
-            onSuccess={() => toast.success("Note added successfully.")}
-          />
-
+          <NotesSection projectId={projectId} enabled={canFetchSections} />
           <CreateRequirementModal
             open={isCreateRequirementModalOpen}
             projectId={projectId}

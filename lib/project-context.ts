@@ -4,6 +4,7 @@ import { parseConfidenceLevel } from "@/lib/domain-knowledge";
 import { stripRichText } from "@/lib/rich-text";
 import type { StoredProject } from "@/lib/serialize-project";
 import type { CoreUser, DomainKnowledge, Feature, Note, PainPoint, Requirement, Tool } from "@/lib/types";
+import { projectLevelNotesFilter } from "@/lib/notes";
 
 type StoredRequirement = Omit<
   Requirement,
@@ -161,7 +162,7 @@ export async function getProjectContext(
       .toArray(),
     db
       .collection<StoredNote>("notes")
-      .find({ projectId })
+      .find(projectLevelNotesFilter(projectId))
       .sort({ createdAt: -1 })
       .toArray(),
   ]);

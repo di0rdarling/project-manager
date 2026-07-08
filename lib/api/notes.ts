@@ -1,8 +1,15 @@
 import type { NoteResponse } from "@/lib/types";
 import { parseResponse } from "@/lib/api/response";
 
-export async function fetchNotes(projectId: string): Promise<NoteResponse[]> {
-  const response = await fetch(`/api/projects/${projectId}/notes`);
+export async function fetchNotes(
+  projectId: string,
+  featureId?: string | null,
+): Promise<NoteResponse[]> {
+  const params =
+    featureId !== undefined && featureId !== null
+      ? `?featureId=${encodeURIComponent(featureId)}`
+      : "";
+  const response = await fetch(`/api/projects/${projectId}/notes${params}`);
   return parseResponse<NoteResponse[]>(response);
 }
 
@@ -10,12 +17,13 @@ export async function createNote(input: {
   projectId: string;
   title: string;
   content: string;
+  featureId?: string | null;
 }): Promise<NoteResponse> {
-  const { projectId, title, content } = input;
+  const { projectId, title, content, featureId } = input;
   const response = await fetch(`/api/projects/${projectId}/notes`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, content }),
+    body: JSON.stringify({ title, content, featureId }),
   });
 
   return parseResponse<NoteResponse>(response);
@@ -40,6 +48,7 @@ export async function updateNote(input: {
 export async function deleteNote(input: {
   projectId: string;
   noteId: string;
+  featureId?: string | null;
 }): Promise<void> {
   const { projectId, noteId } = input;
   const response = await fetch(`/api/projects/${projectId}/notes/${noteId}`, {

@@ -11,6 +11,7 @@ import { isRichTextEmpty } from "@/lib/rich-text";
 type CreateNoteModalProps = {
   open: boolean;
   projectId: string;
+  featureId?: string;
   onClose: () => void;
   onSuccess: () => void;
 };
@@ -18,6 +19,7 @@ type CreateNoteModalProps = {
 export default function CreateNoteModal({
   open,
   projectId,
+  featureId,
   onClose,
   onSuccess,
 }: CreateNoteModalProps) {
@@ -49,7 +51,12 @@ export default function CreateNoteModal({
     }
 
     setValidationError(null);
-    createNoteMutation.mutate({ projectId, title: title.trim(), content });
+    createNoteMutation.mutate({
+      projectId,
+      title: title.trim(),
+      content,
+      featureId: featureId ?? null,
+    });
   }
 
   function handleClose() {

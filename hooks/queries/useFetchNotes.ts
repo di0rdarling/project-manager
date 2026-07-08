@@ -8,15 +8,19 @@ import type { NoteResponse } from "@/lib/types";
 type UseFetchNotesOptions = Omit<
   UseQueryOptions<NoteResponse[], Error>,
   "queryKey" | "queryFn"
->;
+> & {
+  featureId?: string | null;
+};
 
 export function useFetchNotes(
   projectId: string,
   options?: UseFetchNotesOptions,
 ) {
+  const { featureId, ...queryOptions } = options ?? {};
+
   return useQuery({
-    queryKey: noteKeys.all(projectId),
-    queryFn: () => fetchNotes(projectId),
-    ...options,
+    queryKey: noteKeys.list(projectId, featureId),
+    queryFn: () => fetchNotes(projectId, featureId),
+    ...queryOptions,
   });
 }

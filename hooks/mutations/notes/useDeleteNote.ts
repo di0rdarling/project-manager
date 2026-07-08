@@ -25,7 +25,7 @@ export function useDeleteNote(options?: UseDeleteNoteOptions) {
     ...restOptions,
     onSuccess: (data, variables, onMutateResult, context) => {
       queryClient.setQueryData<NoteResponse[]>(
-        noteKeys.all(variables.projectId),
+        noteKeys.list(variables.projectId, variables.featureId),
         (current) =>
           current?.filter((note) => note._id !== variables.noteId),
       );

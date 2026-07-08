@@ -19,6 +19,7 @@ function serializeNote(note: StoredNote): NoteResponse {
   return {
     _id: note._id.toString(),
     projectId: note.projectId.toString(),
+    featureId: note.featureId ? note.featureId.toString() : null,
     title: typeof note.title === "string" ? note.title : "",
     content: note.content,
     createdAt: toIsoString(note.createdAt),

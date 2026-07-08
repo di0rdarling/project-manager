@@ -5,6 +5,7 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { RichTextContent } from "@/components/ui/inputs/richText/RichTextContent";
+import NotesSection from "@/components/views/ProjectDetail/NotesSection";
 import { useFetchFeature } from "@/hooks/queries/useFetchFeature";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
 import { useFetchRequirements } from "@/hooks/queries/useFetchRequirements";
@@ -91,16 +92,11 @@ export default function FeatureDetailView({
             </div>
           </section>
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-              Upcoming
-            </h2>
-            <div className="rounded-2xl border border-dashed border-zinc-300 px-4 py-8 text-center dark:border-zinc-700">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                More feature details are coming soon.
-              </p>
-            </div>
-          </section>
+          <NotesSection
+            projectId={projectId}
+            featureId={featureId}
+            emptyMessage="No notes yet. Add notes about this feature to capture ideas, decisions, or open questions."
+          />
         </>
       )}
     </div>

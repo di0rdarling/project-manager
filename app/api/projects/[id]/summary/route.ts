@@ -6,6 +6,7 @@ import {
   type StoredProject,
 } from "@/lib/serialize-project";
 import type { CoreUser, DomainKnowledge, Feature, Note, PainPoint, Requirement, Tool } from "@/lib/types";
+import { projectLevelNotesFilter } from "@/lib/notes";
 import { buildProjectSummaryPrompt } from "@/lib/prompts/project-summary-prompt";
 
 type RouteContext = {
@@ -137,7 +138,7 @@ export async function POST(_request: Request, context: RouteContext) {
         .toArray(),
       db
         .collection<StoredNote>("notes")
-        .find({ projectId: projectObjectId })
+        .find(projectLevelNotesFilter(projectObjectId))
         .sort({ createdAt: -1 })
         .toArray(),
     ]);

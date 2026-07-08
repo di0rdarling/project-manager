@@ -25,7 +25,7 @@ export function useUpdateNote(options?: UseUpdateNoteOptions) {
     ...restOptions,
     onSuccess: (note, variables, onMutateResult, context) => {
       queryClient.setQueryData<NoteResponse[]>(
-        noteKeys.all(variables.projectId),
+        noteKeys.list(variables.projectId, note.featureId),
         (current) =>
           current?.map((existing) =>
             existing._id === note._id ? note : existing,

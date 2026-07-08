@@ -33,7 +33,11 @@ export default function DeleteNoteModal({
       return;
     }
 
-    deleteNoteMutation.mutate({ projectId, noteId: note._id });
+    deleteNoteMutation.mutate({
+      projectId,
+      noteId: note._id,
+      featureId: note.featureId,
+    });
   }
 
   function handleClose() {
