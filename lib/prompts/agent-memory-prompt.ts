@@ -1,26 +1,16 @@
 import { PLAIN_ENGLISH_STYLE_GUIDE } from "@/lib/prompts/style-guide";
-
-type ProjectContextInput = {
-  name: string;
-  description: string;
-  aiSummary: string | null;
-};
-
-type ChatSummaryInput = {
-  title: string;
-  updatedAt: string;
-  summary: string;
-  project: ProjectContextInput | null;
-};
+import type { TeammateChatSummary } from "@/lib/chat-summaries";
 
 type BuildAgentMemoryPromptInput = {
   agentName: string;
   agentRole: string;
   agentDescription: string;
-  chatSummaries: ChatSummaryInput[];
+  chatSummaries: TeammateChatSummary[];
 };
 
-function formatProjectContext(project: ProjectContextInput): string {
+function formatProjectContext(
+  project: NonNullable<TeammateChatSummary["project"]>,
+): string {
   const sections = [
     `Project: ${project.name.trim() || "Untitled project"}`,
     `Description: ${project.description.trim() || "No description provided."}`,
@@ -33,7 +23,7 @@ function formatProjectContext(project: ProjectContextInput): string {
   return sections.join("\n");
 }
 
-function formatChatSummaries(chatSummaries: ChatSummaryInput[]): string {
+function formatChatSummaries(chatSummaries: TeammateChatSummary[]): string {
   return chatSummaries
     .map((chat, index) => {
       const title = chat.title.trim() || "Untitled chat";

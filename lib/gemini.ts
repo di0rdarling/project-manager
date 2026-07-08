@@ -48,10 +48,15 @@ export async function generateChatReply(
   message: string,
   teammateId?: ChatTeammateId,
   projectContext?: string,
+  otherConversationsContext?: string,
 ): Promise<string> {
   const model = getGeminiClient().getGenerativeModel({
     model: getChatModelName(),
-    systemInstruction: buildChatSystemPrompt(teammateId, projectContext),
+    systemInstruction: buildChatSystemPrompt(
+      teammateId,
+      projectContext,
+      otherConversationsContext,
+    ),
   });
   const chat = model.startChat({
     history: history.map((entry) => ({

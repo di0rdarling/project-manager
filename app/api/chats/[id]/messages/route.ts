@@ -1,8 +1,10 @@
 import { ObjectId } from "mongodb";
 import { generateChatReply, generateConversationSummary } from "@/lib/gemini";
+import { getTeammateChatSummaries } from "@/lib/chat-summaries";
 import getClientPromise from "@/lib/mongodb";
 import { getProjectContext } from "@/lib/project-context";
 import { buildChatConversationSummaryPrompt } from "@/lib/prompts/chat-conversation-summary-prompt";
+import { buildChatOtherConversationsContext } from "@/lib/prompts/chat-other-conversations-prompt";
 import {
   buildChatTitleFromMessage,
   serializeChat,
@@ -71,6 +73,8 @@ export async function POST(request: Request, context: RouteContext) {
       content: message.content,
     }));
 
+    const chatResponse = serializeChat(result.chat);
+
     const projectContext = result.chat.projectId
       ? await getProjectContext(result.client.db(), result.chat.projectId, {
           requirementId: result.chat.requirementId ?? null,
@@ -78,12 +82,20 @@ export async function POST(request: Request, context: RouteContext) {
         })
       : null;
 
-    const chatResponse = serializeChat(result.chat);
+    const otherChatSummaries = await getTeammateChatSummaries(
+      result.client.db(),
+      chatResponse.teammateId,
+      { excludeChatId: result.chatObjectId },
+    );
+    const otherConversationsContext =
+      buildChatOtherConversationsContext(otherChatSummaries) ?? undefined;
+
     const assistantContent = await generateChatReply(
       history,
       content,
       chatResponse.teammateId,
       projectContext ?? undefined,
+      otherConversationsContext,
     );
     const now = new Date().toISOString();
     const userMessage: Omit<ChatMessage, "_id"> = {

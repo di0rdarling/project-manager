@@ -1,16 +1,13 @@
-import { ObjectId } from "mongodb";
 import {
   getChatTeammate,
   isChatTeammateId,
   type ChatTeammateId,
 } from "@/lib/chat-teammates";
+import { getTeammateChatSummaries } from "@/lib/chat-summaries";
 import { generateText } from "@/lib/gemini";
 import getClientPromise from "@/lib/mongodb";
 import { buildAgentMemoryPrompt } from "@/lib/prompts/agent-memory-prompt";
 import { toIsoString } from "@/lib/dates";
-import { stripRichText } from "@/lib/rich-text";
-import { type StoredChat } from "@/lib/serialize-chat";
-import { type StoredProject } from "@/lib/serialize-project";
 import type { AgentMemoryResponse } from "@/lib/types";
 
 type RouteContext = {
@@ -42,65 +39,6 @@ function parseTeammateId(teammateId: string) {
   }
 
   return { teammateId };
-}
-
-async function getChatSummariesForTeammate(teammateId: ChatTeammateId) {
-  const client = await getClientPromise();
-  const db = client.db();
-  const chats = await db
-    .collection<StoredChat>("chats")
-    .find({ teammateId })
-    .sort({ updatedAt: -1 })
-    .toArray();
-
-  const chatsWithSummaries = chats.filter(
-    (chat) =>
-      typeof chat.conversationSummary === "string" &&
-      chat.conversationSummary.trim().length > 0,
-  );
-
-  const projectIds = [
-    ...new Set(
-      chatsWithSummaries
-        .map((chat) => chat.projectId?.toString())
-        .filter((projectId): projectId is string => Boolean(projectId)),
-    ),
-  ].map((projectId) => new ObjectId(projectId));
-
-  const projects =
-    projectIds.length > 0
-      ? await db
-          .collection<StoredProject>("projects")
-          .find({ _id: { $in: projectIds } })
-          .toArray()
-      : [];
-
-  const projectById = new Map(
-    projects.map((project) => [project._id.toString(), project]),
-  );
-
-  return chatsWithSummaries.map((chat) => {
-    const project = chat.projectId
-      ? projectById.get(chat.projectId.toString())
-      : undefined;
-
-    return {
-      title: chat.title,
-      updatedAt: toIsoString(chat.updatedAt),
-      summary: chat.conversationSummary!.trim(),
-      project: project
-        ? {
-            name: project.name,
-            description: stripRichText(project.description),
-            aiSummary:
-              typeof project.aiSummary === "string" &&
-              project.aiSummary.trim().length > 0
-                ? project.aiSummary.trim()
-                : null,
-          }
-        : null,
-    };
-  });
 }
 
 export async function GET(_request: Request, context: RouteContext) {
@@ -136,7 +74,10 @@ export async function POST(_request: Request, context: RouteContext) {
       return parsed.error;
     }
 
-    const chatSummaries = await getChatSummariesForTeammate(parsed.teammateId);
+    const chatSummaries = await getTeammateChatSummaries(
+      (await getClientPromise()).db(),
+      parsed.teammateId,
+    );
 
     if (chatSummaries.length === 0) {
       return Response.json(
