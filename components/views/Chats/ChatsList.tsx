@@ -1,25 +1,43 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import { IconButton } from "@/components/ui/IconButton";
 import { getChatTeammate } from "@/lib/chat-teammates";
 import { formatDisplayDate } from "@/lib/dates";
-import type { ChatResponse } from "@/lib/types";
+import type { ChatListItemResponse } from "@/lib/types";
 import DeleteChatModal from "./modals/DeleteChatModal";
 import { TrashIcon } from "@heroicons/react/24/outline";
 
 interface ChatsListProps {
-  chats: ChatResponse[];
+  chats: ChatListItemResponse[];
   onDeleteSuccess?: (chatTitle: string) => void;
+}
+
+function ChatContextLabel({
+  children,
+  className,
+}: Readonly<{
+  children: ReactNode;
+  className: string;
+}>) {
+  return (
+    <span
+      className={`inline-flex max-w-full items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${className}`}
+    >
+      <span className="truncate">{children}</span>
+    </span>
+  );
 }
 
 export default function ChatsList({
   chats,
   onDeleteSuccess,
 }: Readonly<ChatsListProps>) {
-  const [chatToDelete, setChatToDelete] = useState<ChatResponse | null>(null);
+  const [chatToDelete, setChatToDelete] = useState<ChatListItemResponse | null>(
+    null,
+  );
 
   return (
     <>
@@ -47,7 +65,26 @@ export default function ChatsList({
                   />
                   <span className="min-w-0">
                     <h3 className="font-medium">{chat.title}</h3>
-                    <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                    {chat.project || chat.requirement || chat.feature ? (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {chat.project ? (
+                          <ChatContextLabel className="bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+                            {chat.project.name}
+                          </ChatContextLabel>
+                        ) : null}
+                        {chat.requirement ? (
+                          <ChatContextLabel className="bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-200">
+                            {chat.requirement.title}
+                          </ChatContextLabel>
+                        ) : null}
+                        {chat.feature ? (
+                          <ChatContextLabel className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
+                            {chat.feature.title}
+                          </ChatContextLabel>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                       {teammate.name} · Last updated{" "}
                       {formatDisplayDate(chat.updatedAt)}
                     </p>

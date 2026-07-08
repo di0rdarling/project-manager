@@ -1,4 +1,5 @@
 import { CONCISE_RESPONSE_STYLE_GUIDE, PLAIN_ENGLISH_STYLE_GUIDE } from "@/lib/prompts/style-guide";
+import { buildAiTeammatesRosterPrompt } from "@/lib/prompts/ai-teammates-roster";
 import {
   DEFAULT_CHAT_TEAMMATE_ID,
   getChatTeammatePersonalityTraits,
@@ -12,6 +13,8 @@ export function buildChatSystemPrompt(
 ): string {
   const sections = [
     ...getChatTeammatePersonalityTraits(teammateId),
+    "",
+    buildAiTeammatesRosterPrompt(teammateId),
     ...PLAIN_ENGLISH_STYLE_GUIDE,
     ...CONCISE_RESPONSE_STYLE_GUIDE,
     "You may use Markdown when formatting longer replies, such as headings, lists, bold text, and code blocks.",

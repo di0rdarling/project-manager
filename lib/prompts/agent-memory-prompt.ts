@@ -2,10 +2,13 @@ import {
   formatDisplayDateTime,
   getRelativeDayLabel,
 } from "@/lib/dates";
+import { buildAiTeammatesMemoryRosterPrompt } from "@/lib/prompts/ai-teammates-roster";
 import { PRESERVE_DETAIL_STYLE_GUIDE } from "@/lib/prompts/style-guide";
+import type { ChatTeammateId } from "@/lib/chat-teammates";
 import type { TeammateChatSummary } from "@/lib/chat-summaries";
 
 type BuildAgentMemoryPromptInput = {
+  teammateId: ChatTeammateId;
   agentName: string;
   agentRole: string;
   agentDescription: string;
@@ -71,6 +74,7 @@ function formatChatSummaries(
 }
 
 export function buildAgentMemoryPrompt({
+  teammateId,
   agentName,
   agentRole,
   agentDescription,
@@ -90,6 +94,9 @@ export function buildAgentMemoryPrompt({
     'Use "I" throughout.',
     "Base your response only on the conversation summaries and project details below — do not invent or generalize away details that are present in them.",
     "When a chat was linked to a project, ground what you remember in that project's description and summary as well as the conversation.",
+    "",
+    buildAiTeammatesMemoryRosterPrompt(teammateId),
+    "",
     "The conversations below are listed in chronological order (oldest to newest) by when they were last updated, and the most recent one is explicitly labeled.",
     "Use the timestamps to understand recency and sequence, but do not mechanically restate the full calendar date at the start of every paragraph — that reads as repetitive, especially when several conversations happened on the same day.",
     'For conversations marked "today", speak in the present: say "today", "earlier today", "we have been discussing", or "most recently" — do not refer to today\'s calendar date as if it were already behind you (avoid phrasing like "on July 8" or "back on July 8" when that date is today).',

@@ -1,14 +1,15 @@
 import { parseResponse } from "@/lib/api/response";
 import type { ChatTeammateId } from "@/lib/chat-teammates";
 import type {
+  ChatListItemResponse,
   ChatResponse,
   ChatWithMessagesResponse,
   SendChatMessageResponse,
 } from "@/lib/types";
 
-export async function fetchChats(): Promise<ChatResponse[]> {
+export async function fetchChats(): Promise<ChatListItemResponse[]> {
   const response = await fetch("/api/chats");
-  return parseResponse<ChatResponse[]>(response);
+  return parseResponse<ChatListItemResponse[]>(response);
 }
 
 export async function fetchChat(chatId: string): Promise<ChatWithMessagesResponse> {

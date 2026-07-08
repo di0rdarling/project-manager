@@ -170,6 +170,12 @@ type ChatBase<TId> = {
 export type Chat = ChatBase<ObjectId>;
 export type ChatResponse = ChatBase<string>;
 
+export type ChatListItemResponse = ChatResponse & {
+  project: { _id: string; name: string } | null;
+  requirement: { _id: string; title: string } | null;
+  feature: { _id: string; title: string } | null;
+};
+
 export type ChatWithMessagesResponse = ChatResponse & {
   messages: ChatMessageResponse[];
 };

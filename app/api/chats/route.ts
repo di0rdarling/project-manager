@@ -3,6 +3,7 @@ import {
   DEFAULT_CHAT_TEAMMATE_ID,
   isChatTeammateId,
 } from "@/lib/chat-teammates";
+import { serializeChatsWithContext } from "@/lib/chat-list-items";
 import getClientPromise from "@/lib/mongodb";
 import { serializeChat, type StoredChat } from "@/lib/serialize-chat";
 import type { StoredProject } from "@/lib/serialize-project";
@@ -11,14 +12,14 @@ import type { Chat } from "@/lib/types";
 export async function GET() {
   try {
     const client = await getClientPromise();
-    const chats = await client
-      .db()
+    const db = client.db();
+    const chats = await db
       .collection<StoredChat>("chats")
       .find({})
       .sort({ updatedAt: -1 })
       .toArray();
 
-    return Response.json(chats.map(serializeChat));
+    return Response.json(await serializeChatsWithContext(db, chats));
   } catch {
     return Response.json({ error: "Failed to fetch chats" }, { status: 500 });
   }

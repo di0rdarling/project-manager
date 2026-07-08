@@ -90,6 +90,7 @@ export async function POST(_request: Request, context: RouteContext) {
     const generatedAt = new Date();
     const memory = await generateAgentMemory(
       buildAgentMemoryPrompt({
+        teammateId: parsed.teammateId,
         agentName: teammate.name,
         agentRole: teammate.role,
         agentDescription: teammate.description,

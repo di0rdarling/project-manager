@@ -3,10 +3,10 @@
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
 import { fetchChats } from "@/lib/api/chats";
 import { chatKeys } from "@/lib/query-keys";
-import type { ChatResponse } from "@/lib/types";
+import type { ChatListItemResponse } from "@/lib/types";
 
 type UseFetchChatsOptions = Omit<
-  UseQueryOptions<ChatResponse[], Error>,
+  UseQueryOptions<ChatListItemResponse[], Error>,
   "queryKey" | "queryFn"
 >;
 
