@@ -4,7 +4,7 @@ import { parseConfidenceLevel } from "@/lib/domain-knowledge";
 import { stripRichText } from "@/lib/rich-text";
 import type { StoredProject } from "@/lib/serialize-project";
 import type { CoreUser, DomainKnowledge, Feature, Note, PainPoint, Requirement, Tool } from "@/lib/types";
-import { projectLevelNotesFilter } from "@/lib/notes";
+import { featureNotesFilter, projectLevelNotesFilter } from "@/lib/notes";
 
 type StoredRequirement = Omit<
   Requirement,
@@ -174,20 +174,28 @@ export async function getProjectContext(
     ]),
   );
 
-  const [focusedRequirement, focusedFeature] = await Promise.all([
-    focus?.requirementId
-      ? db.collection<StoredRequirement>("requirements").findOne({
-          _id: focus.requirementId,
-          projectId,
-        })
-      : Promise.resolve(null),
-    focus?.featureId
-      ? db.collection<StoredFeature>("features").findOne({
-          _id: focus.featureId,
-          projectId,
-        })
-      : Promise.resolve(null),
-  ]);
+  const [focusedRequirement, focusedFeature, focusedFeatureNotes] =
+    await Promise.all([
+      focus?.requirementId
+        ? db.collection<StoredRequirement>("requirements").findOne({
+            _id: focus.requirementId,
+            projectId,
+          })
+        : Promise.resolve(null),
+      focus?.featureId
+        ? db.collection<StoredFeature>("features").findOne({
+            _id: focus.featureId,
+            projectId,
+          })
+        : Promise.resolve(null),
+      focus?.featureId
+        ? db
+            .collection<StoredNote>("notes")
+            .find(featureNotesFilter(projectId, focus.featureId))
+            .sort({ createdAt: -1 })
+            .toArray()
+        : Promise.resolve([]),
+    ]);
 
   const projectContext = buildChatProjectContext({
     name: project.name,
@@ -228,6 +236,12 @@ export async function getProjectContext(
       title: note.title,
       content: note.content,
     })),
+    featureNotes: focus?.featureId
+      ? focusedFeatureNotes.map((note) => ({
+          title: note.title,
+          content: note.content,
+        }))
+      : undefined,
   });
 
   const focusSection = buildChatFocusSection(

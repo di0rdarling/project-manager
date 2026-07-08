@@ -33,6 +33,7 @@ type BuildChatProjectContextInput = {
   features: FeatureContextItem[];
   tools: ProjectContextItem[];
   notes: ProjectContextItem[];
+  featureNotes?: ProjectContextItem[];
 };
 
 function formatContentItems(
@@ -117,6 +118,7 @@ export function buildChatProjectContext({
   features,
   tools,
   notes,
+  featureNotes,
 }: BuildChatProjectContextInput): string {
   const sections = [
     `Project Name: ${name}`,
@@ -143,6 +145,10 @@ export function buildChatProjectContext({
     "",
     formatContentItems("Notes", notes),
   );
+
+  if (featureNotes !== undefined) {
+    sections.push("", formatContentItems("Feature Notes", featureNotes));
+  }
 
   return sections.join("\n");
 }
