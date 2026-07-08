@@ -131,6 +131,8 @@ export type ChatMessageResponse = ChatMessageBase<string>;
 type ChatBase<TId> = {
   _id: TId;
   projectId: TId | null;
+  requirementId: TId | null;
+  featureId: TId | null;
   teammateId: ChatTeammateId;
   title: string;
   createdAt: string;

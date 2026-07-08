@@ -14,7 +14,12 @@ type UseCreateChatOptions = Omit<
   UseMutationOptions<
     ChatResponse,
     Error,
-    { projectId: string; teammateId: ChatTeammateId }
+    {
+      projectId: string;
+      teammateId: ChatTeammateId;
+      requirementId?: string | null;
+      featureId?: string | null;
+    }
   >,
   "mutationFn"
 >;

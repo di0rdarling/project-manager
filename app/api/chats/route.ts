@@ -52,9 +52,73 @@ export async function POST(request: Request) {
       ? body.teammateId
       : DEFAULT_CHAT_TEAMMATE_ID;
 
+    const requirementId =
+      typeof body.requirementId === "string" && body.requirementId.trim()
+        ? body.requirementId.trim()
+        : null;
+    const featureId =
+      typeof body.featureId === "string" && body.featureId.trim()
+        ? body.featureId.trim()
+        : null;
+
+    if (requirementId && !ObjectId.isValid(requirementId)) {
+      return Response.json(
+        { error: "Invalid requirement id" },
+        { status: 400 },
+      );
+    }
+
+    if (featureId && !ObjectId.isValid(featureId)) {
+      return Response.json({ error: "Invalid feature id" }, { status: 400 });
+    }
+
+    if (featureId && !requirementId) {
+      return Response.json(
+        { error: "A requirement must be selected when choosing a feature" },
+        { status: 400 },
+      );
+    }
+
+    if (requirementId) {
+      const requirement = await db.collection("requirements").findOne({
+        _id: new ObjectId(requirementId),
+        projectId: projectObjectId,
+      });
+
+      if (!requirement) {
+        return Response.json(
+          { error: "Requirement not found" },
+          { status: 400 },
+        );
+      }
+    }
+
+    if (featureId) {
+      const feature = await db.collection("features").findOne({
+        _id: new ObjectId(featureId),
+        projectId: projectObjectId,
+      });
+
+      if (!feature) {
+        return Response.json({ error: "Feature not found" }, { status: 400 });
+      }
+
+      if (
+        !feature.requirementId ||
+        feature.requirementId.toString() !== requirementId
+      ) {
+        return Response.json(
+          { error: "Feature is not linked to the selected requirement" },
+          { status: 400 },
+        );
+      }
+    }
+
     const now = new Date().toISOString();
     const chat: Omit<Chat, "_id"> = {
       projectId: projectObjectId,
+      requirementId: requirementId ? new ObjectId(requirementId) : null,
+      featureId: featureId ? new ObjectId(featureId) : null,
       teammateId,
       title: "New Chat",
       createdAt: now,

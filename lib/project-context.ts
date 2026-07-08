@@ -1,6 +1,7 @@
 import type { Db, ObjectId } from "mongodb";
 import { buildChatProjectContext } from "@/lib/prompts/chat-project-context-prompt";
 import { parseConfidenceLevel } from "@/lib/domain-knowledge";
+import { stripRichText } from "@/lib/rich-text";
 import type { StoredProject } from "@/lib/serialize-project";
 import type { CoreUser, DomainKnowledge, Feature, Note, PainPoint, Requirement, Tool } from "@/lib/types";
 
@@ -69,9 +70,54 @@ type StoredDomainKnowledge = Omit<
   updatedAt: string | Date;
 };
 
+type ProjectContextFocus = {
+  requirementId?: ObjectId | null;
+  featureId?: ObjectId | null;
+};
+
+function buildChatFocusSection(
+  requirement: StoredRequirement | null,
+  feature: StoredFeature | null,
+): string | null {
+  if (!requirement && !feature) {
+    return null;
+  }
+
+  const sections = ["", "Chat Focus:"];
+
+  if (requirement) {
+    sections.push(
+      "The user started this chat to discuss the following requirement. Prioritize this topic in your replies:",
+      `Requirement: ${requirement.title.trim() || "Untitled requirement"}`,
+      stripRichText(requirement.content) || "No content provided.",
+    );
+  }
+
+  if (feature) {
+    if (requirement) {
+      sections.push(
+        "",
+        "They also want to focus on this linked feature:",
+      );
+    } else {
+      sections.push(
+        "The user started this chat to discuss the following feature. Prioritize this topic in your replies:",
+      );
+    }
+
+    sections.push(
+      `Feature: ${feature.title.trim() || "Untitled feature"}`,
+      stripRichText(feature.content) || "No description provided.",
+    );
+  }
+
+  return sections.join("\n");
+}
+
 export async function getProjectContext(
   db: Db,
   projectId: ObjectId,
+  focus?: ProjectContextFocus,
 ): Promise<string | null> {
   const project = await db
     .collection<StoredProject>("projects")
@@ -127,7 +173,22 @@ export async function getProjectContext(
     ]),
   );
 
-  return buildChatProjectContext({
+  const [focusedRequirement, focusedFeature] = await Promise.all([
+    focus?.requirementId
+      ? db.collection<StoredRequirement>("requirements").findOne({
+          _id: focus.requirementId,
+          projectId,
+        })
+      : Promise.resolve(null),
+    focus?.featureId
+      ? db.collection<StoredFeature>("features").findOne({
+          _id: focus.featureId,
+          projectId,
+        })
+      : Promise.resolve(null),
+  ]);
+
+  const projectContext = buildChatProjectContext({
     name: project.name,
     description: project.description,
     aiSummary: project.aiSummary,
@@ -167,4 +228,11 @@ export async function getProjectContext(
       content: note.content,
     })),
   });
+
+  const focusSection = buildChatFocusSection(
+    focusedRequirement,
+    focusedFeature,
+  );
+
+  return focusSection ? `${projectContext}${focusSection}` : projectContext;
 }

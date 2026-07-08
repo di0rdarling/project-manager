@@ -19,6 +19,8 @@ export async function fetchChat(chatId: string): Promise<ChatWithMessagesRespons
 export async function createChat(input: {
   projectId: string;
   teammateId: ChatTeammateId;
+  requirementId?: string | null;
+  featureId?: string | null;
 }): Promise<ChatResponse> {
   const response = await fetch("/api/chats", {
     method: "POST",

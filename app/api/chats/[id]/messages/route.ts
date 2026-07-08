@@ -71,7 +71,10 @@ export async function POST(request: Request, context: RouteContext) {
     }));
 
     const projectContext = result.chat.projectId
-      ? await getProjectContext(result.client.db(), result.chat.projectId)
+      ? await getProjectContext(result.client.db(), result.chat.projectId, {
+          requirementId: result.chat.requirementId ?? null,
+          featureId: result.chat.featureId ?? null,
+        })
       : null;
 
     const chatResponse = serializeChat(result.chat);

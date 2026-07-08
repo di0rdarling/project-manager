@@ -7,7 +7,12 @@ import type {
   ChatResponse,
 } from "@/lib/types";
 
-export type StoredChat = Omit<Chat, "createdAt" | "updatedAt" | "teammateId"> & {
+export type StoredChat = Omit<
+  Chat,
+  "createdAt" | "updatedAt" | "teammateId" | "requirementId" | "featureId"
+> & {
+  requirementId?: Chat["requirementId"];
+  featureId?: Chat["featureId"];
   teammateId?: Chat["teammateId"];
   createdAt: string | Date;
   updatedAt: string | Date;
@@ -22,6 +27,8 @@ export function serializeChat(chat: StoredChat): ChatResponse {
   return {
     _id: chat._id.toString(),
     projectId: chat.projectId ? chat.projectId.toString() : null,
+    requirementId: chat.requirementId ? chat.requirementId.toString() : null,
+    featureId: chat.featureId ? chat.featureId.toString() : null,
     teammateId: isChatTeammateId(chat.teammateId)
       ? chat.teammateId
       : DEFAULT_CHAT_TEAMMATE_ID,

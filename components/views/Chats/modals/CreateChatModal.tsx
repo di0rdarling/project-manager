@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
@@ -10,7 +10,9 @@ import { AvatarSelect } from "@/components/ui/inputs/AvatarSelect";
 import { Select } from "@/components/ui/inputs/Select";
 import { Modal } from "@/components/ui/Modal";
 import { useCreateChat } from "@/hooks/mutations/chats/useCreateChat";
+import { useFetchFeatures } from "@/hooks/queries/useFetchFeatures";
 import { useFetchProjects } from "@/hooks/queries/useFetchProjects";
+import { useFetchRequirements } from "@/hooks/queries/useFetchRequirements";
 import {
   CHAT_TEAMMATES,
   DEFAULT_CHAT_TEAMMATE_ID,
@@ -43,6 +45,8 @@ export default function CreateChatModal({
   onSuccess,
 }: CreateChatModalProps) {
   const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [selectedRequirementId, setSelectedRequirementId] = useState("");
+  const [selectedFeatureId, setSelectedFeatureId] = useState("");
   const [selectedTeammateId, setSelectedTeammateId] = useState<ChatTeammateId>(
     DEFAULT_CHAT_TEAMMATE_ID,
   );
@@ -54,19 +58,54 @@ export default function CreateChatModal({
     error: projectsError,
   } = useFetchProjects({ enabled: open });
 
+  const effectiveProjectId =
+    selectedProjectId && projects.some((project) => project._id === selectedProjectId)
+      ? selectedProjectId
+      : (projects[0]?._id ?? "");
+
+  const {
+    data: requirements = [],
+    isPending: isLoadingRequirements,
+    isError: isRequirementsError,
+    error: requirementsError,
+  } = useFetchRequirements(effectiveProjectId, {
+    enabled: open && Boolean(effectiveProjectId),
+  });
+
+  const {
+    data: features = [],
+    isPending: isLoadingFeatures,
+    isError: isFeaturesError,
+    error: featuresError,
+  } = useFetchFeatures(effectiveProjectId, {
+    enabled: open && Boolean(effectiveProjectId),
+  });
+
+  const linkedFeatures = selectedRequirementId
+    ? features.filter(
+        (feature) => feature.requirementId === selectedRequirementId,
+      )
+    : [];
+
+  useEffect(() => {
+    setSelectedRequirementId("");
+    setSelectedFeatureId("");
+  }, [effectiveProjectId]);
+
+  useEffect(() => {
+    setSelectedFeatureId("");
+  }, [selectedRequirementId]);
+
   const createChatMutation = useCreateChat({
     onSuccess: (chat) => {
       setSelectedProjectId("");
+      setSelectedRequirementId("");
+      setSelectedFeatureId("");
       setSelectedTeammateId(DEFAULT_CHAT_TEAMMATE_ID);
       onSuccess(chat._id);
       onClose();
     },
   });
-
-  const effectiveProjectId =
-    selectedProjectId && projects.some((project) => project._id === selectedProjectId)
-      ? selectedProjectId
-      : (projects[0]?._id ?? "");
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -78,6 +117,8 @@ export default function CreateChatModal({
     createChatMutation.mutate({
       projectId: effectiveProjectId,
       teammateId: selectedTeammateId,
+      requirementId: selectedRequirementId || null,
+      featureId: selectedFeatureId || null,
     });
   }
 
@@ -87,6 +128,8 @@ export default function CreateChatModal({
     }
 
     setSelectedProjectId("");
+    setSelectedRequirementId("");
+    setSelectedFeatureId("");
     setSelectedTeammateId(DEFAULT_CHAT_TEAMMATE_ID);
     createChatMutation.reset();
     onClose();
@@ -97,13 +140,20 @@ export default function CreateChatModal({
       ? createChatMutation.error.message
       : null;
 
+  const isLoadingProjectDetails =
+    Boolean(effectiveProjectId) &&
+    (isLoadingRequirements || isLoadingFeatures);
+  const hasProjectDetailsError =
+    Boolean(effectiveProjectId) &&
+    (isRequirementsError || isFeaturesError);
+
   return (
     <Modal open={open} onClose={handleClose} title="Start a new chat">
       <form onSubmit={handleSubmit} className="space-y-4">
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Choose a project to discuss and who you&apos;d like to talk to. The
-          AI will use that project&apos;s details as context for the
-          conversation.
+          Choose a project to discuss and who you&apos;d like to talk to. You
+          can optionally narrow the conversation to a specific requirement or
+          linked feature.
         </p>
 
         <AvatarSelect
@@ -135,17 +185,61 @@ export default function CreateChatModal({
             </Link>
           </div>
         ) : (
-          <Select
-            id="projectId"
-            label="Project"
-            value={effectiveProjectId}
-            onChange={(event) => setSelectedProjectId(event.target.value)}
-            options={projects.map((project) => ({
-              value: project._id,
-              label: project.name,
-            }))}
-            required
-          />
+          <>
+            <Select
+              id="projectId"
+              label="Project"
+              value={effectiveProjectId}
+              onChange={(event) => setSelectedProjectId(event.target.value)}
+              options={projects.map((project) => ({
+                value: project._id,
+                label: project.name,
+              }))}
+              required
+            />
+
+            {isLoadingProjectDetails ? (
+              <LoadingMessage>Loading project details...</LoadingMessage>
+            ) : hasProjectDetailsError ? (
+              <ErrorMessage
+                error={requirementsError ?? featuresError}
+                fallbackMessage="Failed to load project requirements and features"
+              />
+            ) : requirements.length > 0 ? (
+              <Select
+                id="requirementId"
+                label="Requirement (optional)"
+                value={selectedRequirementId}
+                onChange={(event) =>
+                  setSelectedRequirementId(event.target.value)
+                }
+                options={[
+                  { value: "", label: "No specific requirement" },
+                  ...requirements.map((requirement) => ({
+                    value: requirement._id,
+                    label:
+                      requirement.title.trim() || "Untitled requirement",
+                  })),
+                ]}
+              />
+            ) : null}
+
+            {selectedRequirementId && linkedFeatures.length > 0 ? (
+              <Select
+                id="featureId"
+                label="Feature (optional)"
+                value={selectedFeatureId}
+                onChange={(event) => setSelectedFeatureId(event.target.value)}
+                options={[
+                  { value: "", label: "No specific feature" },
+                  ...linkedFeatures.map((feature) => ({
+                    value: feature._id,
+                    label: feature.title.trim() || "Untitled feature",
+                  })),
+                ]}
+              />
+            ) : null}
+          </>
         )}
 
         {formError ? (
@@ -168,7 +262,9 @@ export default function CreateChatModal({
               isLoadingProjects ||
               isProjectsError ||
               projects.length === 0 ||
-              !effectiveProjectId
+              !effectiveProjectId ||
+              isLoadingProjectDetails ||
+              hasProjectDetailsError
             }
           >
             {createChatMutation.isPending ? "Starting..." : "Start chat"}
