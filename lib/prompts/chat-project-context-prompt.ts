@@ -16,6 +16,12 @@ type DomainKnowledgeContextItem = {
   confidenceLevel: DomainKnowledgeConfidenceLevel | null;
 };
 
+type FeatureContextItem = {
+  title: string;
+  content: string;
+  linkedRequirementTitle?: string | null;
+};
+
 type BuildChatProjectContextInput = {
   name: string;
   description: string;
@@ -24,6 +30,7 @@ type BuildChatProjectContextInput = {
   painPoints: ProjectContextItem[];
   domainKnowledge: DomainKnowledgeContextItem[];
   requirements: ProjectContextItem[];
+  features: FeatureContextItem[];
   tools: ProjectContextItem[];
   notes: ProjectContextItem[];
 };
@@ -78,6 +85,27 @@ function formatDomainKnowledgeItems(items: DomainKnowledgeContextItem[]): string
   return `Domain Knowledge:\n${formattedItems}`;
 }
 
+function formatFeatureItems(items: FeatureContextItem[]): string {
+  if (items.length === 0) {
+    return "Features: None";
+  }
+
+  const formattedItems = items
+    .map((item, index) => {
+      const heading = item.title.trim() || "Untitled feature";
+      const content = stripRichText(item.content);
+      const linkedRequirement = item.linkedRequirementTitle?.trim();
+      const linkedLine = linkedRequirement
+        ? `\n   Linked requirement: ${linkedRequirement}`
+        : "";
+
+      return `${index + 1}. ${heading}${linkedLine}\n   ${content || "No description provided."}`;
+    })
+    .join("\n");
+
+  return `Features:\n${formattedItems}`;
+}
+
 export function buildChatProjectContext({
   name,
   description,
@@ -86,6 +114,7 @@ export function buildChatProjectContext({
   painPoints,
   domainKnowledge,
   requirements,
+  features,
   tools,
   notes,
 }: BuildChatProjectContextInput): string {
@@ -107,6 +136,8 @@ export function buildChatProjectContext({
     formatDomainKnowledgeItems(domainKnowledge),
     "",
     formatContentItems("Requirements", requirements),
+    "",
+    formatFeatureItems(features),
     "",
     formatContentItems("Tools", tools),
     "",

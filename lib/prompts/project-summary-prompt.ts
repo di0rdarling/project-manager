@@ -17,6 +17,12 @@ type SummaryDomainKnowledgeItem = {
   confidenceLevel: DomainKnowledgeConfidenceLevel | null;
 };
 
+type SummaryFeatureItem = {
+  title: string;
+  content: string;
+  linkedRequirementTitle?: string | null;
+};
+
 type BuildProjectSummaryPromptInput = {
   name: string;
   description: string;
@@ -24,6 +30,7 @@ type BuildProjectSummaryPromptInput = {
   painPoints: SummaryContentItem[];
   domainKnowledge: SummaryDomainKnowledgeItem[];
   requirements: SummaryContentItem[];
+  features: SummaryFeatureItem[];
   tools: SummaryContentItem[];
   notes: SummaryContentItem[];
 };
@@ -80,6 +87,27 @@ function formatDomainKnowledgeItems(
   return `Domain Knowledge:\n${formattedItems}`;
 }
 
+function formatFeatureItems(items: SummaryFeatureItem[]): string {
+  if (items.length === 0) {
+    return "Features: None";
+  }
+
+  const formattedItems = items
+    .map((item, index) => {
+      const heading = item.title.trim() || "Untitled feature";
+      const content = stripRichText(item.content);
+      const linkedRequirement = item.linkedRequirementTitle?.trim();
+      const linkedLine = linkedRequirement
+        ? `\n   Linked requirement: ${linkedRequirement}`
+        : "";
+
+      return `${index + 1}. ${heading}${linkedLine}\n   ${content || "No description provided."}`;
+    })
+    .join("\n");
+
+  return `Features:\n${formattedItems}`;
+}
+
 export function buildProjectSummaryPrompt({
   name,
   description,
@@ -87,13 +115,14 @@ export function buildProjectSummaryPrompt({
   painPoints,
   domainKnowledge,
   requirements,
+  features,
   tools,
   notes,
 }: BuildProjectSummaryPromptInput): string {
   const sections = [
     "You are a project management assistant.",
     "Write a concise 2-3 paragraph overview of the project below.",
-    "Synthesize the project's purpose, key stakeholders, pain points, domain knowledge, requirements, tools, and important notes.",
+    "Synthesize the project's purpose, key stakeholders, pain points, domain knowledge, requirements, features, tools, and important notes.",
     ...PLAIN_ENGLISH_STYLE_GUIDE,
     "Use clear plain text with no markdown or bullet lists.",
     "",
@@ -107,6 +136,8 @@ export function buildProjectSummaryPrompt({
     formatDomainKnowledgeItems(domainKnowledge),
     "",
     formatContentItems("Requirements", requirements),
+    "",
+    formatFeatureItems(features),
     "",
     formatContentItems("Tools", tools),
     "",

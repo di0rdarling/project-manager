@@ -5,7 +5,7 @@ import {
   serializeProject,
   type StoredProject,
 } from "@/lib/serialize-project";
-import type { CoreUser, DomainKnowledge, Note, PainPoint, Requirement, Tool } from "@/lib/types";
+import type { CoreUser, DomainKnowledge, Feature, Note, PainPoint, Requirement, Tool } from "@/lib/types";
 import { buildProjectSummaryPrompt } from "@/lib/prompts/project-summary-prompt";
 
 type RouteContext = {
@@ -18,6 +18,17 @@ type StoredRequirement = Omit<
 > & {
   _id: Requirement["_id"];
   projectId: Requirement["projectId"];
+  createdAt: string | Date;
+  updatedAt: string | Date;
+};
+
+type StoredFeature = Omit<
+  Feature,
+  "_id" | "projectId" | "requirementId" | "createdAt" | "updatedAt"
+> & {
+  _id: Feature["_id"];
+  projectId: Feature["projectId"];
+  requirementId: Feature["requirementId"];
   createdAt: string | Date;
   updatedAt: string | Date;
 };
@@ -92,7 +103,7 @@ export async function POST(_request: Request, context: RouteContext) {
       return Response.json({ error: "Project not found" }, { status: 404 });
     }
 
-    const [coreUsers, painPoints, domainKnowledge, requirements, tools, notes] =
+    const [coreUsers, painPoints, domainKnowledge, requirements, features, tools, notes] =
       await Promise.all([
       db
         .collection<StoredCoreUser>("coreUsers")
@@ -115,6 +126,11 @@ export async function POST(_request: Request, context: RouteContext) {
         .sort({ createdAt: -1 })
         .toArray(),
       db
+        .collection<StoredFeature>("features")
+        .find({ projectId: projectObjectId })
+        .sort({ createdAt: -1 })
+        .toArray(),
+      db
         .collection<StoredTool>("tools")
         .find({ projectId: projectObjectId })
         .sort({ createdAt: -1 })
@@ -125,6 +141,13 @@ export async function POST(_request: Request, context: RouteContext) {
         .sort({ createdAt: -1 })
         .toArray(),
     ]);
+
+    const requirementTitles = new Map(
+      requirements.map((requirement) => [
+        requirement._id.toString(),
+        requirement.title.trim() || "Untitled requirement",
+      ]),
+    );
 
     const prompt = buildProjectSummaryPrompt({
       name: project.name,
@@ -147,6 +170,14 @@ export async function POST(_request: Request, context: RouteContext) {
       requirements: requirements.map((requirement) => ({
         title: requirement.title,
         content: requirement.content,
+      })),
+      features: features.map((feature) => ({
+        title: feature.title,
+        content: feature.content,
+        linkedRequirementTitle: feature.requirementId
+          ? requirementTitles.get(feature.requirementId.toString()) ??
+            "Unknown requirement"
+          : null,
       })),
       tools: tools.map((tool) => ({
         name: tool.name,
