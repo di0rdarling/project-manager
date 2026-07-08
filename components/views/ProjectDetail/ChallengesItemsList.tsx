@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
-import { IconButton } from "@/components/ui/IconButton";
+import {
+  deleteItemAction,
+  editItemAction,
+  ItemActionsMenu,
+} from "@/components/ui/ItemActionsMenu";
+import { ListItemDate } from "@/components/ui/ListItemDate";
 import { RichTextContent } from "@/components/ui/inputs/richText/RichTextContent";
 import { getChallengeStatusLabel } from "@/lib/challenges";
-import { formatDisplayDate } from "@/lib/dates";
 import type { ChallengeResponse } from "@/lib/types";
 
 interface ItemModalRenderProps {
@@ -55,15 +58,18 @@ export default function ChallengesItemsList({
           >
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1 space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-md font-semibold text-zinc-900 dark:text-zinc-100">
-                    {item.title}
-                  </h3>
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeClassName(item.status)}`}
-                  >
-                    {getChallengeStatusLabel(item.status)}
-                  </span>
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-md font-semibold text-zinc-900 dark:text-zinc-100">
+                      {item.title}
+                    </h3>
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeClassName(item.status)}`}
+                    >
+                      {getChallengeStatusLabel(item.status)}
+                    </span>
+                  </div>
+                  <ListItemDate dateTime={item.createdAt} />
                 </div>
 
                 <div className="space-y-1">
@@ -77,29 +83,14 @@ export default function ChallengesItemsList({
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-start gap-1">
-                <time
-                  dateTime={item.createdAt}
-                  className="pt-2 text-xs text-zinc-500"
-                >
-                  {formatDisplayDate(item.createdAt)}
-                </time>
-                <IconButton
-                  type="button"
-                  aria-label="Edit challenge"
-                  onClick={() => setItemToEdit(item)}
-                >
-                  <PencilIcon className="size-4" />
-                </IconButton>
-                <IconButton
-                  type="button"
-                  variant="danger"
-                  aria-label="Delete challenge"
-                  onClick={() => setItemToDelete(item)}
-                >
-                  <TrashIcon className="size-4 text-red-500" />
-                </IconButton>
-              </div>
+              <ItemActionsMenu
+                actions={[
+                  editItemAction("Edit challenge", () => setItemToEdit(item)),
+                  deleteItemAction("Delete challenge", () =>
+                    setItemToDelete(item),
+                  ),
+                ]}
+              />
             </div>
           </li>
         ))}

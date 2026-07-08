@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
-import { IconButton } from "@/components/ui/IconButton";
+import {
+  deleteItemAction,
+  editItemAction,
+  ItemActionsMenu,
+} from "@/components/ui/ItemActionsMenu";
+import { ListItemDate } from "@/components/ui/ListItemDate";
 import { RichTextContent } from "@/components/ui/inputs/richText/RichTextContent";
 import { getRequirementPriorityLabel } from "@/lib/requirements";
-import { formatDisplayDate } from "@/lib/dates";
 import type { RequirementPriority, RequirementResponse } from "@/lib/types";
 
 interface ItemModalRenderProps {
@@ -57,46 +60,34 @@ export default function RequirementsItemsList({
           >
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1 space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-md font-semibold text-zinc-900 dark:text-zinc-100">
-                    {item.title}
-                  </h3>
-                  {item.priority ? (
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${getPriorityBadgeClassName(item.priority)}`}
-                    >
-                      {getRequirementPriorityLabel(item.priority)}
-                    </span>
-                  ) : null}
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-md font-semibold text-zinc-900 dark:text-zinc-100">
+                      {item.title}
+                    </h3>
+                    {item.priority ? (
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${getPriorityBadgeClassName(item.priority)}`}
+                      >
+                        {getRequirementPriorityLabel(item.priority)}
+                      </span>
+                    ) : null}
+                  </div>
+                  <ListItemDate dateTime={item.createdAt} />
                 </div>
                 <RichTextContent
                   content={item.content}
                   className="text-sm text-zinc-800 dark:text-zinc-200"
                 />
               </div>
-              <div className="flex shrink-0 items-start gap-1">
-                <time
-                  dateTime={item.createdAt}
-                  className="pt-2 text-xs text-zinc-500"
-                >
-                  {formatDisplayDate(item.createdAt)}
-                </time>
-                <IconButton
-                  type="button"
-                  aria-label="Edit requirement"
-                  onClick={() => setItemToEdit(item)}
-                >
-                  <PencilIcon className="size-4" />
-                </IconButton>
-                <IconButton
-                  type="button"
-                  variant="danger"
-                  aria-label="Delete requirement"
-                  onClick={() => setItemToDelete(item)}
-                >
-                  <TrashIcon className="size-4 text-red-500" />
-                </IconButton>
-              </div>
+              <ItemActionsMenu
+                actions={[
+                  editItemAction("Edit requirement", () => setItemToEdit(item)),
+                  deleteItemAction("Delete requirement", () =>
+                    setItemToDelete(item),
+                  ),
+                ]}
+              />
             </div>
           </li>
         ))}

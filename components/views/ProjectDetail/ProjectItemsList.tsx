@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
-import { IconButton } from "@/components/ui/IconButton";
+import {
+  deleteItemAction,
+  editItemAction,
+  ItemActionsMenu,
+} from "@/components/ui/ItemActionsMenu";
+import { ListItemDate } from "@/components/ui/ListItemDate";
 import { RichTextContent } from "@/components/ui/inputs/richText/RichTextContent";
 import type { ProjectContentItem } from "@/lib/types";
-import { formatDisplayDate } from "@/lib/dates";
 
 interface ItemModalRenderProps<T extends ProjectContentItem> {
   open: boolean;
@@ -48,10 +51,15 @@ export default function ProjectItemsList<T extends ProjectContentItem>({
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1 space-y-2">
                 {heading ? (
-                  <h3 className="text-md font-semibold text-zinc-900 dark:text-zinc-100">
-                    {heading}
-                  </h3>
-                ) : null}
+                  <div className="space-y-1">
+                    <h3 className="text-md font-semibold text-zinc-900 dark:text-zinc-100">
+                      {heading}
+                    </h3>
+                    <ListItemDate dateTime={item.createdAt} />
+                  </div>
+                ) : (
+                  <ListItemDate dateTime={item.createdAt} />
+                )}
                 {item.role ? (
                   <p className="text-sm text-zinc-500 dark:text-zinc-400">
                     {item.role}
@@ -62,29 +70,14 @@ export default function ProjectItemsList<T extends ProjectContentItem>({
                   className="text-sm text-zinc-800 dark:text-zinc-200"
                 />
               </div>
-              <div className="flex shrink-0 items-start gap-1">
-                <time
-                  dateTime={item.createdAt}
-                  className="pt-2 text-xs text-zinc-500"
-                >
-                  {formatDisplayDate(item.createdAt)}
-                </time>
-                <IconButton
-                  type="button"
-                  aria-label={`Edit ${itemLabel}`}
-                  onClick={() => setItemToEdit(item)}
-                >
-                  <PencilIcon className="size-4" />
-                </IconButton>
-                <IconButton
-                  type="button"
-                  variant="danger"
-                  aria-label={`Delete ${itemLabel}`}
-                  onClick={() => setItemToDelete(item)}
-                >
-                  <TrashIcon className="size-4 text-red-500" />
-                </IconButton>
-              </div>
+              <ItemActionsMenu
+                actions={[
+                  editItemAction(`Edit ${itemLabel}`, () => setItemToEdit(item)),
+                  deleteItemAction(`Delete ${itemLabel}`, () =>
+                    setItemToDelete(item),
+                  ),
+                ]}
+              />
             </div>
           </li>
           );

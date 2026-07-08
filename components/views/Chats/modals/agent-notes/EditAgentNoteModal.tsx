@@ -6,12 +6,13 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/inputs/Input";
 import { RichTextEditor } from "@/components/ui/inputs/richText/RichTextEditor";
 import { useUpdateAgentNote } from "@/hooks/mutations/agent-notes/useUpdateAgentNote";
+import type { ChatTeammateId } from "@/lib/chat-teammates";
 import type { AgentNoteResponse } from "@/lib/types";
 import { isRichTextEmpty } from "@/lib/rich-text";
 
 type EditAgentNoteModalProps = {
   open: boolean;
-  teammateId: string;
+  teammateId: ChatTeammateId;
   note: AgentNoteResponse | null;
   onClose: () => void;
   onSuccess: () => void;

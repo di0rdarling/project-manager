@@ -2,11 +2,12 @@
 
 import { useState, type ReactNode } from "react";
 import {
-  PencilIcon,
-  ShareIcon,
-  TrashIcon,
-} from "@heroicons/react/24/outline";
-import { IconButton } from "@/components/ui/IconButton";
+  deleteItemAction,
+  editItemAction,
+  ItemActionsMenu,
+  shareItemAction,
+} from "@/components/ui/ItemActionsMenu";
+import { ListItemDate } from "@/components/ui/ListItemDate";
 import { TruncatedRichTextContent } from "@/components/ui/inputs/richText/TruncatedRichTextContent";
 import { isAgentNoteOwner } from "@/lib/agent-notes";
 import {
@@ -14,7 +15,6 @@ import {
   type ChatTeammateId,
 } from "@/lib/chat-teammates";
 import type { AgentNoteResponse } from "@/lib/types";
-import { formatDisplayDate } from "@/lib/dates";
 
 interface ItemModalRenderProps {
   open: boolean;
@@ -96,6 +96,7 @@ export default function AIAgentNotesList({
                         {note.title}
                       </h3>
                     ) : null}
+                    <ListItemDate dateTime={note.createdAt} />
                     {sharedWithLabel ? (
                       <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
                         {sharedWithLabel}
@@ -107,40 +108,21 @@ export default function AIAgentNotesList({
                     className="text-sm text-zinc-800 dark:text-zinc-200"
                   />
                 </div>
-                <div className="flex shrink-0 items-start gap-1">
-                  <time
-                    dateTime={note.createdAt}
-                    className="pt-2 text-xs text-zinc-500"
-                  >
-                    {formatDisplayDate(note.createdAt)}
-                  </time>
-                  {isOwner ? (
-                    <>
-                      <IconButton
-                        type="button"
-                        aria-label="Share note"
-                        onClick={() => setNoteToShare(note)}
-                      >
-                        <ShareIcon className="size-4" />
-                      </IconButton>
-                      <IconButton
-                        type="button"
-                        aria-label="Edit note"
-                        onClick={() => setNoteToEdit(note)}
-                      >
-                        <PencilIcon className="size-4" />
-                      </IconButton>
-                      <IconButton
-                        type="button"
-                        variant="danger"
-                        aria-label="Delete note"
-                        onClick={() => setNoteToDelete(note)}
-                      >
-                        <TrashIcon className="size-4 text-red-500" />
-                      </IconButton>
-                    </>
-                  ) : null}
-                </div>
+                <ItemActionsMenu
+                  actions={
+                    isOwner
+                      ? [
+                          shareItemAction("Share note", () =>
+                            setNoteToShare(note),
+                          ),
+                          editItemAction("Edit note", () => setNoteToEdit(note)),
+                          deleteItemAction("Delete note", () =>
+                            setNoteToDelete(note),
+                          ),
+                        ]
+                      : []
+                  }
+                />
               </div>
             </li>
           );

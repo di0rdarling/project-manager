@@ -3,12 +3,11 @@
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { Avatar } from "@/components/ui/Avatar";
-import { IconButton } from "@/components/ui/IconButton";
+import { deleteItemAction, ItemActionsMenu } from "@/components/ui/ItemActionsMenu";
 import { getChatTeammate } from "@/lib/chat-teammates";
 import { formatDisplayDate } from "@/lib/dates";
 import type { ChatListItemResponse } from "@/lib/types";
 import DeleteChatModal from "./modals/DeleteChatModal";
-import { TrashIcon } from "@heroicons/react/24/outline";
 
 interface ChatsListProps {
   chats: ChatListItemResponse[];
@@ -90,16 +89,13 @@ export default function ChatsList({
                     </p>
                   </span>
                 </Link>
-                <div className="flex shrink-0 items-start gap-1">
-                  <IconButton
-                    type="button"
-                    variant="danger"
-                    aria-label={`Delete ${chat.title}`}
-                    onClick={() => setChatToDelete(chat)}
-                  >
-                    <TrashIcon className="size-4 text-red-500" />
-                  </IconButton>
-                </div>
+                <ItemActionsMenu
+                  actions={[
+                    deleteItemAction(`Delete ${chat.title}`, () =>
+                      setChatToDelete(chat),
+                    ),
+                  ]}
+                />
               </div>
             </li>
           );

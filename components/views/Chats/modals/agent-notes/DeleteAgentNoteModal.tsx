@@ -3,12 +3,13 @@
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { useDeleteAgentNote } from "@/hooks/mutations/agent-notes/useDeleteAgentNote";
+import type { ChatTeammateId } from "@/lib/chat-teammates";
 import type { AgentNoteResponse } from "@/lib/types";
 import { getRichTextPreview } from "@/lib/rich-text";
 
 type DeleteAgentNoteModalProps = {
   open: boolean;
-  teammateId: string;
+  teammateId: ChatTeammateId;
   note: AgentNoteResponse | null;
   onClose: () => void;
   onSuccess: () => void;

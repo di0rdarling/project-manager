@@ -1,14 +1,14 @@
 "use client";
 
 import { useRef } from "react";
-import {
-  ArrowPathIcon,
-  SparklesIcon,
-  TrashIcon,
-} from "@heroicons/react/24/outline";
+import { SparklesIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
-import { IconButton } from "@/components/ui/IconButton";
+import {
+  deleteItemAction,
+  ItemActionsMenu,
+  regenerateItemAction,
+} from "@/components/ui/ItemActionsMenu";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useRegisterProjectSection } from "@/hooks/useRegisterProjectSection";
 import type { ProjectDetailSectionId } from "@/lib/project-detail-sections";
@@ -76,25 +76,16 @@ export function AISummarySection({
           {title}
         </h2>
         {summary ? (
-          <div className="flex shrink-0 items-center gap-1">
-            <IconButton
-              type="button"
-              aria-label="Regenerate summary"
-              onClick={() => handleGenerateClick(true)}
-              disabled={isGenerating}
-            >
-              <ArrowPathIcon className="size-4" />
-            </IconButton>
-            <IconButton
-              type="button"
-              variant="danger"
-              aria-label="Delete summary"
-              onClick={onDeleteClick}
-              disabled={isGenerating}
-            >
-              <TrashIcon className="size-4 text-red-500" />
-            </IconButton>
-          </div>
+          <ItemActionsMenu
+            actions={[
+              regenerateItemAction(
+                "Regenerate summary",
+                () => handleGenerateClick(true),
+                isGenerating,
+              ),
+              deleteItemAction("Delete summary", onDeleteClick, isGenerating),
+            ]}
+          />
         ) : null}
       </div>
 

@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
-import { IconButton } from "@/components/ui/IconButton";
+import { useState, type ReactNode } from "react";
+import {
+  deleteItemAction,
+  editItemAction,
+  ItemActionsMenu,
+} from "@/components/ui/ItemActionsMenu";
+import { ListItemDate } from "@/components/ui/ListItemDate";
 import { RichTextContent } from "@/components/ui/inputs/richText/RichTextContent";
 import type { FeatureResponse, RequirementResponse } from "@/lib/types";
-import { formatDisplayDate } from "@/lib/dates";
 
 interface ItemModalRenderProps {
   open: boolean;
@@ -68,9 +71,12 @@ export default function FeatureItemsList({
                   href={`/projects/${projectId}/features/${item._id}`}
                   className="min-w-0 flex-1 space-y-2 rounded-lg outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-100"
                 >
-                  <h3 className="text-md font-semibold text-zinc-900 dark:text-zinc-100">
-                    {item.title}
-                  </h3>
+                  <div className="space-y-1">
+                    <h3 className="text-md font-semibold text-zinc-900 dark:text-zinc-100">
+                      {item.title}
+                    </h3>
+                    <ListItemDate dateTime={item.createdAt} />
+                  </div>
                   {linkedRequirementTitle ? (
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
                       Linked requirement: {linkedRequirementTitle}
@@ -81,29 +87,14 @@ export default function FeatureItemsList({
                     className="text-sm text-zinc-800 dark:text-zinc-200"
                   />
                 </Link>
-                <div className="flex shrink-0 items-start gap-1">
-                  <time
-                    dateTime={item.createdAt}
-                    className="pt-2 text-xs text-zinc-500"
-                  >
-                    {formatDisplayDate(item.createdAt)}
-                  </time>
-                  <IconButton
-                    type="button"
-                    aria-label="Edit feature"
-                    onClick={() => setItemToEdit(item)}
-                  >
-                    <PencilIcon className="size-4" />
-                  </IconButton>
-                  <IconButton
-                    type="button"
-                    variant="danger"
-                    aria-label="Delete feature"
-                    onClick={() => setItemToDelete(item)}
-                  >
-                    <TrashIcon className="size-4 text-red-500" />
-                  </IconButton>
-                </div>
+                <ItemActionsMenu
+                  actions={[
+                    editItemAction("Edit feature", () => setItemToEdit(item)),
+                    deleteItemAction("Delete feature", () =>
+                      setItemToDelete(item),
+                    ),
+                  ]}
+                />
               </div>
             </li>
           );

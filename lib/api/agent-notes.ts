@@ -3,14 +3,14 @@ import type { ChatTeammateId } from "@/lib/chat-teammates";
 import { parseResponse } from "@/lib/api/response";
 
 export async function fetchAgentNotes(
-  teammateId: string,
+  teammateId: ChatTeammateId,
 ): Promise<AgentNoteResponse[]> {
   const response = await fetch(`/api/chats/agents/${teammateId}/notes`);
   return parseResponse<AgentNoteResponse[]>(response);
 }
 
 export async function createAgentNote(input: {
-  teammateId: string;
+  teammateId: ChatTeammateId;
   title: string;
   content: string;
 }): Promise<AgentNoteResponse> {
@@ -25,7 +25,7 @@ export async function createAgentNote(input: {
 }
 
 export async function updateAgentNote(input: {
-  teammateId: string;
+  teammateId: ChatTeammateId;
   noteId: string;
   title: string;
   content: string;
@@ -44,7 +44,7 @@ export async function updateAgentNote(input: {
 }
 
 export async function shareAgentNote(input: {
-  teammateId: string;
+  teammateId: ChatTeammateId;
   noteId: string;
   sharedWithTeammateIds: ChatTeammateId[];
 }): Promise<AgentNoteResponse> {
@@ -62,7 +62,7 @@ export async function shareAgentNote(input: {
 }
 
 export async function deleteAgentNote(input: {
-  teammateId: string;
+  teammateId: ChatTeammateId;
   noteId: string;
 }): Promise<void> {
   const { teammateId, noteId } = input;

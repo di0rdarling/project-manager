@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { IconButton } from "@/components/ui/IconButton";
+import {
+  deleteItemAction,
+  editItemAction,
+  ItemActionsMenu,
+} from "@/components/ui/ItemActionsMenu";
+import { ListItemDate } from "@/components/ui/ListItemDate";
 import type { ProjectResponse } from "@/lib/types";
-import { formatDisplayDate } from "@/lib/dates";
 import DeleteProjectModal from "./modals/DeleteProjectModal";
 import EditProjectModal from "./modals/EditProjectModal";
-import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 interface ProjectManagerListProps {
   projects: ProjectResponse[];
@@ -40,36 +43,26 @@ export default function ProjectManagerList({
                 href={`/projects/${project._id}`}
                 className="min-w-0 flex-1 rounded-lg outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-100"
               >
-                <h3 className="font-medium">{project.name}</h3>
+                <div className="space-y-1">
+                  <h3 className="font-medium">{project.name}</h3>
+                  <ListItemDate dateTime={project.createdAt} />
+                </div>
                 {project.description ? (
                   <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
                     {project.description}
                   </p>
                 ) : null}
               </Link>
-              <div className="flex shrink-0 items-start gap-1">
-                <time
-                  dateTime={project.createdAt}
-                  className="pt-2 text-xs text-zinc-500"
-                >
-                  {formatDisplayDate(project.createdAt)}
-                </time>
-                <IconButton
-                  type="button"
-                  aria-label={`Edit ${project.name}`}
-                  onClick={() => setProjectToEdit(project)}
-                >
-                  <PencilIcon className="size-4" />
-                </IconButton>
-                <IconButton
-                  type="button"
-                  variant="danger"
-                  aria-label={`Delete ${project.name}`}
-                  onClick={() => setProjectToDelete(project)}
-                >
-                  <TrashIcon className="size-4 text-red-500" />
-                </IconButton>
-              </div>
+              <ItemActionsMenu
+                actions={[
+                  editItemAction(`Edit ${project.name}`, () =>
+                    setProjectToEdit(project),
+                  ),
+                  deleteItemAction(`Delete ${project.name}`, () =>
+                    setProjectToDelete(project),
+                  ),
+                ]}
+              />
             </div>
           </li>
         ))}

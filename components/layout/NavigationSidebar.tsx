@@ -22,7 +22,17 @@ const navItems = [
   { href: "/chats", label: "AI Chats", icon: ChatBubbleLeftRightIcon },
 ] as const;
 
-export default function NavigationSidebar() {
+type NavigationSidebarProps = {
+  id?: string;
+  isOpen?: boolean;
+  onNavigate?: () => void;
+};
+
+export default function NavigationSidebar({
+  id,
+  isOpen = true,
+  onNavigate,
+}: NavigationSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const projectSectionNav = useProjectSectionNav();
@@ -49,7 +59,13 @@ export default function NavigationSidebar() {
   }
 
   return (
-    <aside className="flex w-56 shrink-0 flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+    <aside
+      id={id}
+      aria-hidden={!isOpen}
+      className={`fixed inset-y-0 left-0 z-40 flex w-56 flex-col border-r border-zinc-200 bg-white transition-transform duration-200 ease-out dark:border-zinc-800 dark:bg-zinc-950 md:relative md:z-auto md:shrink-0 md:translate-x-0 ${
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      }`}
+    >
       <div className="border-b border-zinc-200 px-4 py-5 dark:border-zinc-800">
         <p className="text-sm font-semibold tracking-tight">Project Manager</p>
         {isProjectDetailPage && project?.name ? (
@@ -76,6 +92,7 @@ export default function NavigationSidebar() {
               <Link
                 key={href}
                 href={href}
+                onClick={onNavigate}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
                   isActive
                     ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50"
@@ -99,6 +116,7 @@ export default function NavigationSidebar() {
         >
           <Link
             href="/"
+            onClick={onNavigate}
             className="mb-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
           >
             <ArrowLeftIcon className="size-5 shrink-0" aria-hidden />
@@ -114,7 +132,10 @@ export default function NavigationSidebar() {
               <button
                 key={id}
                 type="button"
-                onClick={() => projectSectionNav?.navigateToSection(id)}
+                onClick={() => {
+                  projectSectionNav?.navigateToSection(id);
+                  onNavigate?.();
+                }}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition ${
                   isActive
                     ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50"

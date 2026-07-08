@@ -3,6 +3,7 @@
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
 import { fetchAgentNotes } from "@/lib/api/agent-notes";
 import { agentNoteKeys } from "@/lib/query-keys";
+import type { ChatTeammateId } from "@/lib/chat-teammates";
 import type { AgentNoteResponse } from "@/lib/types";
 
 type UseFetchAgentNotesOptions = Omit<
@@ -11,7 +12,7 @@ type UseFetchAgentNotesOptions = Omit<
 >;
 
 export function useFetchAgentNotes(
-  teammateId: string,
+  teammateId: ChatTeammateId,
   options?: UseFetchAgentNotesOptions,
 ) {
   return useQuery({

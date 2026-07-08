@@ -1,17 +1,16 @@
 "use client";
 
-import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import {
-  ArrowsPointingOutIcon,
-  PencilIcon,
-  TrashIcon,
-} from "@heroicons/react/24/outline";
-import { IconButton } from "@/components/ui/IconButton";
+  deleteItemAction,
+  editItemAction,
+  expandItemAction,
+  ItemActionsMenu,
+} from "@/components/ui/ItemActionsMenu";
+import { ListItemDate } from "@/components/ui/ListItemDate";
 import { TruncatedRichTextContent } from "@/components/ui/inputs/richText/TruncatedRichTextContent";
 import { getNoteDetailPath } from "@/lib/notes";
 import type { NoteResponse } from "@/lib/types";
-import { formatDisplayDate } from "@/lib/dates";
 
 interface ItemModalRenderProps {
   open: boolean;
@@ -28,9 +27,6 @@ interface NotesListProps {
   renderEditModal: (props: ItemModalRenderProps) => ReactNode;
   renderDeleteModal: (props: ItemModalRenderProps) => ReactNode;
 }
-
-const expandLinkClassName =
-  "inline-flex cursor-pointer items-center justify-center rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100";
 
 export default function NotesList({
   projectId,
@@ -54,45 +50,30 @@ export default function NotesList({
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1 space-y-2">
                 {note.title ? (
-                  <h3 className="text-md font-semibold text-zinc-900 dark:text-zinc-100">
-                    {note.title}
-                  </h3>
-                ) : null}
+                  <div className="space-y-1">
+                    <h3 className="text-md font-semibold text-zinc-900 dark:text-zinc-100">
+                      {note.title}
+                    </h3>
+                    <ListItemDate dateTime={note.createdAt} />
+                  </div>
+                ) : (
+                  <ListItemDate dateTime={note.createdAt} />
+                )}
                 <TruncatedRichTextContent
                   content={note.content}
                   className="text-sm text-zinc-800 dark:text-zinc-200"
                 />
               </div>
-              <div className="flex shrink-0 items-start gap-1">
-                <time
-                  dateTime={note.createdAt}
-                  className="pt-2 text-xs text-zinc-500"
-                >
-                  {formatDisplayDate(note.createdAt)}
-                </time>
-                <Link
-                  href={getNoteDetailPath(projectId, note._id)}
-                  aria-label="Expand note"
-                  className={expandLinkClassName}
-                >
-                  <ArrowsPointingOutIcon className="size-4" />
-                </Link>
-                <IconButton
-                  type="button"
-                  aria-label="Edit note"
-                  onClick={() => setNoteToEdit(note)}
-                >
-                  <PencilIcon className="size-4" />
-                </IconButton>
-                <IconButton
-                  type="button"
-                  variant="danger"
-                  aria-label="Delete note"
-                  onClick={() => setNoteToDelete(note)}
-                >
-                  <TrashIcon className="size-4 text-red-500" />
-                </IconButton>
-              </div>
+              <ItemActionsMenu
+                actions={[
+                  expandItemAction(
+                    "Expand note",
+                    getNoteDetailPath(projectId, note._id),
+                  ),
+                  editItemAction("Edit note", () => setNoteToEdit(note)),
+                  deleteItemAction("Delete note", () => setNoteToDelete(note)),
+                ]}
+              />
             </div>
           </li>
         ))}
