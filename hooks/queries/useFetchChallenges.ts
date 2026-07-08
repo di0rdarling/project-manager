@@ -8,15 +8,19 @@ import type { ChallengeResponse } from "@/lib/types";
 type UseFetchChallengesOptions = Omit<
   UseQueryOptions<ChallengeResponse[], Error>,
   "queryKey" | "queryFn"
->;
+> & {
+  featureId?: string | null;
+};
 
 export function useFetchChallenges(
   projectId: string,
   options?: UseFetchChallengesOptions,
 ) {
+  const { featureId, ...queryOptions } = options ?? {};
+
   return useQuery({
-    queryKey: challengeKeys.all(projectId),
-    queryFn: () => fetchChallenges(projectId),
-    ...options,
+    queryKey: challengeKeys.list(projectId, featureId),
+    queryFn: () => fetchChallenges(projectId, featureId),
+    ...queryOptions,
   });
 }

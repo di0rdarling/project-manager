@@ -25,7 +25,7 @@ export function useUpdateChallenge(options?: UseUpdateChallengeOptions) {
     ...restOptions,
     onSuccess: (challenge, variables, onMutateResult, context) => {
       queryClient.setQueryData<ChallengeResponse[]>(
-        challengeKeys.all(variables.projectId),
+        challengeKeys.list(variables.projectId, challenge.featureId),
         (current) =>
           current?.map((existing) =>
             existing._id === challenge._id ? challenge : existing,

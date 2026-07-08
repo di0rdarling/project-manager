@@ -43,6 +43,7 @@ export type ChallengeStatus = "open" | "in_progress" | "resolved";
 type ChallengeBase<TId> = {
   _id: TId;
   projectId: TId;
+  featureId: TId | null;
   title: string;
   overview: string;
   status: ChallengeStatus;

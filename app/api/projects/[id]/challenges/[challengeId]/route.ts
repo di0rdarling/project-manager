@@ -25,6 +25,7 @@ function serializeChallenge(challenge: StoredChallenge): ChallengeResponse {
   return {
     _id: challenge._id.toString(),
     projectId: challenge.projectId.toString(),
+    featureId: challenge.featureId ? challenge.featureId.toString() : null,
     title: typeof challenge.title === "string" ? challenge.title : "",
     overview: challenge.overview,
     status,

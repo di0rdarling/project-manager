@@ -5,6 +5,10 @@ import { stripRichText } from "@/lib/rich-text";
 import type { StoredProject } from "@/lib/serialize-project";
 import type { CoreUser, DomainKnowledge, Feature, Note, PainPoint, Requirement, Tool, Challenge } from "@/lib/types";
 import { featureNotesFilter, projectLevelNotesFilter } from "@/lib/notes";
+import {
+  featureChallengesFilter,
+  projectLevelChallengesFilter,
+} from "@/lib/challenges";
 
 type StoredRequirement = Omit<
   Requirement,
@@ -152,7 +156,7 @@ export async function getProjectContext(
       .toArray(),
     db
       .collection<StoredChallenge>("challenges")
-      .find({ projectId })
+      .find(projectLevelChallengesFilter(projectId))
       .sort({ createdAt: -1 })
       .toArray(),
     db
@@ -189,7 +193,7 @@ export async function getProjectContext(
     ]),
   );
 
-  const [focusedRequirement, focusedFeature, focusedFeatureNotes] =
+  const [focusedRequirement, focusedFeature, focusedFeatureNotes, focusedFeatureChallenges] =
     await Promise.all([
       focus?.requirementId
         ? db.collection<StoredRequirement>("requirements").findOne({
@@ -207,6 +211,13 @@ export async function getProjectContext(
         ? db
             .collection<StoredNote>("notes")
             .find(featureNotesFilter(projectId, focus.featureId))
+            .sort({ createdAt: -1 })
+            .toArray()
+        : Promise.resolve([]),
+      focus?.featureId
+        ? db
+            .collection<StoredChallenge>("challenges")
+            .find(featureChallengesFilter(projectId, focus.featureId))
             .sort({ createdAt: -1 })
             .toArray()
         : Promise.resolve([]),
@@ -260,6 +271,13 @@ export async function getProjectContext(
       ? focusedFeatureNotes.map((note) => ({
           title: note.title,
           content: note.content,
+        }))
+      : undefined,
+    featureChallenges: focus?.featureId
+      ? focusedFeatureChallenges.map((challenge) => ({
+          title: challenge.title,
+          overview: challenge.overview,
+          status: challenge.status,
         }))
       : undefined,
   });

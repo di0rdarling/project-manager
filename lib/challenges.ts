@@ -1,3 +1,4 @@
+import type { ObjectId } from "mongodb";
 import type { ChallengeStatus } from "@/lib/types";
 import { stripRichText } from "@/lib/rich-text";
 
@@ -20,15 +21,32 @@ export function getChallengeStatusLabel(status: ChallengeStatus): string {
   return match?.label ?? status;
 }
 
+export function projectLevelChallengesFilter(projectId: ObjectId) {
+  return {
+    projectId,
+    $or: [{ featureId: null }, { featureId: { $exists: false } }],
+  };
+}
+
+export function featureChallengesFilter(projectId: ObjectId, featureId: ObjectId) {
+  return {
+    projectId,
+    featureId,
+  };
+}
+
 type ChallengeContextItem = {
   title: string;
   overview: string;
   status: ChallengeStatus | string;
 };
 
-export function formatChallengeItems(items: ChallengeContextItem[]): string {
+export function formatChallengeItems(
+  items: ChallengeContextItem[],
+  label = "Current Challenges",
+): string {
   if (items.length === 0) {
-    return "Current Challenges: None";
+    return `${label}: None`;
   }
 
   const formattedItems = items
@@ -42,5 +60,5 @@ export function formatChallengeItems(items: ChallengeContextItem[]): string {
     })
     .join("\n");
 
-  return `Current Challenges:\n${formattedItems}`;
+  return `${label}:\n${formattedItems}`;
 }

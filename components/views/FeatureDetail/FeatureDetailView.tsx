@@ -7,6 +7,7 @@ import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { RichTextContent } from "@/components/ui/inputs/richText/RichTextContent";
 import PageContent from "@/components/layout/PageContent";
 import NotesSection from "@/components/views/ProjectDetail/NotesSection";
+import ChallengesSection from "@/components/views/ProjectDetail/ChallengesSection";
 import { useFetchFeature } from "@/hooks/queries/useFetchFeature";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
 import { useFetchRequirements } from "@/hooks/queries/useFetchRequirements";
@@ -92,6 +93,12 @@ export default function FeatureDetailView({
               />
             </div>
           </section>
+
+          <ChallengesSection
+            projectId={projectId}
+            featureId={featureId}
+            emptyMessage="No challenges recorded yet. Add any issues or blockers specific to this feature."
+          />
 
           <NotesSection
             projectId={projectId}

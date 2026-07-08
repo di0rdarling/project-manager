@@ -36,6 +36,7 @@ export default function DeleteChallengeModal({
     deleteChallengeMutation.mutate({
       projectId,
       challengeId: challenge._id,
+      featureId: challenge.featureId,
     });
   }
 

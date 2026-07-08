@@ -35,8 +35,10 @@ export const painPointKeys = {
 };
 
 export const challengeKeys = {
-  all: (projectId: string) =>
-    ["projects", projectId, "challenges"] as const,
+  list: (projectId: string, featureId?: string | null) =>
+    featureId
+      ? (["projects", projectId, "features", featureId, "challenges"] as const)
+      : (["projects", projectId, "challenges"] as const),
 };
 
 export const domainKnowledgeKeys = {

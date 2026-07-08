@@ -1,6 +1,10 @@
 import { ObjectId } from "mongodb";
 import getClientPromise from "@/lib/mongodb";
-import { parseChallengeStatus } from "@/lib/challenges";
+import {
+  featureChallengesFilter,
+  parseChallengeStatus,
+  projectLevelChallengesFilter,
+} from "@/lib/challenges";
 import { toIsoString } from "@/lib/dates";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import type { Challenge, ChallengeResponse } from "@/lib/types";
@@ -25,6 +29,7 @@ function serializeChallenge(challenge: StoredChallenge): ChallengeResponse {
   return {
     _id: challenge._id.toString(),
     projectId: challenge.projectId.toString(),
+    featureId: challenge.featureId ? challenge.featureId.toString() : null,
     title: typeof challenge.title === "string" ? challenge.title : "",
     overview: challenge.overview,
     status,
@@ -57,7 +62,7 @@ async function getProjectOr404(projectId: string) {
   return { client };
 }
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
     const result = await getProjectOr404(id);
@@ -66,10 +71,35 @@ export async function GET(_request: Request, context: RouteContext) {
       return result.error;
     }
 
+    const featureId = new URL(request.url).searchParams.get("featureId");
+    const projectObjectId = new ObjectId(id);
+
+    if (featureId) {
+      if (!ObjectId.isValid(featureId)) {
+        return Response.json({ error: "Invalid feature id" }, { status: 400 });
+      }
+
+      const feature = await result.client
+        .db()
+        .collection("features")
+        .findOne({
+          _id: new ObjectId(featureId),
+          projectId: projectObjectId,
+        });
+
+      if (!feature) {
+        return Response.json({ error: "Feature not found" }, { status: 404 });
+      }
+    }
+
     const challenges = await result.client
       .db()
       .collection<StoredChallenge>("challenges")
-      .find({ projectId: new ObjectId(id) })
+      .find(
+        featureId
+          ? featureChallengesFilter(projectObjectId, new ObjectId(featureId))
+          : projectLevelChallengesFilter(projectObjectId),
+      )
       .sort({ createdAt: -1 })
       .toArray();
 
@@ -96,6 +126,10 @@ export async function POST(request: Request, context: RouteContext) {
     const overview =
       typeof body.overview === "string" ? body.overview.trim() : "";
     const status = parseChallengeStatus(body.status);
+    const featureId =
+      typeof body.featureId === "string" && body.featureId.trim()
+        ? body.featureId.trim()
+        : null;
 
     if (!title) {
       return Response.json(
@@ -118,9 +152,30 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
 
+    const projectObjectId = new ObjectId(id);
+
+    if (featureId) {
+      if (!ObjectId.isValid(featureId)) {
+        return Response.json({ error: "Invalid feature id" }, { status: 400 });
+      }
+
+      const feature = await result.client
+        .db()
+        .collection("features")
+        .findOne({
+          _id: new ObjectId(featureId),
+          projectId: projectObjectId,
+        });
+
+      if (!feature) {
+        return Response.json({ error: "Feature not found" }, { status: 404 });
+      }
+    }
+
     const now = new Date().toISOString();
     const challenge: Omit<Challenge, "_id"> = {
-      projectId: new ObjectId(id),
+      projectId: projectObjectId,
+      featureId: featureId ? new ObjectId(featureId) : null,
       title,
       overview,
       status,

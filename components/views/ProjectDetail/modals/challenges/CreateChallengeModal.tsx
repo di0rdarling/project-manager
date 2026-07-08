@@ -16,6 +16,7 @@ import { isRichTextEmpty } from "@/lib/rich-text";
 type CreateChallengeModalProps = {
   open: boolean;
   projectId: string;
+  featureId?: string;
   onClose: () => void;
   onSuccess: () => void;
 };
@@ -23,6 +24,7 @@ type CreateChallengeModalProps = {
 export default function CreateChallengeModal({
   open,
   projectId,
+  featureId,
   onClose,
   onSuccess,
 }: CreateChallengeModalProps) {
@@ -68,6 +70,7 @@ export default function CreateChallengeModal({
       title: title.trim(),
       overview,
       status: parsedStatus,
+      featureId: featureId ?? null,
     });
   }
 

@@ -25,9 +25,11 @@ export function useDeleteChallenge(options?: UseDeleteChallengeOptions) {
     ...restOptions,
     onSuccess: (data, variables, onMutateResult, context) => {
       queryClient.setQueryData<ChallengeResponse[]>(
-        challengeKeys.all(variables.projectId),
+        challengeKeys.list(variables.projectId, variables.featureId),
         (current) =>
-          current?.filter((challenge) => challenge._id !== variables.challengeId),
+          current?.filter(
+            (challenge) => challenge._id !== variables.challengeId,
+          ),
       );
       onSuccess?.(data, variables, onMutateResult, context);
     },
