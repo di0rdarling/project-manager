@@ -13,3 +13,7 @@ export function featureNotesFilter(projectId: ObjectId, featureId: ObjectId) {
     featureId,
   };
 }
+
+export function getNoteDetailPath(projectId: string, noteId: string) {
+  return `/projects/${projectId}/notes/${noteId}`;
+}

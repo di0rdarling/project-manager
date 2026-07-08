@@ -29,6 +29,37 @@ function serializeNote(note: StoredNote): NoteResponse {
   };
 }
 
+export async function GET(_request: Request, context: RouteContext) {
+  try {
+    const { id, noteId } = await context.params;
+
+    if (!ObjectId.isValid(id)) {
+      return Response.json({ error: "Invalid project id" }, { status: 400 });
+    }
+
+    if (!ObjectId.isValid(noteId)) {
+      return Response.json({ error: "Invalid note id" }, { status: 400 });
+    }
+
+    const client = await getClientPromise();
+    const note = await client
+      .db()
+      .collection<StoredNote>("notes")
+      .findOne({
+        _id: new ObjectId(noteId),
+        projectId: new ObjectId(id),
+      });
+
+    if (!note) {
+      return Response.json({ error: "Note not found" }, { status: 404 });
+    }
+
+    return Response.json(serializeNote(note));
+  } catch {
+    return Response.json({ error: "Failed to fetch note" }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id, noteId } = await context.params;

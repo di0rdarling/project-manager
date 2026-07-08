@@ -31,6 +31,10 @@ export function useUpdateNote(options?: UseUpdateNoteOptions) {
             existing._id === note._id ? note : existing,
           ),
       );
+      queryClient.setQueryData(
+        noteKeys.detail(variables.projectId, note._id),
+        note,
+      );
       onSuccess?.(note, variables, onMutateResult, context);
     },
   });

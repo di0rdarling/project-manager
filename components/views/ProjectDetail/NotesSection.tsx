@@ -6,7 +6,7 @@ import { useFetchNotes } from "@/hooks/queries/useFetchNotes";
 import CreateNoteModal from "./modals/notes/CreateNoteModal";
 import DeleteNoteModal from "./modals/notes/DeleteNoteModal";
 import EditNoteModal from "./modals/notes/EditNoteModal";
-import ProjectItemsList from "./ProjectItemsList";
+import NotesList from "./NotesList";
 import ProjectSection from "./ProjectSection";
 
 type NotesSectionProps = {
@@ -48,9 +48,9 @@ export default function NotesSection({
         isEmpty={notes.length === 0}
         emptyMessage={emptyMessage}
       >
-        <ProjectItemsList
-          items={notes}
-          itemLabel="note"
+        <NotesList
+          projectId={projectId}
+          notes={notes}
           onEditSuccess={() => toast.success("Note updated successfully.")}
           onDeleteSuccess={() => toast.success("Note deleted successfully.")}
           renderEditModal={({ open, item, onClose, onSuccess }) => (

@@ -13,6 +13,15 @@ export async function fetchNotes(
   return parseResponse<NoteResponse[]>(response);
 }
 
+export async function fetchNote(input: {
+  projectId: string;
+  noteId: string;
+}): Promise<NoteResponse> {
+  const { projectId, noteId } = input;
+  const response = await fetch(`/api/projects/${projectId}/notes/${noteId}`);
+  return parseResponse<NoteResponse>(response);
+}
+
 export async function createNote(input: {
   projectId: string;
   title: string;

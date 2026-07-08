@@ -8,6 +8,8 @@ export const noteKeys = {
     featureId
       ? (["projects", projectId, "features", featureId, "notes"] as const)
       : (["projects", projectId, "notes"] as const),
+  detail: (projectId: string, noteId: string) =>
+    ["projects", projectId, "notes", noteId] as const,
 };
 
 export const requirementKeys = {
