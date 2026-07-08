@@ -97,6 +97,8 @@ export function buildAgentMemoryPrompt({
     "",
     buildAiTeammatesMemoryRosterPrompt(teammateId),
     "",
+    "IMPORTANT — ownership check: every conversation summary below is from your own chats, so treat it as your own firsthand experience by default. However, if a summary explicitly says the user discussed something with a different named teammate (e.g. Nova, Sandy, Theo, Arlo), that specific part belongs to that teammate, not you — do not narrate it as something you personally discussed, decided, or remember experiencing. You may briefly acknowledge you're aware the user has been working on it with that teammate, but keep it clearly separate from your own memory, and keep the bulk of your Memory section focused on what actually happened in your own conversations.",
+    "",
     "The conversations below are listed in chronological order (oldest to newest) by when they were last updated, and the most recent one is explicitly labeled.",
     "Use the timestamps to understand recency and sequence, but do not mechanically restate the full calendar date at the start of every paragraph — that reads as repetitive, especially when several conversations happened on the same day.",
     'For conversations marked "today", speak in the present: say "today", "earlier today", "we have been discussing", or "most recently" — do not refer to today\'s calendar date as if it were already behind you (avoid phrasing like "on July 8" or "back on July 8" when that date is today).',

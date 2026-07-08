@@ -3,6 +3,10 @@ import {
   isChatTeammateId,
   type ChatTeammateId,
 } from "@/lib/chat-teammates";
+import {
+  AGENT_MEMORIES_COLLECTION,
+  type StoredAgentMemory,
+} from "@/lib/agent-memory-store";
 import { getTeammateChatSummaries } from "@/lib/chat-summaries";
 import { generateAgentMemory } from "@/lib/gemini";
 import getClientPromise from "@/lib/mongodb";
@@ -12,12 +16,6 @@ import type { AgentMemoryResponse } from "@/lib/types";
 
 type RouteContext = {
   params: Promise<{ teammateId: string }>;
-};
-
-type StoredAgentMemory = {
-  teammateId: ChatTeammateId;
-  memory: string | null;
-  updatedAt: string | Date;
 };
 
 function serializeAgentMemory(
@@ -53,7 +51,7 @@ export async function GET(_request: Request, context: RouteContext) {
     const client = await getClientPromise();
     const memory = await client
       .db()
-      .collection<StoredAgentMemory>("agent_memories")
+      .collection<StoredAgentMemory>(AGENT_MEMORIES_COLLECTION)
       .findOne({ teammateId: parsed.teammateId });
 
     return Response.json(serializeAgentMemory(parsed.teammateId, memory));
@@ -103,7 +101,7 @@ export async function POST(_request: Request, context: RouteContext) {
 
     await client
       .db()
-      .collection<StoredAgentMemory>("agent_memories")
+      .collection<StoredAgentMemory>(AGENT_MEMORIES_COLLECTION)
       .updateOne(
         { teammateId: parsed.teammateId },
         {
@@ -155,7 +153,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
     await client
       .db()
-      .collection<StoredAgentMemory>("agent_memories")
+      .collection<StoredAgentMemory>(AGENT_MEMORIES_COLLECTION)
       .updateOne(
         { teammateId: parsed.teammateId },
         {

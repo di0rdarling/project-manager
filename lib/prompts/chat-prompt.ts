@@ -10,11 +10,12 @@ export function buildChatSystemPrompt(
   teammateId: ChatTeammateId = DEFAULT_CHAT_TEAMMATE_ID,
   projectContext?: string,
   otherConversationsContext?: string,
+  otherTeammatesContext?: string,
 ): string {
   const sections = [
-    ...getChatTeammatePersonalityTraits(teammateId),
-    "",
     buildAiTeammatesRosterPrompt(teammateId),
+    "",
+    ...getChatTeammatePersonalityTraits(teammateId),
     ...PLAIN_ENGLISH_STYLE_GUIDE,
     ...CONCISE_RESPONSE_STYLE_GUIDE,
     "You may use Markdown when formatting longer replies, such as headings, lists, bold text, and code blocks.",
@@ -29,6 +30,18 @@ export function buildChatSystemPrompt(
       "The user may also be talking with you in other separate chat threads. These summaries are fetched in real time from those other chats. Use them to stay aware of ongoing work elsewhere, especially when the user continues a related topic in this chat.",
       "Focus your reply on this conversation unless the user clearly connects it to another thread.",
       otherConversationsContext.trim(),
+    );
+  }
+
+  if (otherTeammatesContext?.trim()) {
+    sections.push(
+      "",
+      "You are also automatically kept aware of what your other AI teammates remember from their own conversations with the user — you don't need to be told directly; treat it the way a colleague on the same team would naturally know what others have been working on with the user.",
+      "This is each teammate's own summarized recollection, so it may not include their very latest conversation if they haven't refreshed it recently. Treat it as generally reliable background, not a guaranteed up-to-the-minute record.",
+      "Use this to avoid making the user repeat context they've already shared elsewhere, and to naturally build on relevant work happening with another teammate when it's genuinely relevant here.",
+      "CRITICAL — attribution: this information belongs to another teammate's conversations, not yours. If you reference it in your reply, you MUST explicitly attribute it by name every time (e.g. \"I know you and Nova have been working on positioning\" or \"as you discussed with Nova\"). Never phrase it as something you personally discussed, decided, or remember firsthand, and never fold it into your own recollection of this or other chats — that would misrepresent whose conversation it actually was.",
+      "Don't invent details beyond what's summarized below, and if it's not relevant to the current message, don't bring it up at all.",
+      otherTeammatesContext.trim(),
     );
   }
 

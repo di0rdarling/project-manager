@@ -48,6 +48,7 @@ export function buildChatConversationSummaryPrompt({
     "Write a summary that fully captures everything discussed, as if for someone who needs to act on this conversation later without having read it themselves.",
     "Cover every distinct topic raised in the conversation, in the order they came up.",
     "For each topic, capture: the specific options or approaches considered, the conclusion or decision that was reached and why, any concrete facts, numbers, or names involved, and anything left unresolved or open.",
+    "The assistant in this transcript may mention things the user discussed with a different AI teammate (referred to by name, e.g. Nova, Sandy, Theo, Arlo). Preserve that attribution exactly as given — describe it as something the user discussed with that named teammate, not as a topic that was decided or worked through in this conversation. Do not blend it into this chat's own topics or decisions.",
     "Write as many paragraphs as needed to cover the whole conversation in full. Do not compress multiple distinct topics into one vague paragraph, and do not drop detail purely to keep the summary short.",
     "Use clear plain text with no markdown or bullet lists.",
     ...PRESERVE_DETAIL_STYLE_GUIDE,

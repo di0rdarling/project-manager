@@ -4,6 +4,7 @@ import {
   generateChatTitle,
   generateConversationSummary,
 } from "@/lib/gemini";
+import { getOtherTeammatesMemories } from "@/lib/agent-memory-store";
 import { getTeammateChatSummaries } from "@/lib/chat-summaries";
 import getClientPromise from "@/lib/mongodb";
 import { getProjectContext } from "@/lib/project-context";
@@ -12,6 +13,7 @@ import {
   RECENT_MESSAGE_WINDOW,
 } from "@/lib/prompts/chat-conversation-summary-prompt";
 import { buildChatOtherConversationsContext } from "@/lib/prompts/chat-other-conversations-prompt";
+import { buildOtherTeammatesContext } from "@/lib/prompts/chat-other-teammates-context-prompt";
 import {
   buildChatTitlePrompt,
   CHAT_TITLE_GENERATION_TURN_THRESHOLD,
@@ -101,12 +103,20 @@ export async function POST(request: Request, context: RouteContext) {
     const otherConversationsContext =
       buildChatOtherConversationsContext(otherChatSummaries) ?? undefined;
 
+    const otherTeammatesMemories = await getOtherTeammatesMemories(
+      result.client.db(),
+      chatResponse.teammateId,
+    );
+    const otherTeammatesContext =
+      buildOtherTeammatesContext(otherTeammatesMemories) ?? undefined;
+
     const assistantReply = await generateChatReply(
       history,
       content,
       chatResponse.teammateId,
       projectContext ?? undefined,
       otherConversationsContext,
+      otherTeammatesContext,
     );
     const now = new Date().toISOString();
     const userMessage: Omit<ChatMessage, "_id"> = {

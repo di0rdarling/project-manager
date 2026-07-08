@@ -18,27 +18,10 @@ export type TeammateChatSummary = {
   } | null;
 };
 
-type GetTeammateChatSummariesOptions = {
-  excludeChatId?: ObjectId;
-};
-
-export async function getTeammateChatSummaries(
+async function summarizeChats(
   db: Db,
-  teammateId: ChatTeammateId,
-  options?: GetTeammateChatSummariesOptions,
+  chats: StoredChat[],
 ): Promise<TeammateChatSummary[]> {
-  const query: Record<string, unknown> = { teammateId };
-
-  if (options?.excludeChatId) {
-    query._id = { $ne: options.excludeChatId };
-  }
-
-  const chats = await db
-    .collection<StoredChat>("chats")
-    .find(query)
-    .sort({ updatedAt: -1 })
-    .toArray();
-
   const chatsWithSummaries = chats.filter(
     (chat) =>
       typeof chat.conversationSummary === "string" &&
@@ -89,4 +72,28 @@ export async function getTeammateChatSummaries(
         : null,
     };
   });
+}
+
+type GetTeammateChatSummariesOptions = {
+  excludeChatId?: ObjectId;
+};
+
+export async function getTeammateChatSummaries(
+  db: Db,
+  teammateId: ChatTeammateId,
+  options?: GetTeammateChatSummariesOptions,
+): Promise<TeammateChatSummary[]> {
+  const query: Record<string, unknown> = { teammateId };
+
+  if (options?.excludeChatId) {
+    query._id = { $ne: options.excludeChatId };
+  }
+
+  const chats = await db
+    .collection<StoredChat>("chats")
+    .find(query)
+    .sort({ updatedAt: -1 })
+    .toArray();
+
+  return summarizeChats(db, chats);
 }
