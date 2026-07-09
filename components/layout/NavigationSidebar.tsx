@@ -93,7 +93,7 @@ export default function NavigationSidebar({
                 key={href}
                 href={href}
                 onClick={onNavigate}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                className={`cursor-pointer flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
                   isActive
                     ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50"
                     : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
@@ -117,7 +117,7 @@ export default function NavigationSidebar({
           <Link
             href="/"
             onClick={onNavigate}
-            className="mb-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
+            className="cursor-pointer mb-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
           >
             <ArrowLeftIcon className="size-5 shrink-0" aria-hidden />
             All projects
@@ -136,7 +136,7 @@ export default function NavigationSidebar({
                   projectSectionNav?.navigateToSection(id);
                   onNavigate?.();
                 }}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition ${
+                className={`cursor-pointer flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition ${
                   isActive
                     ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50"
                     : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
@@ -13,25 +12,11 @@ import { useCreateChat } from "@/hooks/mutations/chats/useCreateChat";
 import { useFetchFeatures } from "@/hooks/queries/useFetchFeatures";
 import { useFetchProjects } from "@/hooks/queries/useFetchProjects";
 import { useFetchRequirements } from "@/hooks/queries/useFetchRequirements";
+import { CHAT_TEAMMATE_SELECT_OPTIONS } from "@/lib/chat-teammate-options";
 import {
-  CHAT_TEAMMATES,
   DEFAULT_CHAT_TEAMMATE_ID,
   type ChatTeammateId,
 } from "@/lib/chat-teammates";
-
-const TEAMMATE_OPTIONS = CHAT_TEAMMATES.map((teammate) => ({
-  value: teammate.id,
-  label: teammate.name,
-  description: teammate.role,
-  avatar: (
-    <Avatar
-      initials={teammate.avatarInitials}
-      src={teammate.avatarImageSrc}
-      alt={teammate.name}
-      colorClassName={teammate.avatarColorClassName}
-    />
-  ),
-}));
 
 type CreateChatModalProps = {
   open: boolean;
@@ -161,7 +146,7 @@ export default function CreateChatModal({
           label="AI Teammate"
           value={selectedTeammateId}
           onChange={(value) => setSelectedTeammateId(value as ChatTeammateId)}
-          options={TEAMMATE_OPTIONS}
+          options={CHAT_TEAMMATE_SELECT_OPTIONS}
         />
 
         {isLoadingProjects ? (
