@@ -14,7 +14,7 @@ import type { ChatTeammateId } from "@/lib/chat-teammates";
 
 const AGENT_MEMORY_MESSAGES: AISummaryMessages = {
   emptyDescription:
-    "Generate a first-person memory from this agent's past chats, including project context where chats were linked to a project.",
+    "Memory builds automatically as you chat — a compact first-person note of decisions, preferences, and open loops. You can also generate or rebuild it here from past chat summaries.",
   generating: "Generating agent memory...",
   regenerating: "Regenerating agent memory...",
   generateError: "Failed to generate agent memory",
@@ -86,7 +86,7 @@ export default function AIAgentMemory({
 
       <DeleteAISummaryModal
         open={isDeleteModalOpen}
-        description="Are you sure you want to delete this AI-generated agent memory? You can generate a new one at any time."
+        description="Are you sure you want to delete this agent memory? It will rebuild automatically as you keep chatting, or you can generate a new one anytime."
         isPending={deleteMemoryMutation.isPending}
         error={deleteMemoryMutation.error}
         onClose={handleDeleteModalClose}

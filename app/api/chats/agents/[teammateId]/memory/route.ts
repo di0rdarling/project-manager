@@ -4,13 +4,17 @@ import {
   type ChatTeammateId,
 } from "@/lib/chat-teammates";
 import {
-  AGENT_MEMORIES_COLLECTION,
+  getAgentMemory,
+  upsertAgentMemory,
   type StoredAgentMemory,
 } from "@/lib/agent-memory-store";
 import { getTeammateChatSummaries } from "@/lib/chat-summaries";
 import { generateAgentMemory } from "@/lib/gemini";
 import getClientPromise from "@/lib/mongodb";
-import { buildAgentMemoryPrompt } from "@/lib/prompts/agent-memory-prompt";
+import {
+  buildAgentMemoryPrompt,
+  clampAgentMemory,
+} from "@/lib/prompts/agent-memory-prompt";
 import { toIsoString } from "@/lib/dates";
 import type { AgentMemoryResponse } from "@/lib/types";
 
@@ -49,10 +53,7 @@ export async function GET(_request: Request, context: RouteContext) {
     }
 
     const client = await getClientPromise();
-    const memory = await client
-      .db()
-      .collection<StoredAgentMemory>(AGENT_MEMORIES_COLLECTION)
-      .findOne({ teammateId: parsed.teammateId });
+    const memory = await getAgentMemory(client.db(), parsed.teammateId);
 
     return Response.json(serializeAgentMemory(parsed.teammateId, memory));
   } catch {
@@ -86,41 +87,27 @@ export async function POST(_request: Request, context: RouteContext) {
 
     const teammate = getChatTeammate(parsed.teammateId);
     const generatedAt = new Date();
-    const memory = await generateAgentMemory(
-      buildAgentMemoryPrompt({
-        teammateId: parsed.teammateId,
-        agentName: teammate.name,
-        agentRole: teammate.role,
-        agentDescription: teammate.description,
-        chatSummaries,
-        generatedAt,
-      }),
+    const memory = clampAgentMemory(
+      await generateAgentMemory(
+        buildAgentMemoryPrompt({
+          teammateId: parsed.teammateId,
+          agentName: teammate.name,
+          agentRole: teammate.role,
+          chatSummaries,
+          generatedAt,
+        }),
+      ),
     );
     const now = generatedAt.toISOString();
     const client = await getClientPromise();
-
-    await client
-      .db()
-      .collection<StoredAgentMemory>(AGENT_MEMORIES_COLLECTION)
-      .updateOne(
-        { teammateId: parsed.teammateId },
-        {
-          $set: {
-            teammateId: parsed.teammateId,
-            memory,
-            updatedAt: now,
-          },
-        },
-        { upsert: true },
-      );
-
-    return Response.json(
-      serializeAgentMemory(parsed.teammateId, {
-        teammateId: parsed.teammateId,
-        memory,
-        updatedAt: now,
-      }),
+    const stored = await upsertAgentMemory(
+      client.db(),
+      parsed.teammateId,
+      memory,
+      now,
     );
+
+    return Response.json(serializeAgentMemory(parsed.teammateId, stored));
   } catch (error) {
     if (
       error instanceof Error &&
@@ -150,29 +137,14 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
     const client = await getClientPromise();
     const now = new Date().toISOString();
-
-    await client
-      .db()
-      .collection<StoredAgentMemory>(AGENT_MEMORIES_COLLECTION)
-      .updateOne(
-        { teammateId: parsed.teammateId },
-        {
-          $set: {
-            teammateId: parsed.teammateId,
-            memory: null,
-            updatedAt: now,
-          },
-        },
-        { upsert: true },
-      );
-
-    return Response.json(
-      serializeAgentMemory(parsed.teammateId, {
-        teammateId: parsed.teammateId,
-        memory: null,
-        updatedAt: now,
-      }),
+    const stored = await upsertAgentMemory(
+      client.db(),
+      parsed.teammateId,
+      null,
+      now,
     );
+
+    return Response.json(serializeAgentMemory(parsed.teammateId, stored));
   } catch {
     return Response.json(
       { error: "Failed to delete agent memory" },

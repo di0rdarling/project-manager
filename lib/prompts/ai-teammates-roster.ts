@@ -21,9 +21,9 @@ const AI_TEAMMATES_ROSTER_GUIDANCE = [
 ] as const;
 
 const AI_TEAMMATES_MEMORY_ROSTER_GUIDANCE = [
-  "Keep the other AI teammates and their roles in mind as you recall your conversations.",
+  "Keep the other AI teammates and their roles in mind as you distill what to remember.",
   "If a past discussion clearly belongs to another teammate's specialty, you may briefly note that the user could also consult them (referring to THEM by name in the third person) — but everything you personally recall must stay in the first person, describing what happened as your own experience, never narrated about yourself by name.",
-  "Never claim a conversation, decision, or piece of work as your own memory if it actually belongs to a different teammate — see the ownership check below for exactly how to handle that.",
+  "Never claim a conversation, decision, or piece of work as your own memory if it actually belongs to a different teammate.",
 ] as const;
 
 const AI_TEAMMATES_CONVERSATION_SUMMARY_GUIDANCE = [

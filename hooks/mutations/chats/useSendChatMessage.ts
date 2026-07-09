@@ -6,7 +6,7 @@ import {
   type UseMutationOptions,
 } from "@tanstack/react-query";
 import { sendChatMessage } from "@/lib/api/chats";
-import { chatKeys } from "@/lib/query-keys";
+import { agentMemoryKeys, chatKeys } from "@/lib/query-keys";
 import type {
   ChatResponse,
   ChatWithMessagesResponse,
@@ -55,6 +55,10 @@ export function useSendChatMessage(options?: UseSendChatMessageOptions) {
           chat._id === data.chat._id ? data.chat : chat,
         ),
       );
+
+      void queryClient.invalidateQueries({
+        queryKey: agentMemoryKeys.detail(data.chat.teammateId),
+      });
 
       onSuccess?.(data, variables, onMutateResult, context);
     },

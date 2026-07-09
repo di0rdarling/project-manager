@@ -3,16 +3,33 @@ import {
   getRelativeDayLabel,
 } from "@/lib/dates";
 import { buildAiTeammatesMemoryRosterPrompt } from "@/lib/prompts/ai-teammates-roster";
-import { PRESERVE_DETAIL_STYLE_GUIDE } from "@/lib/prompts/style-guide";
+import { PRESERVE_DETAIL_WITHIN_LIMIT_STYLE_GUIDE } from "@/lib/prompts/style-guide";
 import type { ChatTeammateId } from "@/lib/chat-teammates";
 import type { TeammateChatSummary } from "@/lib/chat-summaries";
+
+/**
+ * Soft upper bound for stored agent memory. Keeps cross-teammate prompt
+ * context compact while still leaving room for durable decisions, prefs,
+ * and open loops the user can read on the profile page.
+ */
+export const AGENT_MEMORY_MAX_CHARS = 2800;
 
 type BuildAgentMemoryPromptInput = {
   teammateId: ChatTeammateId;
   agentName: string;
   agentRole: string;
-  agentDescription: string;
   chatSummaries: TeammateChatSummary[];
+  generatedAt?: Date;
+};
+
+type BuildAgentMemoryMergePromptInput = {
+  teammateId: ChatTeammateId;
+  agentName: string;
+  agentRole: string;
+  existingMemory: string | null;
+  chatTitle: string;
+  conversationSummary: string;
+  projectName?: string | null;
   generatedAt?: Date;
 };
 
@@ -43,8 +60,6 @@ function formatChatSummaries(
   chatSummaries: TeammateChatSummary[],
   generatedAt: Date,
 ): string {
-  // Oldest first, so the list reads as a timeline the model can narrate
-  // in chronological order, with the true most-recent chat called out last.
   const chronological = [...chatSummaries].sort(
     (a, b) => new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime(),
   );
@@ -73,56 +88,143 @@ function formatChatSummaries(
     .join("\n\n");
 }
 
+function buildSharedMemoryInstructions(
+  agentName: string,
+  agentRole: string,
+): string[] {
+  return [
+    `You are ${agentName}, the ${agentRole}.`,
+    "Write a compact first-person Memory the user can read on your profile, and that other AI teammates can use as background about what you and the user have already covered.",
+    'Use "I" throughout. Never refer to yourself in the third person.',
+    "This is NOT a full retelling of every chat. Chat-level conversation summaries already keep the detailed per-thread record.",
+    "Keep only durable, useful information:",
+    "- Decisions the user made (and why, when known)",
+    "- Preferences, constraints, and non-negotiables",
+    "- Concrete tech/tool/product choices by name",
+    "- Open loops, blockers, and unfinished next steps",
+    "- Stable facts the user should not have to repeat",
+    "Skip ephemeral chit-chat, turn-by-turn narration, greetings, closings, and role boilerplate.",
+    "Do not invent details. Do not pad with filler.",
+    "If a source mentions work the user did with a different named teammate, keep that attribution — do not claim it as your own firsthand experience.",
+    "Write clear plain text with short paragraphs (or short lines). No markdown, no bullet symbols, no numbered lists.",
+    `Hard limit: stay under roughly ${AGENT_MEMORY_MAX_CHARS} characters. If you would exceed that, drop the least durable or oldest items first and keep the highest-signal facts.`,
+    "Near the end, briefly signal what is most recent so recency is obvious.",
+    ...PRESERVE_DETAIL_WITHIN_LIMIT_STYLE_GUIDE,
+  ];
+}
+
+/**
+ * Full rebuild from all of this teammate's chat summaries.
+ * Used for manual Generate / Regenerate on the agent profile.
+ */
 export function buildAgentMemoryPrompt({
   teammateId,
   agentName,
   agentRole,
-  agentDescription,
   chatSummaries,
   generatedAt = new Date(),
 }: BuildAgentMemoryPromptInput): string {
-  const roleForGreeting = agentRole.trim().toLowerCase().startsWith("your ")
-    ? agentRole.trim().toLowerCase()
-    : `your ${agentRole.trim().toLowerCase()}`;
   const currentDateTime = formatDisplayDateTime(generatedAt.toISOString());
 
-  const sections = [
-    `You are ${agentName}, the ${agentRole}.`,
-    `The user is asking you what you remember from your past conversations with them right now.`,
-    `You are responding at this moment: ${currentDateTime}. Treat this as the present — conversations marked "today" in the data below are happening on the current day, not in the past.`,
-    "Write your response in the first person, as if you are speaking directly to the user.",
-    'Use "I" throughout.',
-    "Base your response only on the conversation summaries and project details below — do not invent or generalize away details that are present in them.",
-    "When a chat was linked to a project, ground what you remember in that project's description and summary as well as the conversation.",
+  return [
+    ...buildSharedMemoryInstructions(agentName, agentRole),
+    `You are writing this memory at: ${currentDateTime}.`,
     "",
     buildAiTeammatesMemoryRosterPrompt(teammateId),
     "",
-    "IMPORTANT — ownership check: every conversation summary below is from your own chats, so treat it as your own firsthand experience by default. However, if a summary explicitly says the user discussed something with a different named teammate (e.g. Nova, Sandy, Theo, Arlo, Jordan), that specific part belongs to that teammate, not you — do not narrate it as something you personally discussed, decided, or remember experiencing. You may briefly acknowledge you're aware the user has been working on it with that teammate, but keep it clearly separate from your own memory, and keep the bulk of your Memory section focused on what actually happened in your own conversations.",
-    "",
-    "The conversations below are listed in chronological order (oldest to newest) by when they were last updated, and the most recent one is explicitly labeled.",
-    "Use the timestamps to understand recency and sequence, but do not mechanically restate the full calendar date at the start of every paragraph — that reads as repetitive, especially when several conversations happened on the same day.",
-    'For conversations marked "today", speak in the present: say "today", "earlier today", "we have been discussing", or "most recently" — do not refer to today\'s calendar date as if it were already behind you (avoid phrasing like "on July 8" or "back on July 8" when that date is today).',
-    'For conversations marked "yesterday", you may say "yesterday". For older conversations, use the calendar date or a clear past reference.',
-    "When two or more conversations happened on the same calendar date, mention that date at most once for that group (or say \"today\" once if they are all today), and distinguish the individual conversations using sequencing language instead, such as 'in one of those conversations', 'in another', 'we then moved on to', or 'right after that'.",
-    "Only call out a specific date when it is genuinely useful context (for example, the very first conversation, a date that differs from the ones around it, or the single most recent conversation) — do not force a date into every paragraph.",
-    "Make sure the user can tell what you discussed most recently. Near the end of the Memory section, clearly signal which topic came from your latest conversation, using language like 'most recently' or 'the last time we spoke'.",
-    "",
-    "Structure your response in three parts:",
-    `1. Opening: Start with "Hey, I'm ${agentName}, and I'm ${roleForGreeting}."`,
-    "2. Memory: Write one dedicated paragraph for every conversation summary listed below, covering it in full detail — the specific technologies, tools, or approaches discussed, the options considered, the decisions reached and why, concrete facts or numbers involved, and anything left open or unresolved. Do not merge multiple conversations into a single vague paragraph, and do not flatten technical detail into generic statements.",
-    "3. Closing: End with one short paragraph that flows naturally from the Memory section — as if you are continuing the same conversation, not starting a sales pitch. Do not open with generic role boilerplate like \"I am here to help you...\" or restate your job description.",
-    "In the Closing, focus on what comes next based on your most recent discussions: unfinished work, open questions, and concrete next steps the user could pick up with you. Lead with the specific topics, tools, or decisions from those conversations — especially the most recent one — rather than broad capabilities.",
-    "Where the conversation summaries show unresolved items, mention them by name and invite the user to continue on those specific threads. You may briefly tie this back to how you can help, but only in terms of the actual work already in progress — not a general list of what your role covers.",
-    `Use this role description only as background if it helps you frame a specific next step, not as the main content of the Closing: ${agentDescription.trim() || "No description provided."}`,
-    "Write as many paragraphs as needed in the Memory section to cover every conversation listed below in full — do not shorten or compress the memory section for brevity.",
-    "Use clear plain text with no markdown or bullet lists.",
-    ...PRESERVE_DETAIL_STYLE_GUIDE,
+    "Synthesize one compact Memory from the conversation summaries below.",
+    "Merge overlapping topics across chats. Do not write one paragraph per chat.",
+    "Cover every chat only to the extent it contributes durable facts — omit chats that add nothing lasting.",
     "",
     "Past conversations:",
     formatChatSummaries(chatSummaries, generatedAt),
     "",
-    `Return only ${agentName}'s first-person response.`,
+    `Return only ${agentName}'s compact first-person Memory.`,
+  ].join("\n");
+}
+
+/**
+ * Cheap incremental update: fold one chat's latest summary into the
+ * existing profile memory. Used automatically after each message turn
+ * once the chat conversation summary has been refreshed.
+ */
+export function buildAgentMemoryMergePrompt({
+  teammateId,
+  agentName,
+  agentRole,
+  existingMemory,
+  chatTitle,
+  conversationSummary,
+  projectName,
+  generatedAt = new Date(),
+}: BuildAgentMemoryMergePromptInput): string {
+  const currentDateTime = formatDisplayDateTime(generatedAt.toISOString());
+  const trimmedExisting = existingMemory?.trim() || null;
+  const projectLine = projectName?.trim()
+    ? `Project: ${projectName.trim()}`
+    : "Project: None linked to this chat";
+
+  const sections = [
+    ...buildSharedMemoryInstructions(agentName, agentRole),
+    `You are updating this memory at: ${currentDateTime}.`,
+    "",
+    buildAiTeammatesMemoryRosterPrompt(teammateId),
+    "",
+    "Update your Memory by folding in only the durable new information from the latest conversation summary below.",
+    "If the existing Memory is long, narrative, or essay-like, rewrite it into the compact key-facts style while preserving still-true durable items.",
+    "Remove items that the new summary clearly supersedes. Do not grow the Memory just because there is more text available.",
+    "If the new summary adds nothing durable beyond what is already remembered, return the existing Memory largely unchanged (still in compact form).",
+    "",
   ];
 
+  if (trimmedExisting) {
+    sections.push("Existing Memory:", trimmedExisting, "");
+  } else {
+    sections.push(
+      "Existing Memory: (none yet — create the first compact Memory from the conversation summary below.)",
+      "",
+    );
+  }
+
+  sections.push(
+    "Latest conversation to merge:",
+    `Chat title: ${chatTitle.trim() || "Untitled chat"}`,
+    projectLine,
+    "Conversation summary:",
+    conversationSummary.trim(),
+    "",
+    `Return only ${agentName}'s updated compact first-person Memory.`,
+  );
+
   return sections.join("\n");
+}
+
+/**
+ * Safety net if the model exceeds the soft limit. Prefers cutting on a
+ * paragraph or sentence boundary so the stored text stays readable.
+ */
+export function clampAgentMemory(memory: string): string {
+  const trimmed = memory.trim();
+
+  if (trimmed.length <= AGENT_MEMORY_MAX_CHARS) {
+    return trimmed;
+  }
+
+  const slice = trimmed.slice(0, AGENT_MEMORY_MAX_CHARS);
+  const paragraphBreak = slice.lastIndexOf("\n\n");
+  const sentenceBreak = Math.max(
+    slice.lastIndexOf(". "),
+    slice.lastIndexOf("! "),
+    slice.lastIndexOf("? "),
+  );
+
+  if (paragraphBreak >= AGENT_MEMORY_MAX_CHARS * 0.6) {
+    return slice.slice(0, paragraphBreak).trim();
+  }
+
+  if (sentenceBreak >= AGENT_MEMORY_MAX_CHARS * 0.6) {
+    return slice.slice(0, sentenceBreak + 1).trim();
+  }
+
+  return slice.trim();
 }

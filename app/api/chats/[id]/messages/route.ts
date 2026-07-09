@@ -1,14 +1,23 @@
-import { ObjectId } from "mongodb";
+import { ObjectId, type Db } from "mongodb";
 import {
+  generateAgentMemory,
   generateChatReply,
   generateChatTitle,
   generateConversationSummary,
 } from "@/lib/gemini";
-import { getOtherTeammatesMemories } from "@/lib/agent-memory-store";
+import {
+  getAgentMemory,
+  getOtherTeammatesMemories,
+  upsertAgentMemory,
+} from "@/lib/agent-memory-store";
 import { getAgentNotes } from "@/lib/agent-notes-store";
 import { getTeammateChatSummaries } from "@/lib/chat-summaries";
 import getClientPromise from "@/lib/mongodb";
 import { getProjectContext, getAllProjectsContext } from "@/lib/project-context";
+import {
+  buildAgentMemoryMergePrompt,
+  clampAgentMemory,
+} from "@/lib/prompts/agent-memory-prompt";
 import {
   buildChatConversationSummaryPrompt,
   RECENT_MESSAGE_WINDOW,
@@ -28,7 +37,12 @@ import {
   type StoredChatMessage,
 } from "@/lib/serialize-chat";
 import type { Chat, ChatMessage } from "@/lib/types";
-import { isCrossProjectTeammate } from "@/lib/chat-teammates";
+import {
+  getChatTeammate,
+  isCrossProjectTeammate,
+  type ChatTeammateId,
+} from "@/lib/chat-teammates";
+import type { StoredProject } from "@/lib/serialize-project";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -55,6 +69,52 @@ async function getChatOr404(chatId: string) {
   }
 
   return { client, chat, chatObjectId };
+}
+
+/**
+ * After a chat's conversation summary refreshes, fold durable facts into
+ * this teammate's compact profile Memory. Failures are swallowed so a
+ * memory miss never blocks the user-visible reply.
+ */
+async function refreshAgentMemoryFromChatSummary(input: {
+  db: Db;
+  teammateId: ChatTeammateId;
+  chatTitle: string;
+  conversationSummary: string;
+  projectId: ObjectId | null | undefined;
+  updatedAt: string;
+}): Promise<void> {
+  const teammate = getChatTeammate(input.teammateId);
+  const existing = await getAgentMemory(input.db, input.teammateId);
+
+  let projectName: string | null = null;
+  if (input.projectId) {
+    const project = await input.db
+      .collection<StoredProject>("projects")
+      .findOne({ _id: input.projectId }, { projection: { name: 1 } });
+    projectName = project?.name ?? null;
+  }
+
+  const memory = clampAgentMemory(
+    await generateAgentMemory(
+      buildAgentMemoryMergePrompt({
+        teammateId: input.teammateId,
+        agentName: teammate.name,
+        agentRole: teammate.role,
+        existingMemory: existing?.memory ?? null,
+        chatTitle: input.chatTitle,
+        conversationSummary: input.conversationSummary,
+        projectName,
+      }),
+    ),
+  );
+
+  await upsertAgentMemory(
+    input.db,
+    input.teammateId,
+    memory,
+    input.updatedAt,
+  );
 }
 
 export async function POST(request: Request, context: RouteContext) {
@@ -193,6 +253,7 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     let conversationSummary = result.chat.conversationSummary ?? null;
+    let conversationSummaryUpdated = false;
 
     try {
       const recentMessages = fullTranscript.slice(-RECENT_MESSAGE_WINDOW);
@@ -209,6 +270,7 @@ export async function POST(request: Request, context: RouteContext) {
           recentMessages,
         }),
       );
+      conversationSummaryUpdated = true;
     } catch {
       // Keep the previous summary if generation fails.
     }
@@ -229,6 +291,22 @@ export async function POST(request: Request, context: RouteContext) {
         $set: updatedChat,
       },
     );
+
+    if (conversationSummaryUpdated && conversationSummary?.trim()) {
+      try {
+        await refreshAgentMemoryFromChatSummary({
+          db,
+          teammateId: chatResponse.teammateId,
+          chatTitle: nextTitle,
+          conversationSummary,
+          projectId: result.chat.projectId,
+          updatedAt: now,
+        });
+      } catch {
+        // Memory refresh is best-effort; the reply and chat summary already
+        // succeeded, so do not fail the request if this step errors.
+      }
+    }
 
     const chat = serializeChat({
       ...result.chat,

@@ -21,14 +21,13 @@ export type OtherTeammateMemory = {
 };
 
 /**
- * Each other teammate's already-generated first-person "Memory" (see the
- * agent profile page). This is a single condensed blurb per teammate rather
- * than their full chat history, which keeps cross-teammate context compact
- * regardless of how many conversations a teammate has had.
+ * Each other teammate's compact first-person Memory (see the agent profile
+ * page). This is a capped distillate of durable facts — decisions,
+ * preferences, open loops — rather than a full retelling of every chat.
  *
- * Note: a teammate's memory only reflects what it looked like the last time
- * it was generated/regenerated on their profile page — it is not
- * regenerated automatically after every message.
+ * Memories are updated automatically after each chat message once that
+ * chat's conversation summary refreshes (incremental merge). They can also
+ * be fully rebuilt from the profile page Generate / Regenerate action.
  */
 export async function getOtherTeammatesMemories(
   db: Db,
@@ -53,4 +52,34 @@ export async function getOtherTeammatesMemories(
       memory: record.memory.trim(),
       updatedAt: toIsoString(record.updatedAt),
     }));
+}
+
+export async function getAgentMemory(
+  db: Db,
+  teammateId: ChatTeammateId,
+): Promise<StoredAgentMemory | null> {
+  return db
+    .collection<StoredAgentMemory>(AGENT_MEMORIES_COLLECTION)
+    .findOne({ teammateId });
+}
+
+export async function upsertAgentMemory(
+  db: Db,
+  teammateId: ChatTeammateId,
+  memory: string | null,
+  updatedAt: string = new Date().toISOString(),
+): Promise<StoredAgentMemory> {
+  const record: StoredAgentMemory = {
+    teammateId,
+    memory,
+    updatedAt,
+  };
+
+  await db.collection<StoredAgentMemory>(AGENT_MEMORIES_COLLECTION).updateOne(
+    { teammateId },
+    { $set: record },
+    { upsert: true },
+  );
+
+  return record;
 }

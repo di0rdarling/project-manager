@@ -18,7 +18,7 @@ export function buildOtherTeammatesContext(
   }
 
   return [
-    "What your other AI teammates remember from their own conversations with the user:",
+    "What your other AI teammates remember from their own conversations with the user (compact durable facts — decisions, preferences, open loops):",
     memories.map(formatTeammateMemory).join("\n\n"),
   ].join("\n");
 }

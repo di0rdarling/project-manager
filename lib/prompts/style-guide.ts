@@ -41,3 +41,14 @@ export const PRESERVE_DETAIL_STYLE_GUIDE: readonly string[] = [
   "Name the decision that was reached on each topic and the reasoning behind it, not just that 'a decision was made'.",
   "Write in clear, well-organized prose, but never sacrifice factual detail or specificity for the sake of brevity.",
 ];
+
+/**
+ * Like PRESERVE_DETAIL_STYLE_GUIDE, but for capped artifacts (e.g. agent
+ * profile Memory) where a hard length limit means compression is required.
+ */
+export const PRESERVE_DETAIL_WITHIN_LIMIT_STYLE_GUIDE: readonly string[] = [
+  "Preserve concrete technical details from the source material: names of tools, technologies, products, files, and systems; specific numbers; and the exact options that were considered.",
+  "Do not generalize or simplify technical terms into vague descriptions. State the specific technologies and methods that were actually discussed, by name.",
+  "Name the decision that was reached on each topic and the reasoning behind it, not just that 'a decision was made'.",
+  "Prefer specific names and decisions over vague summaries, but stay within any stated length limit — drop lower-signal items before dropping concrete detail on what you keep.",
+];
