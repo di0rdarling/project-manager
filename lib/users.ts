@@ -64,3 +64,20 @@ export async function createUser(
 
   return { ...user, _id: result.insertedId };
 }
+
+export async function updateUserName(
+  db: Db,
+  userId: ObjectId,
+  name: string | null,
+): Promise<StoredUser | null> {
+  const updatedAt = new Date().toISOString();
+  const result = await db
+    .collection<StoredUser>(USERS_COLLECTION)
+    .findOneAndUpdate(
+      { _id: userId },
+      { $set: { name, updatedAt } },
+      { returnDocument: "after" },
+    );
+
+  return result ?? null;
+}

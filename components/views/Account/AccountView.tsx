@@ -1,6 +1,7 @@
 "use client";
 
 import PageContent from "@/components/layout/PageContent";
+import EditableNameRow from "@/components/views/Account/EditableNameRow";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useFetchCurrentUser } from "@/hooks/queries/useFetchCurrentUser";
@@ -55,10 +56,7 @@ export default function AccountView() {
 
         {currentUser ? (
           <dl className="overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-            <AccountDetailRow
-              label="Name"
-              value={currentUser.name?.trim() || "Not set"}
-            />
+            <EditableNameRow name={currentUser.name} />
             <AccountDetailRow label="Email" value={currentUser.email} />
             <AccountDetailRow
               label="Member since"
