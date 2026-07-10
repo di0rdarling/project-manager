@@ -10,6 +10,7 @@ import {
   ArrowRightOnRectangleIcon,
   ChatBubbleLeftRightIcon,
   HomeIcon,
+  UserCircleIcon,
 } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
 import { useProjectSectionNav } from "@/components/views/ProjectDetail/ProjectSectionNavContext";
@@ -23,6 +24,7 @@ import {
 const navItems = [
   { href: "/", label: "Home", icon: HomeIcon },
   { href: "/chats", label: "AI Chats", icon: ChatBubbleLeftRightIcon },
+  { href: "/account", label: "Account", icon: UserCircleIcon },
 ] as const;
 
 type NavigationSidebarProps = {
@@ -158,9 +160,13 @@ export default function NavigationSidebar({
 
       <div className="mt-auto border-t border-zinc-200 p-3 dark:border-zinc-800">
         {currentUser ? (
-          <p className="mb-2 truncate px-1 text-xs text-zinc-500 dark:text-zinc-400">
+          <Link
+            href="/account"
+            onClick={onNavigate}
+            className="mb-2 block truncate rounded-lg px-1 py-1 text-xs text-zinc-500 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          >
             {currentUser.name || currentUser.email}
-          </p>
+          </Link>
         ) : null}
         <Button
           type="button"
