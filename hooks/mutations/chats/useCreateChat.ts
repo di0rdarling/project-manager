@@ -8,11 +8,11 @@ import {
 import { createChat } from "@/lib/api/chats";
 import type { ChatTeammateId } from "@/lib/chat-teammates";
 import { chatKeys } from "@/lib/query-keys";
-import type { ChatResponse } from "@/lib/types";
+import type { ChatListItemResponse } from "@/lib/types";
 
 type UseCreateChatOptions = Omit<
   UseMutationOptions<
-    ChatResponse,
+    ChatListItemResponse,
     Error,
     {
       projectId: string;
@@ -32,7 +32,7 @@ export function useCreateChat(options?: UseCreateChatOptions) {
     mutationFn: createChat,
     ...restOptions,
     onSuccess: (chat, variables, onMutateResult, context) => {
-      queryClient.setQueryData<ChatResponse[]>(chatKeys.all, (current) =>
+      queryClient.setQueryData<ChatListItemResponse[]>(chatKeys.all, (current) =>
         current ? [chat, ...current] : [chat],
       );
       onSuccess?.(chat, variables, onMutateResult, context);

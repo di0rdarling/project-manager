@@ -22,14 +22,14 @@ export async function createChat(input: {
   teammateId: ChatTeammateId;
   requirementId?: string | null;
   featureId?: string | null;
-}): Promise<ChatResponse> {
+}): Promise<ChatListItemResponse> {
   const response = await fetch("/api/chats", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
 
-  return parseResponse<ChatResponse>(response);
+  return parseResponse<ChatListItemResponse>(response);
 }
 
 export async function sendChatMessage(input: {

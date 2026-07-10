@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { deleteChat } from "@/lib/api/chats";
 import { chatKeys } from "@/lib/query-keys";
-import type { ChatResponse } from "@/lib/types";
+import type { ChatListItemResponse } from "@/lib/types";
 
 type UseDeleteChatOptions = Omit<
   UseMutationOptions<void, Error, string>,
@@ -22,7 +22,7 @@ export function useDeleteChat(options?: UseDeleteChatOptions) {
     mutationFn: deleteChat,
     ...restOptions,
     onSuccess: (data, chatId, onMutateResult, context) => {
-      queryClient.setQueryData<ChatResponse[]>(chatKeys.all, (current) =>
+      queryClient.setQueryData<ChatListItemResponse[]>(chatKeys.all, (current) =>
         current?.filter((chat) => chat._id !== chatId),
       );
       queryClient.removeQueries({ queryKey: chatKeys.detail(chatId) });

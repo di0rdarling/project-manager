@@ -6,7 +6,7 @@ import {
 import { serializeChatsWithContext } from "@/lib/chat-list-items";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
-import { serializeChat, type StoredChat } from "@/lib/serialize-chat";
+import type { StoredChat } from "@/lib/serialize-chat";
 import type { StoredProject } from "@/lib/serialize-project";
 import type { Chat } from "@/lib/types";
 
@@ -130,10 +130,11 @@ export async function POST(request: Request) {
       .collection<Omit<Chat, "_id">>("chats")
       .insertOne(chat);
 
-    return Response.json(
-      serializeChat({ ...chat, _id: result.insertedId }),
-      { status: 201 },
-    );
+    const [createdChat] = await serializeChatsWithContext(db, [
+      { ...chat, _id: result.insertedId },
+    ]);
+
+    return Response.json(createdChat, { status: 201 });
   } catch {
     return Response.json({ error: "Failed to create chat" }, { status: 500 });
   }

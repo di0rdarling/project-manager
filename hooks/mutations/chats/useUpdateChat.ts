@@ -6,8 +6,13 @@ import {
   type UseMutationOptions,
 } from "@tanstack/react-query";
 import { updateChat } from "@/lib/api/chats";
+import { mergeChatListItem } from "@/lib/chat-list-cache";
 import { chatKeys } from "@/lib/query-keys";
-import type { ChatResponse, ChatWithMessagesResponse } from "@/lib/types";
+import type {
+  ChatListItemResponse,
+  ChatResponse,
+  ChatWithMessagesResponse,
+} from "@/lib/types";
 
 type UpdateChatInput = Parameters<typeof updateChat>[0];
 
@@ -24,9 +29,11 @@ export function useUpdateChat(options?: UseUpdateChatOptions) {
     mutationFn: updateChat,
     ...restOptions,
     onSuccess: (updatedChat, variables, onMutateResult, context) => {
-      queryClient.setQueryData<ChatResponse[]>(chatKeys.all, (current) =>
+      queryClient.setQueryData<ChatListItemResponse[]>(chatKeys.all, (current) =>
         current?.map((chat) =>
-          chat._id === updatedChat._id ? updatedChat : chat,
+          chat._id === updatedChat._id
+            ? mergeChatListItem(chat, updatedChat)
+            : chat,
         ),
       );
 
