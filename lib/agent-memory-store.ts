@@ -1,4 +1,4 @@
-import type { Db, WithId } from "mongodb";
+import { ObjectId, type Db, type WithId } from "mongodb";
 import {
   DEFAULT_CHAT_TEAMMATE_ID,
   isChatTeammateId,
@@ -9,6 +9,7 @@ import { toIsoString } from "@/lib/dates";
 export const AGENT_MEMORIES_COLLECTION = "agent_memories";
 
 export type StoredAgentMemory = {
+  userId: ObjectId;
   teammateId: ChatTeammateId;
   memory: string | null;
   updatedAt: string | Date;
@@ -31,11 +32,12 @@ export type OtherTeammateMemory = {
  */
 export async function getOtherTeammatesMemories(
   db: Db,
+  userId: ObjectId,
   currentTeammateId: ChatTeammateId,
 ): Promise<OtherTeammateMemory[]> {
   const records = await db
     .collection<StoredAgentMemory>(AGENT_MEMORIES_COLLECTION)
-    .find({ teammateId: { $ne: currentTeammateId } })
+    .find({ userId, teammateId: { $ne: currentTeammateId } })
     .toArray();
 
   return records
@@ -56,27 +58,30 @@ export async function getOtherTeammatesMemories(
 
 export async function getAgentMemory(
   db: Db,
+  userId: ObjectId,
   teammateId: ChatTeammateId,
 ): Promise<StoredAgentMemory | null> {
   return db
     .collection<StoredAgentMemory>(AGENT_MEMORIES_COLLECTION)
-    .findOne({ teammateId });
+    .findOne({ userId, teammateId });
 }
 
 export async function upsertAgentMemory(
   db: Db,
+  userId: ObjectId,
   teammateId: ChatTeammateId,
   memory: string | null,
   updatedAt: string = new Date().toISOString(),
 ): Promise<StoredAgentMemory> {
   const record: StoredAgentMemory = {
+    userId,
     teammateId,
     memory,
     updatedAt,
   };
 
   await db.collection<StoredAgentMemory>(AGENT_MEMORIES_COLLECTION).updateOne(
-    { teammateId },
+    { userId, teammateId },
     { $set: record },
     { upsert: true },
   );

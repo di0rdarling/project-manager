@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { clearAuthQueryCache } from "@/lib/auth-query-cache";
 import {
   ArrowLeftIcon,
   ArrowRightOnRectangleIcon,
@@ -11,6 +13,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
 import { useProjectSectionNav } from "@/components/views/ProjectDetail/ProjectSectionNavContext";
+import { useFetchCurrentUser } from "@/hooks/queries/useFetchCurrentUser";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
 import {
   getProjectDetailPathInfo,
@@ -35,6 +38,8 @@ export default function NavigationSidebar({
 }: NavigationSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const { data: currentUser } = useFetchCurrentUser();
   const projectSectionNav = useProjectSectionNav();
   const projectPathInfo = getProjectDetailPathInfo(pathname);
   const isProjectDetailPage = projectPathInfo !== null;
@@ -54,6 +59,7 @@ export default function NavigationSidebar({
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
+    clearAuthQueryCache(queryClient);
     router.replace("/login");
     router.refresh();
   }
@@ -151,6 +157,11 @@ export default function NavigationSidebar({
       </div>
 
       <div className="mt-auto border-t border-zinc-200 p-3 dark:border-zinc-800">
+        {currentUser ? (
+          <p className="mb-2 truncate px-1 text-xs text-zinc-500 dark:text-zinc-400">
+            {currentUser.name || currentUser.email}
+          </p>
+        ) : null}
         <Button
           type="button"
           variant="secondary"

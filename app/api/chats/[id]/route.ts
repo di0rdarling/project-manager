@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import {
   serializeChat,
@@ -11,7 +12,7 @@ type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
-async function getChatOr404(chatId: string) {
+async function getChatOr404(chatId: string, userId: ObjectId) {
   if (!ObjectId.isValid(chatId)) {
     return {
       error: Response.json({ error: "Invalid chat id" }, { status: 400 }),
@@ -23,7 +24,7 @@ async function getChatOr404(chatId: string) {
   const chat = await client
     .db()
     .collection<StoredChat>("chats")
-    .findOne({ _id: chatObjectId });
+    .findOne({ _id: chatObjectId, userId });
 
   if (!chat) {
     return {
@@ -36,8 +37,13 @@ async function getChatOr404(chatId: string) {
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id } = await context.params;
-    const result = await getChatOr404(id);
+    const result = await getChatOr404(id, auth.userId);
 
     if ("error" in result) {
       return result.error;
@@ -46,7 +52,7 @@ export async function GET(_request: Request, context: RouteContext) {
     const messages = await result.client
       .db()
       .collection<StoredChatMessage>("chat_messages")
-      .find({ chatId: result.chatObjectId })
+      .find({ chatId: result.chatObjectId, userId: auth.userId })
       .sort({ createdAt: 1 })
       .toArray();
 
@@ -61,8 +67,13 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id } = await context.params;
-    const result = await getChatOr404(id);
+    const result = await getChatOr404(id, auth.userId);
 
     if ("error" in result) {
       return result.error;
@@ -86,7 +97,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       .db()
       .collection<StoredChat>("chats")
       .findOneAndUpdate(
-        { _id: result.chatObjectId },
+        { _id: result.chatObjectId, userId: auth.userId },
         {
           $set: {
             title,
@@ -109,8 +120,13 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id } = await context.params;
-    const result = await getChatOr404(id);
+    const result = await getChatOr404(id, auth.userId);
 
     if ("error" in result) {
       return result.error;
@@ -120,10 +136,12 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
     await db.collection("chat_messages").deleteMany({
       chatId: result.chatObjectId,
+      userId: auth.userId,
     });
 
     const deleteResult = await db.collection("chats").deleteOne({
       _id: result.chatObjectId,
+      userId: auth.userId,
     });
 
     if (deleteResult.deletedCount === 0) {

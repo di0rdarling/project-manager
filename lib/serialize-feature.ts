@@ -15,6 +15,7 @@ export type StoredFeature = Omit<
 export function serializeFeature(feature: StoredFeature): FeatureResponse {
   return {
     _id: feature._id.toString(),
+    userId: feature.userId.toString(),
     projectId: feature.projectId.toString(),
     title: typeof feature.title === "string" ? feature.title : "",
     content: feature.content,

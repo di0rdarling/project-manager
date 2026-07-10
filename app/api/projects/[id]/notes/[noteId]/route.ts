@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
 import { isRichTextEmpty } from "@/lib/rich-text";
@@ -18,6 +19,7 @@ type StoredNote = Omit<Note, "_id" | "projectId" | "createdAt" | "updatedAt"> & 
 function serializeNote(note: StoredNote): NoteResponse {
   return {
     _id: note._id.toString(),
+    userId: note.userId.toString(),
     projectId: note.projectId.toString(),
     featureId: note.featureId ? note.featureId.toString() : null,
     title: typeof note.title === "string" ? note.title : "",
@@ -31,6 +33,11 @@ function serializeNote(note: StoredNote): NoteResponse {
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id, noteId } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -48,6 +55,7 @@ export async function GET(_request: Request, context: RouteContext) {
       .findOne({
         _id: new ObjectId(noteId),
         projectId: new ObjectId(id),
+        userId: auth.userId,
       });
 
     if (!note) {
@@ -62,6 +70,11 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id, noteId } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -93,6 +106,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         {
           _id: new ObjectId(noteId),
           projectId: new ObjectId(id),
+          userId: auth.userId,
         },
         {
           $set: {
@@ -116,6 +130,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id, noteId } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -133,6 +152,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
       .deleteOne({
         _id: new ObjectId(noteId),
         projectId: new ObjectId(id),
+        userId: auth.userId,
       });
 
     if (result.deletedCount === 0) {

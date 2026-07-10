@@ -1,4 +1,4 @@
-import type { Db } from "mongodb";
+import type { Db, ObjectId } from "mongodb";
 import {
   agentNotesVisibilityFilter,
   parseSharedWithTeammateIds,
@@ -29,11 +29,12 @@ export type AgentNoteContextItem = {
 
 export async function getAgentNotes(
   db: Db,
+  userId: ObjectId,
   teammateId: ChatTeammateId,
 ): Promise<AgentNoteContextItem[]> {
   const notes = await db
     .collection<StoredAgentNote>(AGENT_NOTES_COLLECTION)
-    .find(agentNotesVisibilityFilter(teammateId))
+    .find(agentNotesVisibilityFilter(userId, teammateId))
     .sort({ createdAt: -1 })
     .toArray();
 
@@ -59,6 +60,7 @@ export function serializeAgentNote(note: StoredAgentNote) {
 
   return {
     _id: note._id.toString(),
+    userId: note.userId.toString(),
     teammateId: ownerTeammateId,
     sharedWithTeammateIds:
       parseSharedWithTeammateIds(
@@ -76,11 +78,13 @@ export function serializeAgentNote(note: StoredAgentNote) {
 
 export async function getOwnedAgentNote(
   db: Db,
+  userId: ObjectId,
   ownerTeammateId: ChatTeammateId,
   noteId: import("mongodb").ObjectId,
 ): Promise<StoredAgentNote | null> {
   return db.collection<StoredAgentNote>(AGENT_NOTES_COLLECTION).findOne({
     _id: noteId,
+    userId,
     teammateId: ownerTeammateId,
   });
 }

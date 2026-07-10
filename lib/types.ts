@@ -1,8 +1,21 @@
 import type { ObjectId } from "mongodb";
 import type { ChatTeammateId } from "@/lib/chat-teammates";
 
+type UserBase<TId> = {
+  _id: TId;
+  email: string;
+  passwordHash: string;
+  name: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type User = UserBase<ObjectId>;
+export type UserResponse = Omit<UserBase<string>, "passwordHash">;
+
 type ProjectBase<TId> = {
   _id: TId;
+  userId: TId;
   name: string;
   description: string;
   aiSummary: string | null;
@@ -15,6 +28,7 @@ export type ProjectResponse = ProjectBase<string>;
 
 type NoteBase<TId> = {
   _id: TId;
+  userId: TId;
   projectId: TId;
   featureId: TId | null;
   title: string;
@@ -28,6 +42,7 @@ export type NoteResponse = NoteBase<string>;
 
 type AgentNoteBase<TId> = {
   _id: TId;
+  userId: TId;
   teammateId: ChatTeammateId;
   sharedWithTeammateIds: ChatTeammateId[];
   title: string;
@@ -41,6 +56,7 @@ export type AgentNoteResponse = AgentNoteBase<string>;
 
 type PainPointBase<TId> = {
   _id: TId;
+  userId: TId;
   projectId: TId;
   title: string;
   content: string;
@@ -55,6 +71,7 @@ export type ChallengeStatus = "open" | "in_progress" | "resolved";
 
 type ChallengeBase<TId> = {
   _id: TId;
+  userId: TId;
   projectId: TId;
   featureId: TId | null;
   title: string;
@@ -71,6 +88,7 @@ export type RequirementPriority = "must_have" | "should_have" | "could_have";
 
 type RequirementBase<TId> = {
   _id: TId;
+  userId: TId;
   projectId: TId;
   title: string;
   content: string;
@@ -84,6 +102,7 @@ export type RequirementResponse = RequirementBase<string>;
 
 type FeatureBase<TId> = {
   _id: TId;
+  userId: TId;
   projectId: TId;
   title: string;
   content: string;
@@ -98,6 +117,7 @@ export type FeatureResponse = FeatureBase<string>;
 
 type ToolBase<TId> = {
   _id: TId;
+  userId: TId;
   projectId: TId;
   name: string;
   content: string;
@@ -110,6 +130,7 @@ export type ToolResponse = ToolBase<string>;
 
 type CoreUserBase<TId> = {
   _id: TId;
+  userId: TId;
   projectId: TId;
   name: string;
   role: string;
@@ -128,6 +149,7 @@ export type DomainKnowledgeConfidenceLevel =
 
 type DomainKnowledgeBase<TId> = {
   _id: TId;
+  userId: TId;
   projectId: TId;
   featureId: TId | null;
   name: string;
@@ -159,6 +181,7 @@ export type ChatGroundingSource = {
 
 type ChatMessageBase<TId> = {
   _id: TId;
+  userId: TId;
   chatId: TId;
   role: ChatMessageRole;
   content: string;
@@ -173,6 +196,7 @@ export type ChatMessageResponse = ChatMessageBase<string>;
 
 type ChatBase<TId> = {
   _id: TId;
+  userId: TId;
   projectId: TId | null;
   requirementId: TId | null;
   featureId: TId | null;

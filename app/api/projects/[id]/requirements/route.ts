@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
 import { isRichTextEmpty } from "@/lib/rich-text";
@@ -24,6 +25,7 @@ function serializeRequirement(
 ): RequirementResponse {
   return {
     _id: requirement._id.toString(),
+    userId: requirement.userId.toString(),
     projectId: requirement.projectId.toString(),
     title: typeof requirement.title === "string" ? requirement.title : "",
     content: requirement.content,
@@ -35,7 +37,7 @@ function serializeRequirement(
   };
 }
 
-async function getProjectOr404(projectId: string) {
+async function getProjectOr404(projectId: string, userId: ObjectId) {
   if (!ObjectId.isValid(projectId)) {
     return {
       error: Response.json({ error: "Invalid project id" }, { status: 400 }),
@@ -46,7 +48,7 @@ async function getProjectOr404(projectId: string) {
   const project = await client
     .db()
     .collection("projects")
-    .findOne({ _id: new ObjectId(projectId) });
+    .findOne({ _id: new ObjectId(projectId), userId });
 
   if (!project) {
     return {
@@ -59,8 +61,13 @@ async function getProjectOr404(projectId: string) {
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id } = await context.params;
-    const result = await getProjectOr404(id);
+    const result = await getProjectOr404(id, auth.userId);
 
     if ("error" in result) {
       return result.error;
@@ -69,7 +76,7 @@ export async function GET(_request: Request, context: RouteContext) {
     const requirements = await result.client
       .db()
       .collection<StoredRequirement>("requirements")
-      .find({ projectId: new ObjectId(id) })
+      .find({ projectId: new ObjectId(id), userId: auth.userId })
       .sort({ createdAt: -1 })
       .toArray();
 
@@ -84,8 +91,13 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function POST(request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id } = await context.params;
-    const result = await getProjectOr404(id);
+    const result = await getProjectOr404(id, auth.userId);
 
     if ("error" in result) {
       return result.error;
@@ -113,6 +125,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     const now = new Date().toISOString();
     const requirement: Omit<Requirement, "_id"> = {
+      userId: auth.userId,
       projectId: new ObjectId(id),
       title,
       content,

@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
 import { featureNotesFilter, projectLevelNotesFilter } from "@/lib/notes";
@@ -19,6 +20,7 @@ type StoredNote = Omit<Note, "_id" | "projectId" | "createdAt" | "updatedAt"> & 
 function serializeNote(note: StoredNote): NoteResponse {
   return {
     _id: note._id.toString(),
+    userId: note.userId.toString(),
     projectId: note.projectId.toString(),
     featureId: note.featureId ? note.featureId.toString() : null,
     title: typeof note.title === "string" ? note.title : "",
@@ -30,7 +32,7 @@ function serializeNote(note: StoredNote): NoteResponse {
   };
 }
 
-async function getProjectOr404(projectId: string) {
+async function getProjectOr404(projectId: string, userId: ObjectId) {
   if (!ObjectId.isValid(projectId)) {
     return { error: Response.json({ error: "Invalid project id" }, { status: 400 }) };
   }
@@ -39,7 +41,7 @@ async function getProjectOr404(projectId: string) {
   const project = await client
     .db()
     .collection("projects")
-    .findOne({ _id: new ObjectId(projectId) });
+    .findOne({ _id: new ObjectId(projectId), userId });
 
   if (!project) {
     return { error: Response.json({ error: "Project not found" }, { status: 404 }) };
@@ -50,8 +52,13 @@ async function getProjectOr404(projectId: string) {
 
 export async function GET(request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id } = await context.params;
-    const result = await getProjectOr404(id);
+    const result = await getProjectOr404(id, auth.userId);
 
     if ("error" in result) {
       return result.error;
@@ -71,6 +78,7 @@ export async function GET(request: Request, context: RouteContext) {
         .findOne({
           _id: new ObjectId(featureId),
           projectId: projectObjectId,
+          userId: auth.userId,
         });
 
       if (!feature) {
@@ -81,11 +89,12 @@ export async function GET(request: Request, context: RouteContext) {
     const notes = await result.client
       .db()
       .collection<StoredNote>("notes")
-      .find(
-        featureId
+      .find({
+        ...(featureId
           ? featureNotesFilter(projectObjectId, new ObjectId(featureId))
-          : projectLevelNotesFilter(projectObjectId),
-      )
+          : projectLevelNotesFilter(projectObjectId)),
+        userId: auth.userId,
+      })
       .sort({ createdAt: -1 })
       .toArray();
 
@@ -97,8 +106,13 @@ export async function GET(request: Request, context: RouteContext) {
 
 export async function POST(request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id } = await context.params;
-    const result = await getProjectOr404(id);
+    const result = await getProjectOr404(id, auth.userId);
 
     if ("error" in result) {
       return result.error;
@@ -134,6 +148,7 @@ export async function POST(request: Request, context: RouteContext) {
         .findOne({
           _id: new ObjectId(featureId),
           projectId: projectObjectId,
+          userId: auth.userId,
         });
 
       if (!feature) {
@@ -143,6 +158,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     const now = new Date().toISOString();
     const note: Omit<Note, "_id"> = {
+      userId: auth.userId,
       projectId: projectObjectId,
       featureId: featureId ? new ObjectId(featureId) : null,
       title,

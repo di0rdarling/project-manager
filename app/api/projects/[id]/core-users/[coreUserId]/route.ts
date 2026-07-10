@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
 import { isRichTextEmpty } from "@/lib/rich-text";
@@ -21,6 +22,7 @@ type StoredCoreUser = Omit<
 function serializeCoreUser(coreUser: StoredCoreUser): CoreUserResponse {
   return {
     _id: coreUser._id.toString(),
+    userId: coreUser.userId.toString(),
     projectId: coreUser.projectId.toString(),
     name: typeof coreUser.name === "string" ? coreUser.name : "",
     role: typeof coreUser.role === "string" ? coreUser.role : "",
@@ -34,6 +36,11 @@ function serializeCoreUser(coreUser: StoredCoreUser): CoreUserResponse {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id, coreUserId } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -69,6 +76,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         {
           _id: new ObjectId(coreUserId),
           projectId: new ObjectId(id),
+          userId: auth.userId,
         },
         {
           $set: {
@@ -96,6 +104,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id, coreUserId } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -113,6 +126,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
       .deleteOne({
         _id: new ObjectId(coreUserId),
         projectId: new ObjectId(id),
+        userId: auth.userId,
       });
 
     if (result.deletedCount === 0) {

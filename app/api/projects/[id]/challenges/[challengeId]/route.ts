@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { parseChallengeStatus } from "@/lib/challenges";
 import { toIsoString } from "@/lib/dates";
@@ -24,6 +25,7 @@ function serializeChallenge(challenge: StoredChallenge): ChallengeResponse {
 
   return {
     _id: challenge._id.toString(),
+    userId: challenge.userId.toString(),
     projectId: challenge.projectId.toString(),
     featureId: challenge.featureId ? challenge.featureId.toString() : null,
     title: typeof challenge.title === "string" ? challenge.title : "",
@@ -38,6 +40,11 @@ function serializeChallenge(challenge: StoredChallenge): ChallengeResponse {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id, challengeId } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -83,6 +90,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         {
           _id: new ObjectId(challengeId),
           projectId: new ObjectId(id),
+          userId: auth.userId,
         },
         {
           $set: {
@@ -110,6 +118,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id, challengeId } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -127,6 +140,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
       .deleteOne({
         _id: new ObjectId(challengeId),
         projectId: new ObjectId(id),
+        userId: auth.userId,
       });
 
     if (result.deletedCount === 0) {

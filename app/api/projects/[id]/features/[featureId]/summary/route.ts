@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { generateProjectSummary } from "@/lib/gemini";
 import { featureChallengesFilter } from "@/lib/challenges";
@@ -64,6 +65,11 @@ function hasSavedSummary(feature: StoredFeature): boolean {
 
 export async function POST(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id, featureId } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -80,10 +86,13 @@ export async function POST(_request: Request, context: RouteContext) {
     const featureObjectId = new ObjectId(featureId);
 
     const [project, feature] = await Promise.all([
-      db.collection<StoredProject>("projects").findOne({ _id: projectObjectId }),
+      db
+        .collection<StoredProject>("projects")
+        .findOne({ _id: projectObjectId, userId: auth.userId }),
       db.collection<StoredFeature>("features").findOne({
         _id: featureObjectId,
         projectId: projectObjectId,
+        userId: auth.userId,
       }),
     ]);
 
@@ -152,7 +161,7 @@ export async function POST(_request: Request, context: RouteContext) {
     const updatedAt = new Date().toISOString();
 
     const updateResult = await db.collection<StoredFeature>("features").updateOne(
-      { _id: featureObjectId, projectId: projectObjectId },
+      { _id: featureObjectId, projectId: projectObjectId, userId: auth.userId },
       {
         $set: {
           aiSummary,
@@ -167,7 +176,7 @@ export async function POST(_request: Request, context: RouteContext) {
 
     const savedFeature = await db
       .collection<StoredFeature>("features")
-      .findOne({ _id: featureObjectId, projectId: projectObjectId });
+      .findOne({ _id: featureObjectId, projectId: projectObjectId, userId: auth.userId });
 
     if (!savedFeature || !hasSavedSummary(savedFeature)) {
       return Response.json(
@@ -197,6 +206,11 @@ export async function POST(_request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id, featureId } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -213,7 +227,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
     const featureObjectId = new ObjectId(featureId);
 
     const updateResult = await db.collection<StoredFeature>("features").updateOne(
-      { _id: featureObjectId, projectId: projectObjectId },
+      { _id: featureObjectId, projectId: projectObjectId, userId: auth.userId },
       {
         $set: {
           aiSummary: null,
@@ -228,7 +242,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
     const savedFeature = await db
       .collection<StoredFeature>("features")
-      .findOne({ _id: featureObjectId, projectId: projectObjectId });
+      .findOne({ _id: featureObjectId, projectId: projectObjectId, userId: auth.userId });
 
     if (!savedFeature) {
       return Response.json({ error: "Feature not found" }, { status: 404 });

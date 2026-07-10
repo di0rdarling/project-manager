@@ -9,6 +9,7 @@ import {
   type StoredAgentMemory,
 } from "@/lib/agent-memory-store";
 import { getTeammateChatSummaries } from "@/lib/chat-summaries";
+import { requireUserId } from "@/lib/current-user";
 import { generateAgentMemory } from "@/lib/gemini";
 import getClientPromise from "@/lib/mongodb";
 import {
@@ -45,6 +46,11 @@ function parseTeammateId(teammateId: string) {
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { teammateId: rawTeammateId } = await context.params;
     const parsed = parseTeammateId(rawTeammateId);
 
@@ -53,7 +59,11 @@ export async function GET(_request: Request, context: RouteContext) {
     }
 
     const client = await getClientPromise();
-    const memory = await getAgentMemory(client.db(), parsed.teammateId);
+    const memory = await getAgentMemory(
+      client.db(),
+      auth.userId,
+      parsed.teammateId,
+    );
 
     return Response.json(serializeAgentMemory(parsed.teammateId, memory));
   } catch {
@@ -66,6 +76,11 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function POST(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { teammateId: rawTeammateId } = await context.params;
     const parsed = parseTeammateId(rawTeammateId);
 
@@ -75,6 +90,7 @@ export async function POST(_request: Request, context: RouteContext) {
 
     const chatSummaries = await getTeammateChatSummaries(
       (await getClientPromise()).db(),
+      auth.userId,
       parsed.teammateId,
     );
 
@@ -102,6 +118,7 @@ export async function POST(_request: Request, context: RouteContext) {
     const client = await getClientPromise();
     const stored = await upsertAgentMemory(
       client.db(),
+      auth.userId,
       parsed.teammateId,
       memory,
       now,
@@ -128,6 +145,11 @@ export async function POST(_request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { teammateId: rawTeammateId } = await context.params;
     const parsed = parseTeammateId(rawTeammateId);
 
@@ -139,6 +161,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
     const now = new Date().toISOString();
     const stored = await upsertAgentMemory(
       client.db(),
+      auth.userId,
       parsed.teammateId,
       null,
       now,

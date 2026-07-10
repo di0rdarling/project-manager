@@ -1,8 +1,8 @@
 import { ObjectId } from "mongodb";
+import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import { serializeFeature, type StoredFeature } from "@/lib/serialize-feature";
-import type { Feature } from "@/lib/types";
 
 type RouteContext = {
   params: Promise<{ id: string; featureId: string }>;
@@ -29,6 +29,7 @@ function parseRequirementId(
 
 async function validateRequirementLink(
   client: Awaited<ReturnType<typeof getClientPromise>>,
+  userId: ObjectId,
   projectId: ObjectId,
   requirementId: ObjectId | null,
 ): Promise<Response | null> {
@@ -39,7 +40,7 @@ async function validateRequirementLink(
   const requirement = await client
     .db()
     .collection("requirements")
-    .findOne({ _id: requirementId, projectId });
+    .findOne({ _id: requirementId, projectId, userId });
 
   if (!requirement) {
     return Response.json(
@@ -53,6 +54,11 @@ async function validateRequirementLink(
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id, featureId } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -70,6 +76,7 @@ export async function GET(_request: Request, context: RouteContext) {
       .findOne({
         _id: new ObjectId(featureId),
         projectId: new ObjectId(id),
+        userId: auth.userId,
       });
 
     if (!feature) {
@@ -84,6 +91,11 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id, featureId } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -122,6 +134,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const projectId = new ObjectId(id);
     const requirementError = await validateRequirementLink(
       client,
+      auth.userId,
       projectId,
       requirementResult.requirementId,
     );
@@ -137,6 +150,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         {
           _id: new ObjectId(featureId),
           projectId,
+          userId: auth.userId,
         },
         {
           $set: {
@@ -164,6 +178,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id, featureId } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -181,6 +200,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
       .deleteOne({
         _id: new ObjectId(featureId),
         projectId: new ObjectId(id),
+        userId: auth.userId,
       });
 
     if (result.deletedCount === 0) {

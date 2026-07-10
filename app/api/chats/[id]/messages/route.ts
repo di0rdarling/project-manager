@@ -12,6 +12,7 @@ import {
 } from "@/lib/agent-memory-store";
 import { getAgentNotes } from "@/lib/agent-notes-store";
 import { getTeammateChatSummaries } from "@/lib/chat-summaries";
+import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { getProjectContext, getAllProjectsContext } from "@/lib/project-context";
 import {
@@ -48,7 +49,7 @@ type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
-async function getChatOr404(chatId: string) {
+async function getChatOr404(chatId: string, userId: ObjectId) {
   if (!ObjectId.isValid(chatId)) {
     return {
       error: Response.json({ error: "Invalid chat id" }, { status: 400 }),
@@ -60,7 +61,7 @@ async function getChatOr404(chatId: string) {
   const chat = await client
     .db()
     .collection<StoredChat>("chats")
-    .findOne({ _id: chatObjectId });
+    .findOne({ _id: chatObjectId, userId });
 
   if (!chat) {
     return {
@@ -78,6 +79,7 @@ async function getChatOr404(chatId: string) {
  */
 async function refreshAgentMemoryFromChatSummary(input: {
   db: Db;
+  userId: ObjectId;
   teammateId: ChatTeammateId;
   chatTitle: string;
   conversationSummary: string;
@@ -85,13 +87,16 @@ async function refreshAgentMemoryFromChatSummary(input: {
   updatedAt: string;
 }): Promise<void> {
   const teammate = getChatTeammate(input.teammateId);
-  const existing = await getAgentMemory(input.db, input.teammateId);
+  const existing = await getAgentMemory(input.db, input.userId, input.teammateId);
 
   let projectName: string | null = null;
   if (input.projectId) {
     const project = await input.db
       .collection<StoredProject>("projects")
-      .findOne({ _id: input.projectId }, { projection: { name: 1 } });
+      .findOne(
+        { _id: input.projectId, userId: input.userId },
+        { projection: { name: 1 } },
+      );
     projectName = project?.name ?? null;
   }
 
@@ -111,6 +116,7 @@ async function refreshAgentMemoryFromChatSummary(input: {
 
   await upsertAgentMemory(
     input.db,
+    input.userId,
     input.teammateId,
     memory,
     input.updatedAt,
@@ -119,8 +125,13 @@ async function refreshAgentMemoryFromChatSummary(input: {
 
 export async function POST(request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id } = await context.params;
-    const result = await getChatOr404(id);
+    const result = await getChatOr404(id, auth.userId);
 
     if ("error" in result) {
       return result.error;
@@ -140,7 +151,7 @@ export async function POST(request: Request, context: RouteContext) {
     const existingMessages = await result.client
       .db()
       .collection<StoredChatMessage>("chat_messages")
-      .find({ chatId: result.chatObjectId })
+      .find({ chatId: result.chatObjectId, userId: auth.userId })
       .sort({ createdAt: 1 })
       .toArray();
 
@@ -152,16 +163,22 @@ export async function POST(request: Request, context: RouteContext) {
     const chatResponse = serializeChat(result.chat);
 
     const projectContext = isCrossProjectTeammate(chatResponse.teammateId)
-      ? await getAllProjectsContext(result.client.db())
+      ? await getAllProjectsContext(result.client.db(), auth.userId)
       : result.chat.projectId
-        ? await getProjectContext(result.client.db(), result.chat.projectId, {
-            requirementId: result.chat.requirementId ?? null,
-            featureId: result.chat.featureId ?? null,
-          })
+        ? await getProjectContext(
+            result.client.db(),
+            auth.userId,
+            result.chat.projectId,
+            {
+              requirementId: result.chat.requirementId ?? null,
+              featureId: result.chat.featureId ?? null,
+            },
+          )
         : null;
 
     const otherChatSummaries = await getTeammateChatSummaries(
       result.client.db(),
+      auth.userId,
       chatResponse.teammateId,
       { excludeChatId: result.chatObjectId },
     );
@@ -170,6 +187,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     const otherTeammatesMemories = await getOtherTeammatesMemories(
       result.client.db(),
+      auth.userId,
       chatResponse.teammateId,
     );
     const otherTeammatesContext =
@@ -177,6 +195,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     const agentNotes = await getAgentNotes(
       result.client.db(),
+      auth.userId,
       chatResponse.teammateId,
     );
     const agentNotesContext = buildAgentNotesContext(agentNotes) ?? undefined;
@@ -192,12 +211,14 @@ export async function POST(request: Request, context: RouteContext) {
     );
     const now = new Date().toISOString();
     const userMessage: Omit<ChatMessage, "_id"> = {
+      userId: auth.userId,
       chatId: result.chatObjectId,
       role: "user",
       content,
       createdAt: now,
     };
     const assistantMessage: Omit<ChatMessage, "_id"> = {
+      userId: auth.userId,
       chatId: result.chatObjectId,
       role: "model",
       content: assistantReply.content,
@@ -286,7 +307,7 @@ export async function POST(request: Request, context: RouteContext) {
     };
 
     await db.collection<StoredChat>("chats").updateOne(
-      { _id: result.chatObjectId },
+      { _id: result.chatObjectId, userId: auth.userId },
       {
         $set: updatedChat,
       },
@@ -296,6 +317,7 @@ export async function POST(request: Request, context: RouteContext) {
       try {
         await refreshAgentMemoryFromChatSummary({
           db,
+          userId: auth.userId,
           teammateId: chatResponse.teammateId,
           chatTitle: nextTitle,
           conversationSummary,

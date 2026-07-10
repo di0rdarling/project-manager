@@ -1,3 +1,4 @@
+import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import {
   serializeProject,
@@ -7,11 +8,16 @@ import type { Project } from "@/lib/types";
 
 export async function GET() {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const client = await getClientPromise();
     const projects = await client
       .db()
       .collection<StoredProject>("projects")
-      .find({})
+      .find({ userId: auth.userId })
       .sort({ createdAt: -1 })
       .toArray();
 
@@ -26,6 +32,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const body = await request.json();
     const name = typeof body.name === "string" ? body.name.trim() : "";
     const description =
@@ -40,6 +51,7 @@ export async function POST(request: Request) {
 
     const now = new Date().toISOString();
     const project: Omit<Project, "_id"> = {
+      userId: auth.userId,
       name,
       description,
       aiSummary: null,

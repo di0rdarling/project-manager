@@ -1,3 +1,4 @@
+import type { ObjectId } from "mongodb";
 import {
   CHAT_TEAMMATE_IDS,
   isChatTeammateId,
@@ -5,9 +6,11 @@ import {
 } from "@/lib/chat-teammates";
 
 export function agentNotesVisibilityFilter(
+  userId: ObjectId,
   teammateId: ChatTeammateId,
 ): Record<string, unknown> {
   return {
+    userId,
     $or: [{ teammateId }, { sharedWithTeammateIds: teammateId }],
   };
 }

@@ -6,6 +6,7 @@ import {
   getOwnedAgentNote,
   serializeAgentNote,
 } from "@/lib/agent-notes-store";
+import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import type { AgentNote } from "@/lib/types";
@@ -38,6 +39,11 @@ function parseRouteParams(teammateId: string, noteId: string) {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { teammateId: rawTeammateId, noteId: rawNoteId } =
       await context.params;
     const parsed = parseRouteParams(rawTeammateId, rawNoteId);
@@ -61,6 +67,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const client = await getClientPromise();
     const existingNote = await getOwnedAgentNote(
       client.db(),
+      auth.userId,
       parsed.teammateId,
       new ObjectId(parsed.noteId),
     );
@@ -111,6 +118,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       .findOneAndUpdate(
         {
           _id: new ObjectId(parsed.noteId),
+          userId: auth.userId,
           teammateId: parsed.teammateId,
         },
         { $set: updates },
@@ -129,6 +137,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { teammateId: rawTeammateId, noteId: rawNoteId } =
       await context.params;
     const parsed = parseRouteParams(rawTeammateId, rawNoteId);
@@ -143,6 +156,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
       .collection(AGENT_NOTES_COLLECTION)
       .deleteOne({
         _id: new ObjectId(parsed.noteId),
+        userId: auth.userId,
         teammateId: parsed.teammateId,
       });
 

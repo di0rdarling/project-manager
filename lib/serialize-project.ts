@@ -10,6 +10,7 @@ export type StoredProject = Omit<Project, "_id" | "createdAt" | "updatedAt"> & {
 export function serializeProject(project: StoredProject): ProjectResponse {
   return {
     _id: project._id.toString(),
+    userId: project.userId.toString(),
     name: project.name,
     description: project.description,
     aiSummary:

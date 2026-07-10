@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import {
   featureChallengesFilter,
@@ -28,6 +29,7 @@ function serializeChallenge(challenge: StoredChallenge): ChallengeResponse {
 
   return {
     _id: challenge._id.toString(),
+    userId: challenge.userId.toString(),
     projectId: challenge.projectId.toString(),
     featureId: challenge.featureId ? challenge.featureId.toString() : null,
     title: typeof challenge.title === "string" ? challenge.title : "",
@@ -40,7 +42,7 @@ function serializeChallenge(challenge: StoredChallenge): ChallengeResponse {
   };
 }
 
-async function getProjectOr404(projectId: string) {
+async function getProjectOr404(projectId: string, userId: ObjectId) {
   if (!ObjectId.isValid(projectId)) {
     return {
       error: Response.json({ error: "Invalid project id" }, { status: 400 }),
@@ -51,7 +53,7 @@ async function getProjectOr404(projectId: string) {
   const project = await client
     .db()
     .collection("projects")
-    .findOne({ _id: new ObjectId(projectId) });
+    .findOne({ _id: new ObjectId(projectId), userId });
 
   if (!project) {
     return {
@@ -64,8 +66,13 @@ async function getProjectOr404(projectId: string) {
 
 export async function GET(request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id } = await context.params;
-    const result = await getProjectOr404(id);
+    const result = await getProjectOr404(id, auth.userId);
 
     if ("error" in result) {
       return result.error;
@@ -85,6 +92,7 @@ export async function GET(request: Request, context: RouteContext) {
         .findOne({
           _id: new ObjectId(featureId),
           projectId: projectObjectId,
+          userId: auth.userId,
         });
 
       if (!feature) {
@@ -95,11 +103,12 @@ export async function GET(request: Request, context: RouteContext) {
     const challenges = await result.client
       .db()
       .collection<StoredChallenge>("challenges")
-      .find(
-        featureId
+      .find({
+        ...(featureId
           ? featureChallengesFilter(projectObjectId, new ObjectId(featureId))
-          : projectLevelChallengesFilter(projectObjectId),
-      )
+          : projectLevelChallengesFilter(projectObjectId)),
+        userId: auth.userId,
+      })
       .sort({ createdAt: -1 })
       .toArray();
 
@@ -114,8 +123,13 @@ export async function GET(request: Request, context: RouteContext) {
 
 export async function POST(request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id } = await context.params;
-    const result = await getProjectOr404(id);
+    const result = await getProjectOr404(id, auth.userId);
 
     if ("error" in result) {
       return result.error;
@@ -165,6 +179,7 @@ export async function POST(request: Request, context: RouteContext) {
         .findOne({
           _id: new ObjectId(featureId),
           projectId: projectObjectId,
+          userId: auth.userId,
         });
 
       if (!feature) {
@@ -174,6 +189,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     const now = new Date().toISOString();
     const challenge: Omit<Challenge, "_id"> = {
+      userId: auth.userId,
       projectId: projectObjectId,
       featureId: featureId ? new ObjectId(featureId) : null,
       title,

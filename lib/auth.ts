@@ -1,7 +1,9 @@
 import { createHmac, timingSafeEqual } from "crypto";
+import bcrypt from "bcryptjs";
 
 export const AUTH_COOKIE_NAME = "pm-auth";
 const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
+const PASSWORD_HASH_ROUNDS = 12;
 
 function getAuthSecret(): string {
   const secret = process.env.AUTH_SECRET;
@@ -11,66 +13,68 @@ function getAuthSecret(): string {
   return secret;
 }
 
-export function isPasswordProtectionEnabled(): boolean {
-  return Boolean(process.env.APP_PASSWORD?.length);
+export function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, PASSWORD_HASH_ROUNDS);
 }
 
-export function verifyPassword(input: string): boolean {
-  const expected = process.env.APP_PASSWORD;
-  if (!expected) {
-    return false;
-  }
-
-  const inputBuffer = Buffer.from(input);
-  const expectedBuffer = Buffer.from(expected);
-
-  if (inputBuffer.length !== expectedBuffer.length) {
-    return false;
-  }
-
-  return timingSafeEqual(inputBuffer, expectedBuffer);
+export function verifyPasswordHash(
+  password: string,
+  passwordHash: string,
+): Promise<boolean> {
+  return bcrypt.compare(password, passwordHash);
 }
 
-function signExpiry(expires: string): string {
-  return createHmac("sha256", getAuthSecret()).update(expires).digest("hex");
+function signPayload(payload: string): string {
+  return createHmac("sha256", getAuthSecret()).update(payload).digest("hex");
 }
 
-export function createAuthToken(): string {
+/**
+ * Session token format: `${userId}.${expires}.${signature}`, where the
+ * signature is an HMAC over `${userId}.${expires}` keyed by AUTH_SECRET.
+ */
+export function createSessionToken(userId: string): string {
   const expires = String(Date.now() + SESSION_DURATION_MS);
-  const signature = signExpiry(expires);
-  return `${expires}.${signature}`;
+  const payload = `${userId}.${expires}`;
+  const signature = signPayload(payload);
+  return `${payload}.${signature}`;
 }
 
-export function verifyAuthToken(token: string | undefined): boolean {
-  if (!token || !isPasswordProtectionEnabled()) {
-    return !isPasswordProtectionEnabled();
+export function verifySessionToken(
+  token: string | undefined,
+): { userId: string } | null {
+  if (!token) {
+    return null;
   }
 
-  const [expires, signature] = token.split(".");
-  if (!expires || !signature) {
-    return false;
+  const [userId, expires, signature] = token.split(".");
+  if (!userId || !expires || !signature) {
+    return null;
   }
 
   const expiryTime = Number(expires);
   if (!Number.isFinite(expiryTime) || Date.now() > expiryTime) {
-    return false;
+    return null;
   }
 
   let expectedSignature: string;
   try {
-    expectedSignature = signExpiry(expires);
+    expectedSignature = signPayload(`${userId}.${expires}`);
   } catch {
-    return false;
+    return null;
   }
 
   const signatureBuffer = Buffer.from(signature, "hex");
   const expectedBuffer = Buffer.from(expectedSignature, "hex");
 
   if (signatureBuffer.length !== expectedBuffer.length) {
-    return false;
+    return null;
   }
 
-  return timingSafeEqual(signatureBuffer, expectedBuffer);
+  if (!timingSafeEqual(signatureBuffer, expectedBuffer)) {
+    return null;
+  }
+
+  return { userId };
 }
 
 export function getAuthCookieOptions() {

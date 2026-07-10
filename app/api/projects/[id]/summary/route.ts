@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { generateProjectSummary } from "@/lib/gemini";
 import {
@@ -99,6 +100,11 @@ function hasSavedSummary(project: StoredProject): boolean {
 
 export async function POST(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -111,7 +117,7 @@ export async function POST(_request: Request, context: RouteContext) {
 
     const project = await db
       .collection<StoredProject>("projects")
-      .findOne({ _id: projectObjectId });
+      .findOne({ _id: projectObjectId, userId: auth.userId });
 
     if (!project) {
       return Response.json({ error: "Project not found" }, { status: 404 });
@@ -121,42 +127,51 @@ export async function POST(_request: Request, context: RouteContext) {
       await Promise.all([
       db
         .collection<StoredCoreUser>("coreUsers")
-        .find({ projectId: projectObjectId })
+        .find({ projectId: projectObjectId, userId: auth.userId })
         .sort({ createdAt: -1 })
         .toArray(),
       db
         .collection<StoredPainPoint>("painPoints")
-        .find({ projectId: projectObjectId })
+        .find({ projectId: projectObjectId, userId: auth.userId })
         .sort({ createdAt: -1 })
         .toArray(),
       db
         .collection<StoredChallenge>("challenges")
-        .find(projectLevelChallengesFilter(projectObjectId))
+        .find({
+          ...projectLevelChallengesFilter(projectObjectId),
+          userId: auth.userId,
+        })
         .sort({ createdAt: -1 })
         .toArray(),
       db
         .collection<StoredDomainKnowledge>("domainKnowledge")
-        .find(projectLevelDomainKnowledgeFilter(projectObjectId))
+        .find({
+          ...projectLevelDomainKnowledgeFilter(projectObjectId),
+          userId: auth.userId,
+        })
         .sort({ createdAt: -1 })
         .toArray(),
       db
         .collection<StoredRequirement>("requirements")
-        .find({ projectId: projectObjectId })
+        .find({ projectId: projectObjectId, userId: auth.userId })
         .sort({ createdAt: -1 })
         .toArray(),
       db
         .collection<StoredFeature>("features")
-        .find({ projectId: projectObjectId })
+        .find({ projectId: projectObjectId, userId: auth.userId })
         .sort({ createdAt: -1 })
         .toArray(),
       db
         .collection<StoredTool>("tools")
-        .find({ projectId: projectObjectId })
+        .find({ projectId: projectObjectId, userId: auth.userId })
         .sort({ createdAt: -1 })
         .toArray(),
       db
         .collection<StoredNote>("notes")
-        .find(projectLevelNotesFilter(projectObjectId))
+        .find({
+          ...projectLevelNotesFilter(projectObjectId),
+          userId: auth.userId,
+        })
         .sort({ createdAt: -1 })
         .toArray(),
     ]);
@@ -218,7 +233,7 @@ export async function POST(_request: Request, context: RouteContext) {
     const updatedAt = new Date().toISOString();
 
     const updateResult = await db.collection<StoredProject>("projects").updateOne(
-      { _id: projectObjectId },
+      { _id: projectObjectId, userId: auth.userId },
       {
         $set: {
           aiSummary,
@@ -233,7 +248,7 @@ export async function POST(_request: Request, context: RouteContext) {
 
     const savedProject = await db
       .collection<StoredProject>("projects")
-      .findOne({ _id: projectObjectId });
+      .findOne({ _id: projectObjectId, userId: auth.userId });
 
     if (!savedProject || !hasSavedSummary(savedProject)) {
       return Response.json(
@@ -263,6 +278,11 @@ export async function POST(_request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -274,7 +294,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
     const projectObjectId = new ObjectId(id);
 
     const updateResult = await db.collection<StoredProject>("projects").updateOne(
-      { _id: projectObjectId },
+      { _id: projectObjectId, userId: auth.userId },
       {
         $set: {
           aiSummary: null,
@@ -289,7 +309,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
     const savedProject = await db
       .collection<StoredProject>("projects")
-      .findOne({ _id: projectObjectId });
+      .findOne({ _id: projectObjectId, userId: auth.userId });
 
     if (!savedProject) {
       return Response.json({ error: "Project not found" }, { status: 404 });

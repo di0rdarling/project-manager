@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
 import { isRichTextEmpty } from "@/lib/rich-text";
@@ -18,6 +19,7 @@ type StoredTool = Omit<Tool, "_id" | "projectId" | "createdAt" | "updatedAt"> & 
 function serializeTool(tool: StoredTool): ToolResponse {
   return {
     _id: tool._id.toString(),
+    userId: tool.userId.toString(),
     projectId: tool.projectId.toString(),
     name: typeof tool.name === "string" ? tool.name : "",
     content: tool.content,
@@ -30,6 +32,11 @@ function serializeTool(tool: StoredTool): ToolResponse {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id, toolId } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -61,6 +68,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         {
           _id: new ObjectId(toolId),
           projectId: new ObjectId(id),
+          userId: auth.userId,
         },
         {
           $set: {
@@ -84,6 +92,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id, toolId } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -101,6 +114,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
       .deleteOne({
         _id: new ObjectId(toolId),
         projectId: new ObjectId(id),
+        userId: auth.userId,
       });
 
     if (result.deletedCount === 0) {

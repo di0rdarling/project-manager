@@ -2,16 +2,18 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { clearAuthQueryCache } from "@/lib/auth-query-cache";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/inputs/Input";
 
-export default function LoginForm() {
+const MIN_PASSWORD_LENGTH = 8;
+
+export default function SignupForm() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const searchParams = useSearchParams();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -20,28 +22,32 @@ export default function LoginForm() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ name, email, password }),
       });
 
       if (!response.ok) {
         const data = (await response.json()) as { error?: string };
-        setError(data.error ?? "Unable to sign in");
+        setError(data.error ?? "Unable to sign up");
         return;
       }
 
       clearAuthQueryCache(queryClient);
-
-      const from = searchParams.get("from") ?? "/";
-      router.replace(from);
+      router.replace("/");
       router.refresh();
     } catch {
-      setError("Unable to sign in");
+      setError("Unable to sign up");
     } finally {
       setIsSubmitting(false);
     }
@@ -53,11 +59,21 @@ export default function LoginForm() {
       className="w-full max-w-sm space-y-6 rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
     >
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Project Manager</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Create an account</h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Sign in to your account to continue.
+          Sign up to start managing your projects.
         </p>
       </div>
+
+      <Input
+        id="name"
+        label="Name"
+        type="text"
+        autoComplete="name"
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        autoFocus
+      />
 
       <Input
         id="email"
@@ -67,17 +83,17 @@ export default function LoginForm() {
         value={email}
         onChange={(event) => setEmail(event.target.value)}
         required
-        autoFocus
       />
 
       <Input
         id="password"
         label="Password"
         type="password"
-        autoComplete="current-password"
+        autoComplete="new-password"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
         required
+        minLength={MIN_PASSWORD_LENGTH}
       />
 
       {error ? (
@@ -87,16 +103,16 @@ export default function LoginForm() {
       ) : null}
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Signing in..." : "Sign in"}
+        {isSubmitting ? "Creating account..." : "Sign up"}
       </Button>
 
       <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
-        Don&apos;t have an account?{" "}
+        Already have an account?{" "}
         <Link
-          href="/signup"
+          href="/login"
           className="font-medium text-zinc-900 underline underline-offset-2 dark:text-zinc-50"
         >
-          Sign up
+          Sign in
         </Link>
       </p>
     </form>

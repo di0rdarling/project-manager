@@ -20,6 +20,7 @@ export type TeammateChatSummary = {
 
 async function summarizeChats(
   db: Db,
+  userId: ObjectId,
   chats: StoredChat[],
 ): Promise<TeammateChatSummary[]> {
   const chatsWithSummaries = chats.filter(
@@ -40,7 +41,7 @@ async function summarizeChats(
     projectIds.length > 0
       ? await db
           .collection<StoredProject>("projects")
-          .find({ _id: { $in: projectIds } })
+          .find({ _id: { $in: projectIds }, userId })
           .toArray()
       : [];
 
@@ -80,10 +81,11 @@ type GetTeammateChatSummariesOptions = {
 
 export async function getTeammateChatSummaries(
   db: Db,
+  userId: ObjectId,
   teammateId: ChatTeammateId,
   options?: GetTeammateChatSummariesOptions,
 ): Promise<TeammateChatSummary[]> {
-  const query: Record<string, unknown> = { teammateId };
+  const query: Record<string, unknown> = { userId, teammateId };
 
   if (options?.excludeChatId) {
     query._id = { $ne: options.excludeChatId };
@@ -95,5 +97,5 @@ export async function getTeammateChatSummaries(
     .sort({ updatedAt: -1 })
     .toArray();
 
-  return summarizeChats(db, chats);
+  return summarizeChats(db, userId, chats);
 }

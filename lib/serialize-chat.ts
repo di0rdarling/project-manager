@@ -34,6 +34,7 @@ export type StoredChatMessage = Omit<ChatMessage, "chatId" | "createdAt"> & {
 export function serializeChat(chat: StoredChat): ChatResponse {
   return {
     _id: chat._id.toString(),
+    userId: chat.userId.toString(),
     projectId: chat.projectId ? chat.projectId.toString() : null,
     requirementId: chat.requirementId ? chat.requirementId.toString() : null,
     featureId: chat.featureId ? chat.featureId.toString() : null,
@@ -54,6 +55,7 @@ export function serializeChatMessage(
 ): ChatMessageResponse {
   return {
     _id: message._id.toString(),
+    userId: message.userId.toString(),
     chatId: message.chatId.toString(),
     role: message.role,
     content: message.content,

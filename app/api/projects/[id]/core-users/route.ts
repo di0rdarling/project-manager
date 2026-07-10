@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
 import { isRichTextEmpty } from "@/lib/rich-text";
@@ -21,6 +22,7 @@ type StoredCoreUser = Omit<
 function serializeCoreUser(coreUser: StoredCoreUser): CoreUserResponse {
   return {
     _id: coreUser._id.toString(),
+    userId: coreUser.userId.toString(),
     projectId: coreUser.projectId.toString(),
     name: typeof coreUser.name === "string" ? coreUser.name : "",
     role: typeof coreUser.role === "string" ? coreUser.role : "",
@@ -32,7 +34,7 @@ function serializeCoreUser(coreUser: StoredCoreUser): CoreUserResponse {
   };
 }
 
-async function getProjectOr404(projectId: string) {
+async function getProjectOr404(projectId: string, userId: ObjectId) {
   if (!ObjectId.isValid(projectId)) {
     return {
       error: Response.json({ error: "Invalid project id" }, { status: 400 }),
@@ -43,7 +45,7 @@ async function getProjectOr404(projectId: string) {
   const project = await client
     .db()
     .collection("projects")
-    .findOne({ _id: new ObjectId(projectId) });
+    .findOne({ _id: new ObjectId(projectId), userId });
 
   if (!project) {
     return {
@@ -56,8 +58,13 @@ async function getProjectOr404(projectId: string) {
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id } = await context.params;
-    const result = await getProjectOr404(id);
+    const result = await getProjectOr404(id, auth.userId);
 
     if ("error" in result) {
       return result.error;
@@ -66,7 +73,7 @@ export async function GET(_request: Request, context: RouteContext) {
     const coreUsers = await result.client
       .db()
       .collection<StoredCoreUser>("coreUsers")
-      .find({ projectId: new ObjectId(id) })
+      .find({ projectId: new ObjectId(id), userId: auth.userId })
       .sort({ createdAt: -1 })
       .toArray();
 
@@ -81,8 +88,13 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function POST(request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id } = await context.params;
-    const result = await getProjectOr404(id);
+    const result = await getProjectOr404(id, auth.userId);
 
     if ("error" in result) {
       return result.error;
@@ -107,6 +119,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     const now = new Date().toISOString();
     const coreUser: Omit<CoreUser, "_id"> = {
+      userId: auth.userId,
       projectId: new ObjectId(id),
       name,
       role,

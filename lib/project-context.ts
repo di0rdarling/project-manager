@@ -144,12 +144,13 @@ function buildChatFocusSection(
 
 export async function getProjectContext(
   db: Db,
+  userId: ObjectId,
   projectId: ObjectId,
   focus?: ProjectContextFocus,
 ): Promise<string | null> {
   const project = await db
     .collection<StoredProject>("projects")
-    .findOne({ _id: projectId });
+    .findOne({ _id: projectId, userId });
 
   if (!project) {
     return null;
@@ -324,10 +325,13 @@ export async function getProjectContext(
   return focusSection ? `${projectContext}${focusSection}` : projectContext;
 }
 
-export async function getAllProjectsContext(db: Db): Promise<string | null> {
+export async function getAllProjectsContext(
+  db: Db,
+  userId: ObjectId,
+): Promise<string | null> {
   const projects = await db
     .collection<StoredProject>("projects")
-    .find({})
+    .find({ userId })
     .sort({ updatedAt: -1 })
     .toArray();
 
@@ -336,7 +340,7 @@ export async function getAllProjectsContext(db: Db): Promise<string | null> {
   }
 
   const projectContexts = await Promise.all(
-    projects.map((project) => getProjectContext(db, project._id)),
+    projects.map((project) => getProjectContext(db, userId, project._id)),
   );
 
   const sections = projectContexts

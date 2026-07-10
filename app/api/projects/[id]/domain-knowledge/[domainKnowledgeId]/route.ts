@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
 import { parseConfidenceLevel } from "@/lib/domain-knowledge";
@@ -24,6 +25,7 @@ function serializeDomainKnowledge(
 ): DomainKnowledgeResponse {
   return {
     _id: item._id.toString(),
+    userId: item.userId.toString(),
     projectId: item.projectId.toString(),
     featureId: item.featureId ? item.featureId.toString() : null,
     name: typeof item.name === "string" ? item.name : "",
@@ -39,6 +41,11 @@ function serializeDomainKnowledge(
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id, domainKnowledgeId } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -84,6 +91,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         {
           _id: new ObjectId(domainKnowledgeId),
           projectId: new ObjectId(id),
+          userId: auth.userId,
         },
         {
           $set: {
@@ -115,6 +123,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id, domainKnowledgeId } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -135,6 +148,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
       .deleteOne({
         _id: new ObjectId(domainKnowledgeId),
         projectId: new ObjectId(id),
+        userId: auth.userId,
       });
 
     if (result.deletedCount === 0) {

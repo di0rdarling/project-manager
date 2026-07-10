@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import {
   serializeProject,
@@ -11,6 +12,11 @@ type RouteContext = {
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -21,7 +27,7 @@ export async function GET(_request: Request, context: RouteContext) {
     const project = await client
       .db()
       .collection<StoredProject>("projects")
-      .findOne({ _id: new ObjectId(id) });
+      .findOne({ _id: new ObjectId(id), userId: auth.userId });
 
     if (!project) {
       return Response.json({ error: "Project not found" }, { status: 404 });
@@ -38,6 +44,11 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -61,7 +72,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       .db()
       .collection<StoredProject>("projects")
       .findOneAndUpdate(
-        { _id: new ObjectId(id) },
+        { _id: new ObjectId(id), userId: auth.userId },
         {
           $set: {
             name,
@@ -87,6 +98,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const { id } = await context.params;
 
     if (!ObjectId.isValid(id)) {
@@ -97,7 +113,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
     const result = await client
       .db()
       .collection("projects")
-      .deleteOne({ _id: new ObjectId(id) });
+      .deleteOne({ _id: new ObjectId(id), userId: auth.userId });
 
     if (result.deletedCount === 0) {
       return Response.json({ error: "Project not found" }, { status: 404 });

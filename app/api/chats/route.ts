@@ -4,6 +4,7 @@ import {
   isChatTeammateId,
 } from "@/lib/chat-teammates";
 import { serializeChatsWithContext } from "@/lib/chat-list-items";
+import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { serializeChat, type StoredChat } from "@/lib/serialize-chat";
 import type { StoredProject } from "@/lib/serialize-project";
@@ -11,11 +12,16 @@ import type { Chat } from "@/lib/types";
 
 export async function GET() {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const client = await getClientPromise();
     const db = client.db();
     const chats = await db
       .collection<StoredChat>("chats")
-      .find({})
+      .find({ userId: auth.userId })
       .sort({ updatedAt: -1 })
       .toArray();
 
@@ -27,6 +33,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
     const body = await request.json();
     const projectId =
       typeof body.projectId === "string" ? body.projectId.trim() : "";
@@ -43,7 +54,7 @@ export async function POST(request: Request) {
     const projectObjectId = new ObjectId(projectId);
     const project = await db
       .collection<StoredProject>("projects")
-      .findOne({ _id: projectObjectId });
+      .findOne({ _id: projectObjectId, userId: auth.userId });
 
     if (!project) {
       return Response.json({ error: "Project not found" }, { status: 404 });
@@ -77,6 +88,7 @@ export async function POST(request: Request) {
       const requirement = await db.collection("requirements").findOne({
         _id: new ObjectId(requirementId),
         projectId: projectObjectId,
+        userId: auth.userId,
       });
 
       if (!requirement) {
@@ -91,6 +103,7 @@ export async function POST(request: Request) {
       const feature = await db.collection("features").findOne({
         _id: new ObjectId(featureId),
         projectId: projectObjectId,
+        userId: auth.userId,
       });
 
       if (!feature) {
@@ -100,6 +113,7 @@ export async function POST(request: Request) {
 
     const now = new Date().toISOString();
     const chat: Omit<Chat, "_id"> = {
+      userId: auth.userId,
       projectId: projectObjectId,
       requirementId: requirementId ? new ObjectId(requirementId) : null,
       featureId: featureId ? new ObjectId(featureId) : null,
