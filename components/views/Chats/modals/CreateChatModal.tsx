@@ -66,20 +66,10 @@ export default function CreateChatModal({
     enabled: open && Boolean(effectiveProjectId),
   });
 
-  const linkedFeatures = selectedRequirementId
-    ? features.filter(
-        (feature) => feature.requirementId === selectedRequirementId,
-      )
-    : [];
-
   useEffect(() => {
     setSelectedRequirementId("");
     setSelectedFeatureId("");
   }, [effectiveProjectId]);
-
-  useEffect(() => {
-    setSelectedFeatureId("");
-  }, [selectedRequirementId]);
 
   const createChatMutation = useCreateChat({
     onSuccess: (chat) => {
@@ -138,7 +128,7 @@ export default function CreateChatModal({
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           Choose a project to discuss and who you&apos;d like to talk to. You
           can optionally narrow the conversation to a specific requirement or
-          linked feature.
+          feature.
         </p>
 
         <AvatarSelect
@@ -209,7 +199,7 @@ export default function CreateChatModal({
               />
             ) : null}
 
-            {selectedRequirementId && linkedFeatures.length > 0 ? (
+            {features.length > 0 ? (
               <Select
                 id="featureId"
                 label="Feature (optional)"
@@ -217,7 +207,7 @@ export default function CreateChatModal({
                 onChange={(event) => setSelectedFeatureId(event.target.value)}
                 options={[
                   { value: "", label: "No specific feature" },
-                  ...linkedFeatures.map((feature) => ({
+                  ...features.map((feature) => ({
                     value: feature._id,
                     label: feature.title.trim() || "Untitled feature",
                   })),

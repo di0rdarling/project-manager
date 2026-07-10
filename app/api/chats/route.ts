@@ -73,13 +73,6 @@ export async function POST(request: Request) {
       return Response.json({ error: "Invalid feature id" }, { status: 400 });
     }
 
-    if (featureId && !requirementId) {
-      return Response.json(
-        { error: "A requirement must be selected when choosing a feature" },
-        { status: 400 },
-      );
-    }
-
     if (requirementId) {
       const requirement = await db.collection("requirements").findOne({
         _id: new ObjectId(requirementId),
@@ -102,16 +95,6 @@ export async function POST(request: Request) {
 
       if (!feature) {
         return Response.json({ error: "Feature not found" }, { status: 400 });
-      }
-
-      if (
-        !feature.requirementId ||
-        feature.requirementId.toString() !== requirementId
-      ) {
-        return Response.json(
-          { error: "Feature is not linked to the selected requirement" },
-          { status: 400 },
-        );
       }
     }
 
