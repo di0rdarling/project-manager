@@ -1,5 +1,6 @@
 import type { ChatTeammateId } from "@/lib/chat-teammates";
 import { buildAiTeammatesConversationSummaryRosterPrompt } from "@/lib/prompts/ai-teammates-roster";
+import { buildChatUserContextPrompt } from "@/lib/prompts/chat-user-context-prompt";
 import { PRESERVE_DETAIL_STYLE_GUIDE } from "@/lib/prompts/style-guide";
 
 export type ConversationSummaryMessage = {
@@ -26,6 +27,7 @@ type BuildChatConversationSummaryPromptInput = {
    */
   olderSummary: string | null;
   recentMessages: ConversationSummaryMessage[];
+  userName?: string | null;
 };
 
 export function formatTranscript(
@@ -44,11 +46,14 @@ export function buildChatConversationSummaryPrompt({
   chatTitle,
   olderSummary,
   recentMessages,
+  userName,
 }: BuildChatConversationSummaryPromptInput): string {
   const trimmedOlderSummary = olderSummary?.trim() || null;
 
   const sections = [
     buildAiTeammatesConversationSummaryRosterPrompt(teammateId),
+    "",
+    buildChatUserContextPrompt(userName),
     "",
     "Write a detailed running summary of this conversation from your own perspective, as your personal memory of what you and the user discussed.",
     "Write the summary so you (and your other chats with this user) can act on it later without re-reading the transcript.",

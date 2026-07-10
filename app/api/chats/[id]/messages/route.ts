@@ -14,6 +14,7 @@ import { getAgentNotes } from "@/lib/agent-notes-store";
 import { getTeammateChatSummaries } from "@/lib/chat-summaries";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
+import { findUserById } from "@/lib/users";
 import { getProjectContext, getAllProjectsContext } from "@/lib/project-context";
 import {
   buildAgentMemoryMergePrompt,
@@ -84,6 +85,7 @@ async function refreshAgentMemoryFromChatSummary(input: {
   chatTitle: string;
   conversationSummary: string;
   projectId: ObjectId | null | undefined;
+  userName: string | null;
   updatedAt: string;
 }): Promise<void> {
   const teammate = getChatTeammate(input.teammateId);
@@ -110,6 +112,7 @@ async function refreshAgentMemoryFromChatSummary(input: {
         chatTitle: input.chatTitle,
         conversationSummary: input.conversationSummary,
         projectName,
+        userName: input.userName,
       }),
     ),
   );
@@ -136,6 +139,9 @@ export async function POST(request: Request, context: RouteContext) {
     if ("error" in result) {
       return result.error;
     }
+
+    const currentUser = await findUserById(result.client.db(), auth.userId);
+    const userName = currentUser?.name ?? null;
 
     const body = await request.json();
     const content =
@@ -208,6 +214,7 @@ export async function POST(request: Request, context: RouteContext) {
       otherConversationsContext,
       otherTeammatesContext,
       agentNotesContext,
+      userName,
     );
     const now = new Date().toISOString();
     const userMessage: Omit<ChatMessage, "_id"> = {
@@ -289,6 +296,7 @@ export async function POST(request: Request, context: RouteContext) {
             ? (result.chat.conversationSummary ?? null)
             : null,
           recentMessages,
+          userName,
         }),
       );
       conversationSummaryUpdated = true;
@@ -322,6 +330,7 @@ export async function POST(request: Request, context: RouteContext) {
           chatTitle: nextTitle,
           conversationSummary,
           projectId: result.chat.projectId,
+          userName,
           updatedAt: now,
         });
       } catch {

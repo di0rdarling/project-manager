@@ -3,6 +3,7 @@ import {
   getRelativeDayLabel,
 } from "@/lib/dates";
 import { buildAiTeammatesMemoryRosterPrompt } from "@/lib/prompts/ai-teammates-roster";
+import { buildChatUserContextPrompt } from "@/lib/prompts/chat-user-context-prompt";
 import { PRESERVE_DETAIL_WITHIN_LIMIT_STYLE_GUIDE } from "@/lib/prompts/style-guide";
 import type { ChatTeammateId } from "@/lib/chat-teammates";
 import type { TeammateChatSummary } from "@/lib/chat-summaries";
@@ -19,6 +20,7 @@ type BuildAgentMemoryPromptInput = {
   agentName: string;
   agentRole: string;
   chatSummaries: TeammateChatSummary[];
+  userName?: string | null;
   generatedAt?: Date;
 };
 
@@ -30,6 +32,7 @@ type BuildAgentMemoryMergePromptInput = {
   chatTitle: string;
   conversationSummary: string;
   projectName?: string | null;
+  userName?: string | null;
   generatedAt?: Date;
 };
 
@@ -122,6 +125,7 @@ export function buildAgentMemoryPrompt({
   agentName,
   agentRole,
   chatSummaries,
+  userName,
   generatedAt = new Date(),
 }: BuildAgentMemoryPromptInput): string {
   const currentDateTime = formatDisplayDateTime(generatedAt.toISOString());
@@ -129,6 +133,8 @@ export function buildAgentMemoryPrompt({
   return [
     ...buildSharedMemoryInstructions(agentName, agentRole),
     `You are writing this memory at: ${currentDateTime}.`,
+    "",
+    buildChatUserContextPrompt(userName),
     "",
     buildAiTeammatesMemoryRosterPrompt(teammateId),
     "",
@@ -156,6 +162,7 @@ export function buildAgentMemoryMergePrompt({
   chatTitle,
   conversationSummary,
   projectName,
+  userName,
   generatedAt = new Date(),
 }: BuildAgentMemoryMergePromptInput): string {
   const currentDateTime = formatDisplayDateTime(generatedAt.toISOString());
@@ -167,6 +174,8 @@ export function buildAgentMemoryMergePrompt({
   const sections = [
     ...buildSharedMemoryInstructions(agentName, agentRole),
     `You are updating this memory at: ${currentDateTime}.`,
+    "",
+    buildChatUserContextPrompt(userName),
     "",
     buildAiTeammatesMemoryRosterPrompt(teammateId),
     "",

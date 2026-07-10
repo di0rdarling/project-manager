@@ -12,6 +12,7 @@ import { getTeammateChatSummaries } from "@/lib/chat-summaries";
 import { requireUserId } from "@/lib/current-user";
 import { generateAgentMemory } from "@/lib/gemini";
 import getClientPromise from "@/lib/mongodb";
+import { findUserById } from "@/lib/users";
 import {
   buildAgentMemoryPrompt,
   clampAgentMemory,
@@ -88,8 +89,9 @@ export async function POST(_request: Request, context: RouteContext) {
       return parsed.error;
     }
 
+    const client = await getClientPromise();
     const chatSummaries = await getTeammateChatSummaries(
-      (await getClientPromise()).db(),
+      client.db(),
       auth.userId,
       parsed.teammateId,
     );
@@ -101,6 +103,9 @@ export async function POST(_request: Request, context: RouteContext) {
       );
     }
 
+    const currentUser = await findUserById(client.db(), auth.userId);
+    const userName = currentUser?.name ?? null;
+
     const teammate = getChatTeammate(parsed.teammateId);
     const generatedAt = new Date();
     const memory = clampAgentMemory(
@@ -110,12 +115,12 @@ export async function POST(_request: Request, context: RouteContext) {
           agentName: teammate.name,
           agentRole: teammate.role,
           chatSummaries,
+          userName,
           generatedAt,
         }),
       ),
     );
     const now = generatedAt.toISOString();
-    const client = await getClientPromise();
     const stored = await upsertAgentMemory(
       client.db(),
       auth.userId,
