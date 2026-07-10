@@ -8,6 +8,7 @@ import {
   featureDomainKnowledgeFilter,
   parseConfidenceLevel,
 } from "@/lib/domain-knowledge";
+import { getStoredRequirementIds } from "@/lib/feature-requirements";
 import { buildFeatureSummaryPrompt } from "@/lib/prompts/feature-summary-prompt";
 import {
   serializeFeature,
@@ -104,14 +105,19 @@ export async function POST(_request: Request, context: RouteContext) {
       return Response.json({ error: "Feature not found" }, { status: 404 });
     }
 
-    const [linkedRequirement, domainKnowledge, challenges, notes] =
+    const requirementIds = getStoredRequirementIds(feature);
+
+    const [linkedRequirements, domainKnowledge, challenges, notes] =
       await Promise.all([
-      feature.requirementId
-        ? db.collection<StoredRequirement>("requirements").findOne({
-            _id: feature.requirementId,
-            projectId: projectObjectId,
-          })
-        : Promise.resolve(null),
+      requirementIds.length > 0
+        ? db
+            .collection<StoredRequirement>("requirements")
+            .find({
+              _id: { $in: requirementIds },
+              projectId: projectObjectId,
+            })
+            .toArray()
+        : Promise.resolve([]),
       db
         .collection<StoredDomainKnowledge>("domainKnowledge")
         .find(featureDomainKnowledgeFilter(projectObjectId, featureObjectId))
@@ -134,12 +140,10 @@ export async function POST(_request: Request, context: RouteContext) {
       projectDescription: project.description,
       title: feature.title,
       content: feature.content,
-      linkedRequirement: linkedRequirement
-        ? {
-            title: linkedRequirement.title,
-            content: linkedRequirement.content,
-          }
-        : null,
+      linkedRequirements: linkedRequirements.map((requirement) => ({
+        title: requirement.title,
+        content: requirement.content,
+      })),
       domainKnowledge: domainKnowledge.map((item) => ({
         name: item.name,
         currentUnderstanding: item.currentUnderstanding,

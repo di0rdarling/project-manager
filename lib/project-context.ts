@@ -5,6 +5,10 @@ import {
   parseConfidenceLevel,
   projectLevelDomainKnowledgeFilter,
 } from "@/lib/domain-knowledge";
+import {
+  getLinkedRequirementTitles,
+  getStoredRequirementIds,
+} from "@/lib/feature-requirements";
 import { stripRichText } from "@/lib/rich-text";
 import {
   getRequirementPriorityLabel,
@@ -30,11 +34,12 @@ type StoredRequirement = Omit<
 
 type StoredFeature = Omit<
   Feature,
-  "_id" | "projectId" | "requirementId" | "createdAt" | "updatedAt"
+  "_id" | "projectId" | "requirementIds" | "createdAt" | "updatedAt"
 > & {
   _id: Feature["_id"];
   projectId: Feature["projectId"];
-  requirementId: Feature["requirementId"];
+  requirementIds?: Feature["requirementIds"];
+  requirementId?: Feature["requirementIds"][number] | null;
   createdAt: string | Date;
   updatedAt: string | Date;
 };
@@ -281,10 +286,10 @@ export async function getProjectContext(
     features: features.map((feature) => ({
       title: feature.title,
       content: feature.content,
-      linkedRequirementTitle: feature.requirementId
-        ? requirementTitles.get(feature.requirementId.toString()) ??
-          "Unknown requirement"
-        : null,
+      linkedRequirementTitles: getLinkedRequirementTitles(
+        getStoredRequirementIds(feature),
+        requirementTitles,
+      ),
     })),
     tools: tools.map((tool) => ({
       name: tool.name,

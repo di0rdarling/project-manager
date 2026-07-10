@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ContextTag } from "@/components/ui/ContextTag";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { RichTextContent } from "@/components/ui/inputs/richText/RichTextContent";
@@ -39,16 +40,18 @@ export default function FeatureDetailView({
   } = useFetchProject(projectId);
 
   const { data: requirements = [] } = useFetchRequirements(projectId, {
-    enabled: Boolean(feature?.requirementId),
+    enabled: Boolean(feature?.requirementIds?.length),
   });
 
   const isPending = isFeaturePending || isProjectPending;
   const isError = isFeatureError || isProjectError;
   const error = featureError ?? projectError;
 
-  const linkedRequirement = feature?.requirementId
-    ? requirements.find((requirement) => requirement._id === feature.requirementId)
-    : null;
+  const linkedRequirements = feature
+    ? requirements.filter((requirement) =>
+        feature.requirementIds.includes(requirement._id),
+      )
+    : [];
 
   return (
     <PageContent>
@@ -71,13 +74,20 @@ export default function FeatureDetailView({
               Feature
             </p>
             <h1 className="text-4xl font-bold tracking-tight">{feature.title}</h1>
-            {linkedRequirement ? (
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                Linked requirement:{" "}
-                <span className="text-zinc-700 dark:text-zinc-300">
-                  {linkedRequirement.title.trim() || "Untitled requirement"}
-                </span>
-              </p>
+            {linkedRequirements.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  Linked requirements:
+                </p>
+                {linkedRequirements.map((requirement) => (
+                  <ContextTag
+                    key={requirement._id}
+                    className="bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                  >
+                    {requirement.title.trim() || "Untitled requirement"}
+                  </ContextTag>
+                ))}
+              </div>
             ) : null}
             <p className="text-xs text-zinc-500">
               Created {formatDisplayDate(feature.createdAt)}

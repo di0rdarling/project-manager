@@ -28,14 +28,14 @@ type SummaryDomainKnowledgeItem = {
 type LinkedRequirement = {
   title: string;
   content: string;
-} | null;
+};
 
 type BuildFeatureSummaryPromptInput = {
   projectName: string;
   projectDescription: string;
   title: string;
   content: string;
-  linkedRequirement: LinkedRequirement;
+  linkedRequirements: LinkedRequirement[];
   domainKnowledge: SummaryDomainKnowledgeItem[];
   challenges: SummaryChallengeItem[];
   notes: SummaryContentItem[];
@@ -61,15 +61,21 @@ function formatContentItems(
   return `${label}:\n${formattedItems}`;
 }
 
-function formatLinkedRequirement(requirement: LinkedRequirement): string {
-  if (!requirement) {
-    return "Linked Requirement: None";
+function formatLinkedRequirements(requirements: LinkedRequirement[]): string {
+  if (requirements.length === 0) {
+    return "Linked Requirements: None";
   }
 
-  const title = requirement.title.trim() || "Untitled requirement";
-  const content = stripRichText(requirement.content);
+  const formattedItems = requirements
+    .map((requirement, index) => {
+      const title = requirement.title.trim() || "Untitled requirement";
+      const content = stripRichText(requirement.content);
 
-  return `Linked Requirement:\nTitle: ${title}\nContent: ${content || "No content provided."}`;
+      return `${index + 1}. Title: ${title}\n   Content: ${content || "No content provided."}`;
+    })
+    .join("\n");
+
+  return `Linked Requirements:\n${formattedItems}`;
 }
 
 export function buildFeatureSummaryPrompt({
@@ -77,7 +83,7 @@ export function buildFeatureSummaryPrompt({
   projectDescription,
   title,
   content,
-  linkedRequirement,
+  linkedRequirements,
   domainKnowledge,
   challenges,
   notes,
@@ -85,7 +91,7 @@ export function buildFeatureSummaryPrompt({
   const sections = [
     "You are a project management assistant.",
     "Write a concise 2-3 paragraph overview of the feature below.",
-    "Synthesize the feature's purpose, linked requirement, domain knowledge, current challenges, and important notes.",
+    "Synthesize the feature's purpose, linked requirements, domain knowledge, current challenges, and important notes.",
     "Use the project context only as background when it helps explain the feature.",
     ...PLAIN_ENGLISH_STYLE_GUIDE,
     "Use clear plain text with no markdown or bullet lists.",
@@ -96,7 +102,7 @@ export function buildFeatureSummaryPrompt({
     `Feature Title: ${title.trim() || "Untitled feature"}`,
     `Feature Description: ${stripRichText(content) || "No description provided."}`,
     "",
-    formatLinkedRequirement(linkedRequirement),
+    formatLinkedRequirements(linkedRequirements),
     "",
     formatDomainKnowledgeItems(domainKnowledge),
     "",

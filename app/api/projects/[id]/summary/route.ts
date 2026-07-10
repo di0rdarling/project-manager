@@ -12,6 +12,11 @@ import { projectLevelChallengesFilter } from "@/lib/challenges";
 import { projectLevelDomainKnowledgeFilter } from "@/lib/domain-knowledge";
 import { parseRequirementPriority } from "@/lib/requirements";
 import { buildProjectSummaryPrompt } from "@/lib/prompts/project-summary-prompt";
+import {
+  getLinkedRequirementTitles,
+  getStoredRequirementIds,
+} from "@/lib/feature-requirements";
+import type { StoredFeature } from "@/lib/serialize-feature";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -23,17 +28,6 @@ type StoredRequirement = Omit<
 > & {
   _id: Requirement["_id"];
   projectId: Requirement["projectId"];
-  createdAt: string | Date;
-  updatedAt: string | Date;
-};
-
-type StoredFeature = Omit<
-  Feature,
-  "_id" | "projectId" | "requirementId" | "createdAt" | "updatedAt"
-> & {
-  _id: Feature["_id"];
-  projectId: Feature["projectId"];
-  requirementId: Feature["requirementId"];
   createdAt: string | Date;
   updatedAt: string | Date;
 };
@@ -214,10 +208,10 @@ export async function POST(_request: Request, context: RouteContext) {
       features: features.map((feature) => ({
         title: feature.title,
         content: feature.content,
-        linkedRequirementTitle: feature.requirementId
-          ? requirementTitles.get(feature.requirementId.toString()) ??
-            "Unknown requirement"
-          : null,
+        linkedRequirementTitles: getLinkedRequirementTitles(
+          getStoredRequirementIds(feature),
+          requirementTitles,
+        ),
       })),
       tools: tools.map((tool) => ({
         name: tool.name,

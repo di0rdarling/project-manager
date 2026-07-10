@@ -5,6 +5,7 @@ import { toIsoString } from "@/lib/dates";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import { parseRequirementPriority } from "@/lib/requirements";
 import type { Requirement, RequirementResponse } from "@/lib/types";
+import type { StoredFeature } from "@/lib/serialize-feature";
 
 type RouteContext = {
   params: Promise<{ id: string; requirementId: string }>;
@@ -132,18 +133,41 @@ export async function DELETE(_request: Request, context: RouteContext) {
     }
 
     const client = await getClientPromise();
-    const result = await client
-      .db()
-      .collection("requirements")
-      .deleteOne({
-        _id: new ObjectId(requirementId),
-        projectId: new ObjectId(id),
-        userId: auth.userId,
-      });
+    const db = client.db();
+    const projectObjectId = new ObjectId(id);
+    const requirementObjectId = new ObjectId(requirementId);
+
+    const result = await db.collection("requirements").deleteOne({
+      _id: requirementObjectId,
+      projectId: projectObjectId,
+      userId: auth.userId,
+    });
 
     if (result.deletedCount === 0) {
       return Response.json({ error: "Requirement not found" }, { status: 404 });
     }
+
+    await db.collection<StoredFeature>("features").updateMany(
+      {
+        projectId: projectObjectId,
+        userId: auth.userId,
+        $or: [
+          { requirementIds: requirementObjectId },
+          { requirementId: requirementObjectId },
+        ],
+      },
+      {
+        $pull: {
+          requirementIds: requirementObjectId,
+        },
+        $unset: {
+          requirementId: "",
+        },
+        $set: {
+          updatedAt: new Date().toISOString(),
+        },
+      },
+    );
 
     return Response.json({ success: true });
   } catch {

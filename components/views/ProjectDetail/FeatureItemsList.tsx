@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
+import { ContextTag } from "@/components/ui/ContextTag";
 import {
   deleteItemAction,
   editItemAction,
@@ -28,16 +29,16 @@ interface FeatureItemsListProps {
   renderDeleteModal: (props: ItemModalRenderProps) => ReactNode;
 }
 
-function getRequirementTitle(
-  requirementId: string | null,
+function getLinkedRequirementTitles(
+  requirementIds: string[],
   requirements: RequirementResponse[],
-): string | null {
-  if (!requirementId) {
-    return null;
-  }
-
-  const requirement = requirements.find((item) => item._id === requirementId);
-  return requirement?.title.trim() || "Untitled requirement";
+): string[] {
+  return requirementIds
+    .map((requirementId) => {
+      const requirement = requirements.find((item) => item._id === requirementId);
+      return requirement?.title.trim() || "Untitled requirement";
+    })
+    .filter(Boolean);
 }
 
 export default function FeatureItemsList({
@@ -56,8 +57,8 @@ export default function FeatureItemsList({
     <>
       <ul className="space-y-3">
         {items.map((item) => {
-          const linkedRequirementTitle = getRequirementTitle(
-            item.requirementId,
+          const linkedRequirementTitles = getLinkedRequirementTitles(
+            item.requirementIds,
             requirements,
           );
 
@@ -77,10 +78,17 @@ export default function FeatureItemsList({
                     </h3>
                     <ListItemDate dateTime={item.createdAt} />
                   </div>
-                  {linkedRequirementTitle ? (
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                      Linked requirement: {linkedRequirementTitle}
-                    </p>
+                  {linkedRequirementTitles.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {linkedRequirementTitles.map((title) => (
+                        <ContextTag
+                          key={`${item._id}-${title}`}
+                          className="bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300"
+                        >
+                          {title}
+                        </ContextTag>
+                      ))}
+                    </div>
                   ) : null}
                   <RichTextContent
                     content={item.content}

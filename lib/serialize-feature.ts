@@ -1,13 +1,16 @@
 import { toIsoString } from "@/lib/dates";
+import { getStoredRequirementIds } from "@/lib/feature-requirements";
 import type { Feature, FeatureResponse } from "@/lib/types";
 
 export type StoredFeature = Omit<
   Feature,
-  "_id" | "projectId" | "requirementId" | "createdAt" | "updatedAt"
+  "_id" | "projectId" | "requirementIds" | "createdAt" | "updatedAt"
 > & {
   _id: Feature["_id"];
   projectId: Feature["projectId"];
-  requirementId: Feature["requirementId"];
+  requirementIds?: Feature["requirementIds"];
+  /** @deprecated Legacy single-link field; read-only for migration. */
+  requirementId?: Feature["requirementIds"][number] | null;
   createdAt: string | Date;
   updatedAt: string | Date;
 };
@@ -19,9 +22,7 @@ export function serializeFeature(feature: StoredFeature): FeatureResponse {
     projectId: feature.projectId.toString(),
     title: typeof feature.title === "string" ? feature.title : "",
     content: feature.content,
-    requirementId: feature.requirementId
-      ? feature.requirementId.toString()
-      : null,
+    requirementIds: getStoredRequirementIds(feature).map((id) => id.toString()),
     aiSummary:
       typeof feature.aiSummary === "string" && feature.aiSummary.trim()
         ? feature.aiSummary

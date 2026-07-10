@@ -23,13 +23,13 @@ export async function createFeature(input: {
   projectId: string;
   title: string;
   content: string;
-  requirementId?: string | null;
+  requirementIds?: string[];
 }): Promise<FeatureResponse> {
-  const { projectId, title, content, requirementId } = input;
+  const { projectId, title, content, requirementIds = [] } = input;
   const response = await fetch(`/api/projects/${projectId}/features`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, content, requirementId }),
+    body: JSON.stringify({ title, content, requirementIds }),
   });
 
   return parseResponse<FeatureResponse>(response);
@@ -40,15 +40,15 @@ export async function updateFeature(input: {
   featureId: string;
   title: string;
   content: string;
-  requirementId?: string | null;
+  requirementIds?: string[];
 }): Promise<FeatureResponse> {
-  const { projectId, featureId, title, content, requirementId } = input;
+  const { projectId, featureId, title, content, requirementIds = [] } = input;
   const response = await fetch(
     `/api/projects/${projectId}/features/${featureId}`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, content, requirementId }),
+      body: JSON.stringify({ title, content, requirementIds }),
     },
   );
 

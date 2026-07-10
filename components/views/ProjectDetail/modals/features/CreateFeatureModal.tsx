@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/inputs/Input";
-import { Select } from "@/components/ui/inputs/Select";
+import { MultiSelect } from "@/components/ui/inputs/MultiSelect";
 import { RichTextEditor } from "@/components/ui/inputs/richText/RichTextEditor";
 import { useCreateFeature } from "@/hooks/mutations/features/useCreateFeature";
 import type { RequirementResponse } from "@/lib/types";
@@ -19,13 +19,10 @@ type CreateFeatureModalProps = {
 };
 
 function buildRequirementOptions(requirements: RequirementResponse[]) {
-  return [
-    { value: "", label: "No linked requirement" },
-    ...requirements.map((requirement) => ({
-      value: requirement._id,
-      label: requirement.title.trim() || "Untitled requirement",
-    })),
-  ];
+  return requirements.map((requirement) => ({
+    value: requirement._id,
+    label: requirement.title.trim() || "Untitled requirement",
+  }));
 }
 
 export default function CreateFeatureModal({
@@ -37,14 +34,14 @@ export default function CreateFeatureModal({
 }: CreateFeatureModalProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [requirementId, setRequirementId] = useState("");
+  const [requirementIds, setRequirementIds] = useState<string[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const createFeatureMutation = useCreateFeature({
     onSuccess: () => {
       setTitle("");
       setContent("");
-      setRequirementId("");
+      setRequirementIds([]);
       setValidationError(null);
       onSuccess();
       onClose();
@@ -69,7 +66,7 @@ export default function CreateFeatureModal({
       projectId,
       title: title.trim(),
       content,
-      requirementId: requirementId || null,
+      requirementIds,
     });
   }
 
@@ -80,7 +77,7 @@ export default function CreateFeatureModal({
 
     setTitle("");
     setContent("");
-    setRequirementId("");
+    setRequirementIds([]);
     setValidationError(null);
     createFeatureMutation.reset();
     onClose();
@@ -116,12 +113,14 @@ export default function CreateFeatureModal({
           onChange={setContent}
         />
 
-        <Select
-          id="feature-requirement"
-          label="Linked requirement (optional)"
-          value={requirementId}
-          onChange={(event) => setRequirementId(event.target.value)}
+        <MultiSelect
+          id="feature-requirements"
+          label="Linked requirements (optional)"
           options={buildRequirementOptions(requirements)}
+          values={requirementIds}
+          onChange={setRequirementIds}
+          placeholder="Select requirements"
+          emptyMessage="No requirements yet. Add requirements to link them to this feature."
         />
 
         {formError ? (

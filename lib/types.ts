@@ -106,7 +106,7 @@ type FeatureBase<TId> = {
   projectId: TId;
   title: string;
   content: string;
-  requirementId: TId | null;
+  requirementIds: TId[];
   aiSummary: string | null;
   createdAt: string;
   updatedAt: string;

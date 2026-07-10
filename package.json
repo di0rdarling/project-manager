@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "migrate:add-users": "node --env-file=.env scripts/migrate-add-users.mjs"
+    "migrate:add-users": "node --env-file=.env scripts/migrate-add-users.mjs",
+    "migrate:feature-requirement-ids": "node --env-file=.env scripts/migrate-feature-requirement-ids.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.10.0",

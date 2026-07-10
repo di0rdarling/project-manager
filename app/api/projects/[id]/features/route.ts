@@ -1,5 +1,9 @@
 import { ObjectId } from "mongodb";
 import { requireUserId } from "@/lib/current-user";
+import {
+  parseRequirementIds,
+  validateRequirementLinks,
+} from "@/lib/feature-requirements";
 import getClientPromise from "@/lib/mongodb";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import { serializeFeature, type StoredFeature } from "@/lib/serialize-feature";
@@ -29,50 +33,6 @@ async function getProjectOr404(projectId: string, userId: ObjectId) {
   }
 
   return { client, projectId: new ObjectId(projectId) };
-}
-
-function parseRequirementId(
-  value: unknown,
-): { requirementId: ObjectId | null } | { error: Response } {
-  if (value === null || value === undefined || value === "") {
-    return { requirementId: null };
-  }
-
-  if (typeof value !== "string" || !ObjectId.isValid(value)) {
-    return {
-      error: Response.json(
-        { error: "Invalid requirement id" },
-        { status: 400 },
-      ),
-    };
-  }
-
-  return { requirementId: new ObjectId(value) };
-}
-
-async function validateRequirementLink(
-  client: Awaited<ReturnType<typeof getClientPromise>>,
-  userId: ObjectId,
-  projectId: ObjectId,
-  requirementId: ObjectId | null,
-): Promise<Response | null> {
-  if (!requirementId) {
-    return null;
-  }
-
-  const requirement = await client
-    .db()
-    .collection("requirements")
-    .findOne({ _id: requirementId, projectId, userId });
-
-  if (!requirement) {
-    return Response.json(
-      { error: "Linked requirement not found" },
-      { status: 400 },
-    );
-  }
-
-  return null;
 }
 
 export async function GET(_request: Request, context: RouteContext) {
@@ -123,7 +83,7 @@ export async function POST(request: Request, context: RouteContext) {
     const title = typeof body.title === "string" ? body.title.trim() : "";
     const content =
       typeof body.content === "string" ? body.content.trim() : "";
-    const requirementResult = parseRequirementId(body.requirementId);
+    const requirementResult = parseRequirementIds(body.requirementIds);
 
     if ("error" in requirementResult) {
       return requirementResult.error;
@@ -143,11 +103,11 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
 
-    const requirementError = await validateRequirementLink(
+    const requirementError = await validateRequirementLinks(
       result.client,
       auth.userId,
       result.projectId,
-      requirementResult.requirementId,
+      requirementResult.requirementIds,
     );
 
     if (requirementError) {
@@ -160,7 +120,7 @@ export async function POST(request: Request, context: RouteContext) {
       projectId: result.projectId,
       title,
       content,
-      requirementId: requirementResult.requirementId,
+      requirementIds: requirementResult.requirementIds,
       aiSummary: null,
       createdAt: now,
       updatedAt: now,

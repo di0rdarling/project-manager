@@ -1,5 +1,9 @@
 import { ObjectId } from "mongodb";
 import { requireUserId } from "@/lib/current-user";
+import {
+  parseRequirementIds,
+  validateRequirementLinks,
+} from "@/lib/feature-requirements";
 import getClientPromise from "@/lib/mongodb";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import { serializeFeature, type StoredFeature } from "@/lib/serialize-feature";
@@ -7,50 +11,6 @@ import { serializeFeature, type StoredFeature } from "@/lib/serialize-feature";
 type RouteContext = {
   params: Promise<{ id: string; featureId: string }>;
 };
-
-function parseRequirementId(
-  value: unknown,
-): { requirementId: ObjectId | null } | { error: Response } {
-  if (value === null || value === undefined || value === "") {
-    return { requirementId: null };
-  }
-
-  if (typeof value !== "string" || !ObjectId.isValid(value)) {
-    return {
-      error: Response.json(
-        { error: "Invalid requirement id" },
-        { status: 400 },
-      ),
-    };
-  }
-
-  return { requirementId: new ObjectId(value) };
-}
-
-async function validateRequirementLink(
-  client: Awaited<ReturnType<typeof getClientPromise>>,
-  userId: ObjectId,
-  projectId: ObjectId,
-  requirementId: ObjectId | null,
-): Promise<Response | null> {
-  if (!requirementId) {
-    return null;
-  }
-
-  const requirement = await client
-    .db()
-    .collection("requirements")
-    .findOne({ _id: requirementId, projectId, userId });
-
-  if (!requirement) {
-    return Response.json(
-      { error: "Linked requirement not found" },
-      { status: 400 },
-    );
-  }
-
-  return null;
-}
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
@@ -110,7 +70,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const title = typeof body.title === "string" ? body.title.trim() : "";
     const content =
       typeof body.content === "string" ? body.content.trim() : "";
-    const requirementResult = parseRequirementId(body.requirementId);
+    const requirementResult = parseRequirementIds(body.requirementIds);
 
     if ("error" in requirementResult) {
       return requirementResult.error;
@@ -132,11 +92,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const client = await getClientPromise();
     const projectId = new ObjectId(id);
-    const requirementError = await validateRequirementLink(
+    const requirementError = await validateRequirementLinks(
       client,
       auth.userId,
       projectId,
-      requirementResult.requirementId,
+      requirementResult.requirementIds,
     );
 
     if (requirementError) {
@@ -156,8 +116,11 @@ export async function PATCH(request: Request, context: RouteContext) {
           $set: {
             title,
             content,
-            requirementId: requirementResult.requirementId,
+            requirementIds: requirementResult.requirementIds,
             updatedAt: new Date().toISOString(),
+          },
+          $unset: {
+            requirementId: "",
           },
         },
         { returnDocument: "after" },

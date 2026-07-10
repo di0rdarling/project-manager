@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/inputs/Input";
-import { Select } from "@/components/ui/inputs/Select";
+import { MultiSelect } from "@/components/ui/inputs/MultiSelect";
 import { RichTextEditor } from "@/components/ui/inputs/richText/RichTextEditor";
 import { useUpdateFeature } from "@/hooks/mutations/features/useUpdateFeature";
 import type { FeatureResponse, RequirementResponse } from "@/lib/types";
@@ -20,13 +20,10 @@ type EditFeatureModalProps = {
 };
 
 function buildRequirementOptions(requirements: RequirementResponse[]) {
-  return [
-    { value: "", label: "No linked requirement" },
-    ...requirements.map((requirement) => ({
-      value: requirement._id,
-      label: requirement.title.trim() || "Untitled requirement",
-    })),
-  ];
+  return requirements.map((requirement) => ({
+    value: requirement._id,
+    label: requirement.title.trim() || "Untitled requirement",
+  }));
 }
 
 export default function EditFeatureModal({
@@ -39,14 +36,14 @@ export default function EditFeatureModal({
 }: EditFeatureModalProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [requirementId, setRequirementId] = useState("");
+  const [requirementIds, setRequirementIds] = useState<string[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (feature) {
       setTitle(feature.title);
       setContent(feature.content);
-      setRequirementId(feature.requirementId ?? "");
+      setRequirementIds(feature.requirementIds);
       setValidationError(null);
     }
   }, [feature]);
@@ -81,7 +78,7 @@ export default function EditFeatureModal({
       featureId: feature._id,
       title: title.trim(),
       content,
-      requirementId: requirementId || null,
+      requirementIds,
     });
   }
 
@@ -125,12 +122,14 @@ export default function EditFeatureModal({
           onChange={setContent}
         />
 
-        <Select
-          id="edit-feature-requirement"
-          label="Linked requirement (optional)"
-          value={requirementId}
-          onChange={(event) => setRequirementId(event.target.value)}
+        <MultiSelect
+          id="edit-feature-requirements"
+          label="Linked requirements (optional)"
           options={buildRequirementOptions(requirements)}
+          values={requirementIds}
+          onChange={setRequirementIds}
+          placeholder="Select requirements"
+          emptyMessage="No requirements yet. Add requirements to link them to this feature."
         />
 
         {formError ? (

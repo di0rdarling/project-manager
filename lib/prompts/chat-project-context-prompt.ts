@@ -31,7 +31,7 @@ type RequirementContextItem = {
 type FeatureContextItem = {
   title: string;
   content: string;
-  linkedRequirementTitle?: string | null;
+  linkedRequirementTitles?: string[];
 };
 
 type ChallengeContextItem = {
@@ -90,10 +90,13 @@ function formatFeatureItems(items: FeatureContextItem[]): string {
     .map((item, index) => {
       const heading = item.title.trim() || "Untitled feature";
       const content = stripRichText(item.content);
-      const linkedRequirement = item.linkedRequirementTitle?.trim();
-      const linkedLine = linkedRequirement
-        ? `\n   Linked requirement: ${linkedRequirement}`
-        : "";
+      const linkedRequirements = (item.linkedRequirementTitles ?? [])
+        .map((title) => title.trim())
+        .filter(Boolean);
+      const linkedLine =
+        linkedRequirements.length > 0
+          ? `\n   Linked requirements: ${linkedRequirements.join(", ")}`
+          : "";
 
       return `${index + 1}. ${heading}${linkedLine}\n   ${content || "No description provided."}`;
     })
