@@ -152,7 +152,7 @@ export default function CreateChatModal({
               You need at least one project before starting a chat.
             </p>
             <Link
-              href="/"
+              href="/home"
               className="mt-3 inline-block text-sm font-medium text-zinc-900 underline underline-offset-2 dark:text-zinc-100"
               onClick={handleClose}
             >

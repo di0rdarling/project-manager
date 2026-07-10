@@ -22,7 +22,7 @@ import {
 } from "@/lib/project-detail-sections";
 
 const navItems = [
-  { href: "/", label: "Home", icon: HomeIcon },
+  { href: "/home", label: "Home", icon: HomeIcon },
   { href: "/chats", label: "AI Chats", icon: ChatBubbleLeftRightIcon },
   { href: "/account", label: "Account", icon: UserCircleIcon },
 ] as const;
@@ -94,7 +94,9 @@ export default function NavigationSidebar({
         >
           {navItems.map(({ href, label, icon: Icon }) => {
             const isActive =
-              href === "/" ? pathname === "/" : pathname.startsWith(href);
+              href === "/home"
+                ? pathname === "/home"
+                : pathname.startsWith(href);
 
             return (
               <Link
@@ -123,7 +125,7 @@ export default function NavigationSidebar({
           }`}
         >
           <Link
-            href="/"
+            href="/home"
             onClick={onNavigate}
             className="cursor-pointer mb-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
           >

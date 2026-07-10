@@ -101,7 +101,7 @@ export default function ProjectDetailView({
   return (
     <PageContent>
       <Link
-        href="/"
+        href="/home"
         className="inline-flex w-fit items-center gap-2 text-sm text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
       >
         <ArrowLeftIcon className="size-4" aria-hidden />

@@ -44,7 +44,7 @@ export default function SignupForm() {
       }
 
       clearAuthQueryCache(queryClient);
-      router.replace("/");
+      router.replace("/home");
       router.refresh();
     } catch {
       setError("Unable to sign up");

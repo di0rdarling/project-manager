@@ -37,7 +37,7 @@ export default function LoginForm() {
 
       clearAuthQueryCache(queryClient);
 
-      const from = searchParams.get("from") ?? "/";
+      const from = searchParams.get("from") ?? "/home";
       router.replace(from);
       router.refresh();
     } catch {

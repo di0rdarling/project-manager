@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { AUTH_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
 import { CURRENT_USER_ID_HEADER } from "@/lib/current-user";
 
-const PUBLIC_PAGE_PATHS = ["/login", "/signup"];
+const PUBLIC_PAGE_PATHS = ["/", "/login", "/signup"];
 // Only the auth endpoints that must work *without* an existing session.
 // Everything else under /api/auth/ (e.g. /api/auth/me) still requires one.
 const PUBLIC_API_PATHS = [
@@ -17,15 +17,24 @@ export async function proxy(request: NextRequest) {
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
   const session = verifySessionToken(token);
 
-  const isPublicPage = PUBLIC_PAGE_PATHS.some((path) =>
-    pathname.startsWith(path),
-  );
+  const isPublicPage =
+    pathname === "/" ||
+    PUBLIC_PAGE_PATHS.some(
+      (path) => path !== "/" && pathname.startsWith(path),
+    );
   const isPublicApiPath = PUBLIC_API_PATHS.includes(pathname);
 
   if (isPublicPage || isPublicApiPath) {
-    if (isPublicPage && session) {
-      return NextResponse.redirect(new URL("/", request.url));
+    if (session) {
+      if (pathname === "/login" || pathname === "/signup") {
+        return NextResponse.redirect(new URL("/home", request.url));
+      }
+
+      if (pathname === "/") {
+        return NextResponse.redirect(new URL("/home", request.url));
+      }
     }
+
     return NextResponse.next();
   }
 
@@ -35,9 +44,7 @@ export async function proxy(request: NextRequest) {
     }
 
     const loginUrl = new URL("/login", request.url);
-    if (pathname !== "/") {
-      loginUrl.searchParams.set("from", pathname);
-    }
+    loginUrl.searchParams.set("from", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
