@@ -23,6 +23,7 @@ import {
   TeammateProfileLink,
 } from "@/components/views/Chats/TeammateProfileLink";
 import { useSendChatMessage } from "@/hooks/mutations/chats/useSendChatMessage";
+import { useUnarchiveChat } from "@/hooks/mutations/chats/useUnarchiveChat";
 import { useFetchChat } from "@/hooks/queries/useFetchChat";
 import { getChatTeammate, type ChatTeammate } from "@/lib/chat-teammates";
 import { formatDisplayDateTime } from "@/lib/dates";
@@ -141,6 +142,17 @@ export default function ChatDetailView({
     },
   });
 
+  const unarchiveChatMutation = useUnarchiveChat({
+    onSuccess: (unarchivedChat) => {
+      toast.success(`Chat "${unarchivedChat.title}" restored to active chats.`);
+    },
+    onError: (mutationError) => {
+      toast.error(mutationError.message);
+    },
+  });
+
+  const isArchived = Boolean(chat?.archivedAt);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat?.messages.length, sendMessageMutation.isPending]);
@@ -148,7 +160,7 @@ export default function ChatDetailView({
   function sendMessage() {
     const trimmedMessage = message.trim();
 
-    if (!trimmedMessage || sendMessageMutation.isPending) {
+    if (!trimmedMessage || sendMessageMutation.isPending || isArchived) {
       return;
     }
 
@@ -234,6 +246,16 @@ export default function ChatDetailView({
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1">
+            {isArchived ? (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => unarchiveChatMutation.mutate(chatId)}
+                disabled={unarchiveChatMutation.isPending}
+              >
+                {unarchiveChatMutation.isPending ? "Restoring..." : "Unarchive"}
+              </Button>
+            ) : null}
             {chat.conversationSummary ? (
               <IconButton
                 type="button"
@@ -250,6 +272,14 @@ export default function ChatDetailView({
 
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
         <div className={`flex min-h-full flex-col justify-end gap-4 ${pageInnerClassName}`}>
+          {isArchived ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+              This chat is archived. Its summary has been compressed for your AI
+              teammate&apos;s long-term memory. Unarchive to continue the
+              conversation.
+            </div>
+          ) : null}
+
           {chat.messages.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-zinc-300 px-4 py-8 text-center dark:border-zinc-700">
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -275,27 +305,33 @@ export default function ChatDetailView({
       </div>
 
       <div className="shrink-0 border-t border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
-        <form
-          onSubmit={handleSubmit}
-          className={`flex items-end gap-3 ${pageInnerClassName}`}
-        >
-          <textarea
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type your message..."
-            rows={3}
-            disabled={sendMessageMutation.isPending}
-            className="w-full resize-none rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-zinc-500 disabled:opacity-60 dark:border-zinc-700 dark:focus:border-zinc-400"
-          />
-          <Button
-            type="submit"
-            disabled={!message.trim() || sendMessageMutation.isPending}
-            className="shrink-0"
+        {isArchived ? (
+          <p className={`text-sm text-zinc-500 dark:text-zinc-400 ${pageInnerClassName}`}>
+            Archived chats are read-only. Unarchive this chat to send new messages.
+          </p>
+        ) : (
+          <form
+            onSubmit={handleSubmit}
+            className={`flex items-end gap-3 ${pageInnerClassName}`}
           >
-            {sendMessageMutation.isPending ? "Sending..." : "Send"}
-          </Button>
-        </form>
+            <textarea
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your message..."
+              rows={3}
+              disabled={sendMessageMutation.isPending}
+              className="w-full resize-none rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-zinc-500 disabled:opacity-60 dark:border-zinc-700 dark:focus:border-zinc-400"
+            />
+            <Button
+              type="submit"
+              disabled={!message.trim() || sendMessageMutation.isPending}
+              className="shrink-0"
+            >
+              {sendMessageMutation.isPending ? "Sending..." : "Send"}
+            </Button>
+          </form>
+        )}
       </div>
 
       <EditChatTitleModal

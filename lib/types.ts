@@ -205,6 +205,7 @@ type ChatBase<TId> = {
   titleIsCustom: boolean;
   aiTitleGenerated: boolean;
   conversationSummary: string | null;
+  archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };

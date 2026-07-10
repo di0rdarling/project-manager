@@ -52,6 +52,8 @@ export const domainKnowledgeKeys = {
 
 export const chatKeys = {
   all: ["chats"] as const,
+  list: (status: "active" | "archived" | "all" = "active") =>
+    ["chats", status] as const,
   detail: (id: string) => ["chats", id] as const,
 };
 

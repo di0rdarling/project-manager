@@ -32,8 +32,9 @@ export function useCreateChat(options?: UseCreateChatOptions) {
     mutationFn: createChat,
     ...restOptions,
     onSuccess: (chat, variables, onMutateResult, context) => {
-      queryClient.setQueryData<ChatListItemResponse[]>(chatKeys.all, (current) =>
-        current ? [chat, ...current] : [chat],
+      queryClient.setQueryData<ChatListItemResponse[]>(
+        chatKeys.list("active"),
+        (current) => (current ? [chat, ...current] : [chat]),
       );
       onSuccess?.(chat, variables, onMutateResult, context);
     },

@@ -5,10 +5,12 @@ import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
+import { FilterPill } from "@/components/ui/FilterPill";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useFetchChats } from "@/hooks/queries/useFetchChats";
 import { useFetchProjects } from "@/hooks/queries/useFetchProjects";
 import PageContent from "@/components/layout/PageContent";
+import type { ChatListStatus } from "@/lib/api/chats";
 import type { ChatTeammateId } from "@/lib/chat-teammates";
 import ChatAgentsRow from "./ChatAgentsRow";
 import ChatsList from "./ChatsList";
@@ -18,6 +20,7 @@ import CreateChatModal from "./modals/CreateChatModal";
 export default function ChatsView() {
   const router = useRouter();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [listStatus, setListStatus] = useState<ChatListStatus>("active");
   const [selectedTeammateId, setSelectedTeammateId] = useState<
     ChatTeammateId | ""
   >("");
@@ -28,7 +31,7 @@ export default function ChatsView() {
     isPending,
     isError,
     error,
-  } = useFetchChats();
+  } = useFetchChats({ status: listStatus });
 
   const { data: projects = [] } = useFetchProjects();
 
@@ -48,6 +51,18 @@ export default function ChatsView() {
 
   const hasActiveFilters =
     selectedTeammateId !== "" || selectedProjectId !== "";
+
+  const showArchived = listStatus === "archived";
+  const emptyMessage =
+    listStatus === "archived"
+      ? hasActiveFilters
+        ? "No archived chats match these filters."
+        : "No archived chats yet."
+      : chats.length === 0
+        ? "No chats yet. Start a new conversation to get help from your AI teammates."
+        : hasActiveFilters
+          ? "No chats match these filters."
+          : "No chats to show.";
 
   function openCreateModal() {
     setIsCreateModalOpen(true);
@@ -70,19 +85,36 @@ export default function ChatsView() {
       <ChatAgentsRow />
 
       <section className="space-y-4">
-        <h2 className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-          Chats
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+            Chats
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            <FilterPill
+              isActive={listStatus === "active"}
+              onClick={() => setListStatus("active")}
+            >
+              Active
+            </FilterPill>
+            <FilterPill
+              isActive={listStatus === "archived"}
+              onClick={() => setListStatus("archived")}
+            >
+              Archived
+            </FilterPill>
+          </div>
+        </div>
 
         {isPending ? (
-          <LoadingMessage>Loading chats...</LoadingMessage>
+          <LoadingMessage>
+            {showArchived ? "Loading archived chats..." : "Loading chats..."}
+          </LoadingMessage>
         ) : isError ? (
           <ErrorMessage error={error} fallbackMessage="Failed to load chats" />
-        ) : chats.length === 0 ? (
+        ) : chats.length === 0 && listStatus === "active" && !hasActiveFilters ? (
           <div className="rounded-xl border border-dashed border-zinc-300 px-4 py-8 text-center dark:border-zinc-700">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              No chats yet. Start a new conversation to get help from your AI
-              teammates.
+              {emptyMessage}
             </p>
             <Button type="button" onClick={openCreateModal} className="mt-4">
               New chat
@@ -97,14 +129,13 @@ export default function ChatsView() {
               onTeammateChange={setSelectedTeammateId}
               onProjectChange={setSelectedProjectId}
               onNewChat={openCreateModal}
+              showNewChatButton={!showArchived}
             />
 
             {filteredChats.length === 0 ? (
               <div className="rounded-xl border border-dashed border-zinc-300 px-4 py-8 text-center dark:border-zinc-700">
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                  {hasActiveFilters
-                    ? "No chats match these filters."
-                    : "No chats to show."}
+                  {emptyMessage}
                 </p>
                 {hasActiveFilters ? (
                   <Button
@@ -120,8 +151,15 @@ export default function ChatsView() {
             ) : (
               <ChatsList
                 chats={filteredChats}
+                showArchived={showArchived}
                 onDeleteSuccess={(chatTitle) =>
                   toast.success(`Chat "${chatTitle}" deleted successfully.`)
+                }
+                onArchiveSuccess={(chatTitle) =>
+                  toast.success(`Chat "${chatTitle}" archived successfully.`)
+                }
+                onUnarchiveSuccess={(chatTitle) =>
+                  toast.success(`Chat "${chatTitle}" restored to active chats.`)
                 }
               />
             )}

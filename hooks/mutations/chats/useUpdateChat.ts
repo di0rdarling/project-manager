@@ -6,10 +6,12 @@ import {
   type UseMutationOptions,
 } from "@tanstack/react-query";
 import { updateChat } from "@/lib/api/chats";
-import { mergeChatListItem } from "@/lib/chat-list-cache";
+import {
+  mergeChatListItem,
+  updateAllChatListCaches,
+} from "@/lib/chat-list-cache";
 import { chatKeys } from "@/lib/query-keys";
 import type {
-  ChatListItemResponse,
   ChatResponse,
   ChatWithMessagesResponse,
 } from "@/lib/types";
@@ -29,7 +31,7 @@ export function useUpdateChat(options?: UseUpdateChatOptions) {
     mutationFn: updateChat,
     ...restOptions,
     onSuccess: (updatedChat, variables, onMutateResult, context) => {
-      queryClient.setQueryData<ChatListItemResponse[]>(chatKeys.all, (current) =>
+      updateAllChatListCaches(queryClient, (current) =>
         current?.map((chat) =>
           chat._id === updatedChat._id
             ? mergeChatListItem(chat, updatedChat)

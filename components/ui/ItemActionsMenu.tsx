@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   ArrowsPointingOutIcon,
+  ArchiveBoxIcon,
   ArrowPathIcon,
   EllipsisVerticalIcon,
   PencilIcon,
@@ -73,6 +74,20 @@ export function regenerateItemAction(
     key: "regenerate",
     label,
     icon: <ArrowPathIcon className="size-4" aria-hidden />,
+    onClick,
+    disabled,
+  };
+}
+
+export function archiveItemAction(
+  label: string,
+  onClick: () => void,
+  disabled = false,
+): ItemAction {
+  return {
+    key: "archive",
+    label,
+    icon: <ArchiveBoxIcon className="size-4" aria-hidden />,
     onClick,
     disabled,
   };

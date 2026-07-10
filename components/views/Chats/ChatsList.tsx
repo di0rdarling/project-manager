@@ -4,15 +4,24 @@ import Link from "next/link";
 import { useState } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import { ContextTag } from "@/components/ui/ContextTag";
-import { deleteItemAction, ItemActionsMenu } from "@/components/ui/ItemActionsMenu";
+import {
+  archiveItemAction,
+  deleteItemAction,
+  ItemActionsMenu,
+} from "@/components/ui/ItemActionsMenu";
 import { getChatTeammate } from "@/lib/chat-teammates";
 import { formatCompactDisplayDate } from "@/lib/dates";
 import type { ChatListItemResponse } from "@/lib/types";
+import { useUnarchiveChat } from "@/hooks/mutations/chats/useUnarchiveChat";
+import ArchiveChatModal from "./modals/ArchiveChatModal";
 import DeleteChatModal from "./modals/DeleteChatModal";
 
 interface ChatsListProps {
   chats: ChatListItemResponse[];
+  showArchived?: boolean;
   onDeleteSuccess?: (chatTitle: string) => void;
+  onArchiveSuccess?: (chatTitle: string) => void;
+  onUnarchiveSuccess?: (chatTitle: string) => void;
 }
 
 function getChatSnippet(chat: ChatListItemResponse): string | null {
@@ -25,11 +34,21 @@ function getChatSnippet(chat: ChatListItemResponse): string | null {
 
 export default function ChatsList({
   chats,
+  showArchived = false,
   onDeleteSuccess,
+  onArchiveSuccess,
+  onUnarchiveSuccess,
 }: Readonly<ChatsListProps>) {
   const [chatToDelete, setChatToDelete] = useState<ChatListItemResponse | null>(
     null,
   );
+  const [chatToArchive, setChatToArchive] = useState<ChatListItemResponse | null>(
+    null,
+  );
+
+  const unarchiveChatMutation = useUnarchiveChat({
+    onSuccess: (chat) => onUnarchiveSuccess?.(chat.title),
+  });
 
   return (
     <>
@@ -98,11 +117,27 @@ export default function ChatsList({
                   ) : null}
                 </Link>
                 <ItemActionsMenu
-                  actions={[
-                    deleteItemAction(`Delete ${chat.title}`, () =>
-                      setChatToDelete(chat),
-                    ),
-                  ]}
+                  actions={
+                    showArchived
+                      ? [
+                          archiveItemAction(
+                            `Unarchive ${chat.title}`,
+                            () => unarchiveChatMutation.mutate(chat._id),
+                            unarchiveChatMutation.isPending,
+                          ),
+                          deleteItemAction(`Delete ${chat.title}`, () =>
+                            setChatToDelete(chat),
+                          ),
+                        ]
+                      : [
+                          archiveItemAction(`Archive ${chat.title}`, () =>
+                            setChatToArchive(chat),
+                          ),
+                          deleteItemAction(`Delete ${chat.title}`, () =>
+                            setChatToDelete(chat),
+                          ),
+                        ]
+                  }
                 />
               </div>
             </li>
@@ -115,6 +150,13 @@ export default function ChatsList({
         chat={chatToDelete}
         onClose={() => setChatToDelete(null)}
         onSuccess={(chatTitle) => onDeleteSuccess?.(chatTitle)}
+      />
+
+      <ArchiveChatModal
+        open={chatToArchive !== null}
+        chat={chatToArchive}
+        onClose={() => setChatToArchive(null)}
+        onSuccess={(chatTitle) => onArchiveSuccess?.(chatTitle)}
       />
     </>
   );

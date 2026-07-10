@@ -6,10 +6,12 @@ import {
   type UseMutationOptions,
 } from "@tanstack/react-query";
 import { sendChatMessage } from "@/lib/api/chats";
-import { mergeChatListItem } from "@/lib/chat-list-cache";
+import {
+  mergeChatListItem,
+  updateAllChatListCaches,
+} from "@/lib/chat-list-cache";
 import { agentMemoryKeys, chatKeys } from "@/lib/query-keys";
 import type {
-  ChatListItemResponse,
   ChatWithMessagesResponse,
   SendChatMessageResponse,
 } from "@/lib/types";
@@ -51,7 +53,7 @@ export function useSendChatMessage(options?: UseSendChatMessageOptions) {
         },
       );
 
-      queryClient.setQueryData<ChatListItemResponse[]>(chatKeys.all, (current) =>
+      updateAllChatListCaches(queryClient, (current) =>
         current?.map((chat) =>
           chat._id === data.chat._id
             ? mergeChatListItem(chat, data.chat)

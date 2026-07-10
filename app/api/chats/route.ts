@@ -10,18 +10,33 @@ import type { StoredChat } from "@/lib/serialize-chat";
 import type { StoredProject } from "@/lib/serialize-project";
 import type { Chat } from "@/lib/types";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const auth = await requireUserId();
     if ("error" in auth) {
       return auth.error;
     }
 
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get("status") ?? "active";
+    const query: Record<string, unknown> = { userId: auth.userId };
+
+    if (status === "active") {
+      query.archivedAt = null;
+    } else if (status === "archived") {
+      query.archivedAt = { $ne: null };
+    } else if (status !== "all") {
+      return Response.json(
+        { error: 'status must be "active", "archived", or "all"' },
+        { status: 400 },
+      );
+    }
+
     const client = await getClientPromise();
     const db = client.db();
     const chats = await db
       .collection<StoredChat>("chats")
-      .find({ userId: auth.userId })
+      .find(query)
       .sort({ updatedAt: -1 })
       .toArray();
 
@@ -122,6 +137,7 @@ export async function POST(request: Request) {
       titleIsCustom: false,
       aiTitleGenerated: false,
       conversationSummary: null,
+      archivedAt: null,
       createdAt: now,
       updatedAt: now,
     };

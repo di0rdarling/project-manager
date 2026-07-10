@@ -264,3 +264,9 @@ export async function generateChatTitle(prompt: string): Promise<string> {
 export async function generateAgentMemory(prompt: string): Promise<string> {
   return generateText(prompt, getMemoryModelName());
 }
+
+export async function generateArchivedChatSummary(
+  prompt: string,
+): Promise<string> {
+  return generateText(prompt, getMemoryModelName());
+}

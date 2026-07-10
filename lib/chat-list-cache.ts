@@ -1,3 +1,5 @@
+import type { QueryClient } from "@tanstack/react-query";
+import { chatKeys } from "@/lib/query-keys";
 import type { ChatListItemResponse, ChatResponse } from "@/lib/types";
 
 /**
@@ -14,4 +16,16 @@ export function mergeChatListItem(
     requirement: existing?.requirement ?? null,
     feature: existing?.feature ?? null,
   };
+}
+
+export function updateAllChatListCaches(
+  queryClient: QueryClient,
+  updater: (
+    current: ChatListItemResponse[] | undefined,
+  ) => ChatListItemResponse[] | undefined,
+): void {
+  queryClient.setQueriesData<ChatListItemResponse[]>(
+    { queryKey: chatKeys.all },
+    updater,
+  );
 }

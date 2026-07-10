@@ -7,8 +7,12 @@ import type {
   SendChatMessageResponse,
 } from "@/lib/types";
 
-export async function fetchChats(): Promise<ChatListItemResponse[]> {
-  const response = await fetch("/api/chats");
+export type ChatListStatus = "active" | "archived" | "all";
+
+export async function fetchChats(
+  status: ChatListStatus = "active",
+): Promise<ChatListItemResponse[]> {
+  const response = await fetch(`/api/chats?status=${status}`);
   return parseResponse<ChatListItemResponse[]>(response);
 }
 
@@ -66,4 +70,20 @@ export async function deleteChat(chatId: string): Promise<void> {
   });
 
   await parseResponse<{ success: true }>(response);
+}
+
+export async function archiveChat(chatId: string): Promise<ChatResponse> {
+  const response = await fetch(`/api/chats/${chatId}/archive`, {
+    method: "POST",
+  });
+
+  return parseResponse<ChatResponse>(response);
+}
+
+export async function unarchiveChat(chatId: string): Promise<ChatResponse> {
+  const response = await fetch(`/api/chats/${chatId}/archive`, {
+    method: "DELETE",
+  });
+
+  return parseResponse<ChatResponse>(response);
 }

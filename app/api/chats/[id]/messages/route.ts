@@ -1,14 +1,12 @@
-import { ObjectId, type Db } from "mongodb";
+import { ObjectId } from "mongodb";
+import { refreshAgentMemoryFromChatSummary } from "@/lib/agent-memory-refresh";
 import {
-  generateAgentMemory,
   generateChatReply,
   generateChatTitle,
   generateConversationSummary,
 } from "@/lib/gemini";
 import {
-  getAgentMemory,
   getOtherTeammatesMemories,
-  upsertAgentMemory,
 } from "@/lib/agent-memory-store";
 import { getAgentNotes } from "@/lib/agent-notes-store";
 import { getTeammateChatSummaries } from "@/lib/chat-summaries";
@@ -16,10 +14,6 @@ import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { findUserById } from "@/lib/users";
 import { getProjectContext, getAllProjectsContext } from "@/lib/project-context";
-import {
-  buildAgentMemoryMergePrompt,
-  clampAgentMemory,
-} from "@/lib/prompts/agent-memory-prompt";
 import {
   buildChatConversationSummaryPrompt,
   RECENT_MESSAGE_WINDOW,
@@ -40,11 +34,8 @@ import {
 } from "@/lib/serialize-chat";
 import type { Chat, ChatMessage } from "@/lib/types";
 import {
-  getChatTeammate,
   isCrossProjectTeammate,
-  type ChatTeammateId,
 } from "@/lib/chat-teammates";
-import type { StoredProject } from "@/lib/serialize-project";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -73,59 +64,6 @@ async function getChatOr404(chatId: string, userId: ObjectId) {
   return { client, chat, chatObjectId };
 }
 
-/**
- * After a chat's conversation summary refreshes, fold durable facts into
- * this teammate's compact profile Memory. Failures are swallowed so a
- * memory miss never blocks the user-visible reply.
- */
-async function refreshAgentMemoryFromChatSummary(input: {
-  db: Db;
-  userId: ObjectId;
-  teammateId: ChatTeammateId;
-  chatTitle: string;
-  conversationSummary: string;
-  projectId: ObjectId | null | undefined;
-  userName: string | null;
-  updatedAt: string;
-}): Promise<void> {
-  const teammate = getChatTeammate(input.teammateId);
-  const existing = await getAgentMemory(input.db, input.userId, input.teammateId);
-
-  let projectName: string | null = null;
-  if (input.projectId) {
-    const project = await input.db
-      .collection<StoredProject>("projects")
-      .findOne(
-        { _id: input.projectId, userId: input.userId },
-        { projection: { name: 1 } },
-      );
-    projectName = project?.name ?? null;
-  }
-
-  const memory = clampAgentMemory(
-    await generateAgentMemory(
-      buildAgentMemoryMergePrompt({
-        teammateId: input.teammateId,
-        agentName: teammate.name,
-        agentRole: teammate.role,
-        existingMemory: existing?.memory ?? null,
-        chatTitle: input.chatTitle,
-        conversationSummary: input.conversationSummary,
-        projectName,
-        userName: input.userName,
-      }),
-    ),
-  );
-
-  await upsertAgentMemory(
-    input.db,
-    input.userId,
-    input.teammateId,
-    memory,
-    input.updatedAt,
-  );
-}
-
 export async function POST(request: Request, context: RouteContext) {
   try {
     const auth = await requireUserId();
@@ -138,6 +76,13 @@ export async function POST(request: Request, context: RouteContext) {
 
     if ("error" in result) {
       return result.error;
+    }
+
+    if (result.chat.archivedAt) {
+      return Response.json(
+        { error: "Archived chats cannot receive new messages. Unarchive to continue." },
+        { status: 400 },
+      );
     }
 
     const currentUser = await findUserById(result.client.db(), auth.userId);
@@ -186,7 +131,7 @@ export async function POST(request: Request, context: RouteContext) {
       result.client.db(),
       auth.userId,
       chatResponse.teammateId,
-      { excludeChatId: result.chatObjectId },
+      { excludeChatId: result.chatObjectId, excludeArchived: true },
     );
     const otherConversationsContext =
       buildChatOtherConversationsContext(otherChatSummaries) ?? undefined;

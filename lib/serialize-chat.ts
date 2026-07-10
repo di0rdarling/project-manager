@@ -45,6 +45,7 @@ export function serializeChat(chat: StoredChat): ChatResponse {
     titleIsCustom: chat.titleIsCustom ?? false,
     aiTitleGenerated: chat.aiTitleGenerated ?? false,
     conversationSummary: chat.conversationSummary ?? null,
+    archivedAt: chat.archivedAt ? toIsoString(chat.archivedAt) : null,
     createdAt: toIsoString(chat.createdAt),
     updatedAt: toIsoString(chat.updatedAt),
   };

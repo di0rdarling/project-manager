@@ -77,6 +77,11 @@ async function summarizeChats(
 
 type GetTeammateChatSummariesOptions = {
   excludeChatId?: ObjectId;
+  /**
+   * When true, archived chats are omitted. Use for live-chat "other
+   * conversations" context so finished threads do not clutter active work.
+   */
+  excludeArchived?: boolean;
 };
 
 export async function getTeammateChatSummaries(
@@ -89,6 +94,10 @@ export async function getTeammateChatSummaries(
 
   if (options?.excludeChatId) {
     query._id = { $ne: options.excludeChatId };
+  }
+
+  if (options?.excludeArchived) {
+    query.archivedAt = null;
   }
 
   const chats = await db

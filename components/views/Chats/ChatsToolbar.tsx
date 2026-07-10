@@ -18,6 +18,7 @@ type ChatsToolbarProps = {
   onTeammateChange: (teammateId: ChatTeammateId | "") => void;
   onProjectChange: (projectId: string) => void;
   onNewChat: () => void;
+  showNewChatButton?: boolean;
 };
 
 export default function ChatsToolbar({
@@ -27,6 +28,7 @@ export default function ChatsToolbar({
   onTeammateChange,
   onProjectChange,
   onNewChat,
+  showNewChatButton = true,
 }: Readonly<ChatsToolbarProps>) {
   return (
     <div className="space-y-3">
@@ -49,14 +51,16 @@ export default function ChatsToolbar({
           ))}
         </div>
 
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={onNewChat}
-          className="shrink-0 self-start sm:self-auto"
-        >
-          New chat
-        </Button>
+        {showNewChatButton ? (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onNewChat}
+            className="shrink-0 self-start sm:self-auto"
+          >
+            New chat
+          </Button>
+        ) : null}
       </div>
 
       <select
