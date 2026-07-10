@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { Avatar } from "@/components/ui/Avatar";
+import { ContextTag } from "@/components/ui/ContextTag";
 import { deleteItemAction, ItemActionsMenu } from "@/components/ui/ItemActionsMenu";
 import { getChatTeammate } from "@/lib/chat-teammates";
-import { formatDisplayDate } from "@/lib/dates";
+import { formatCompactDisplayDate } from "@/lib/dates";
 import type { ChatListItemResponse } from "@/lib/types";
 import DeleteChatModal from "./modals/DeleteChatModal";
 
@@ -14,20 +15,12 @@ interface ChatsListProps {
   onDeleteSuccess?: (chatTitle: string) => void;
 }
 
-function ChatContextLabel({
-  children,
-  className,
-}: Readonly<{
-  children: ReactNode;
-  className: string;
-}>) {
-  return (
-    <span
-      className={`inline-flex max-w-full items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${className}`}
-    >
-      <span className="truncate">{children}</span>
-    </span>
-  );
+function getChatSnippet(chat: ChatListItemResponse): string | null {
+  if (chat.conversationSummary?.trim()) {
+    return chat.conversationSummary.trim();
+  }
+
+  return null;
 }
 
 export default function ChatsList({
@@ -43,51 +36,66 @@ export default function ChatsList({
       <ul className="space-y-3">
         {chats.map((chat) => {
           const teammate = getChatTeammate(chat.teammateId);
+          const snippet = getChatSnippet(chat);
 
           return (
             <li
               key={chat._id}
-              className="rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
+              className="rounded-xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
             >
               <div className="flex items-start justify-between gap-4">
                 <Link
                   href={`/chats/${chat._id}`}
-                  className="flex min-w-0 flex-1 items-start gap-3 rounded-lg outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-100"
+                  className="flex min-w-0 flex-1 flex-col gap-2 rounded-lg outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-100"
                 >
-                  <Avatar
-                    initials={teammate.avatarInitials}
-                    src={teammate.avatarImageSrc}
-                    alt={teammate.name}
-                    colorClassName={teammate.avatarColorClassName}
-                    size="sm"
-                    className="mt-0.5"
-                  />
-                  <span className="min-w-0">
-                    <h3 className="font-medium">{chat.title}</h3>
-                    {chat.project || chat.requirement || chat.feature ? (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {chat.project ? (
-                          <ChatContextLabel className="bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-                            {chat.project.name}
-                          </ChatContextLabel>
-                        ) : null}
-                        {chat.requirement ? (
-                          <ChatContextLabel className="bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-200">
-                            {chat.requirement.title}
-                          </ChatContextLabel>
-                        ) : null}
-                        {chat.feature ? (
-                          <ChatContextLabel className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
-                            {chat.feature.title}
-                          </ChatContextLabel>
-                        ) : null}
-                      </div>
-                    ) : null}
-                    <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                      {teammate.name} · Last updated{" "}
-                      {formatDisplayDate(chat.updatedAt)}
+                  <div className="flex items-start gap-3">
+                    <Avatar
+                      initials={teammate.avatarInitials}
+                      src={teammate.avatarImageSrc}
+                      alt={teammate.name}
+                      colorClassName={teammate.avatarColorClassName}
+                      size="sm"
+                      className="mt-0.5 shrink-0"
+                    />
+                    <h3 className="min-w-0 font-medium text-zinc-900 dark:text-zinc-100">
+                      {chat.title}
+                    </h3>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 pl-11">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <ContextTag className="bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+                        {teammate.name}
+                      </ContextTag>
+                      {chat.project ? (
+                        <ContextTag className="bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100">
+                          {chat.project.name}
+                        </ContextTag>
+                      ) : null}
+                      {chat.requirement ? (
+                        <ContextTag className="bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                          {chat.requirement.title}
+                        </ContextTag>
+                      ) : null}
+                      {chat.feature ? (
+                        <ContextTag className="bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                          {chat.feature.title}
+                        </ContextTag>
+                      ) : null}
+                    </div>
+                    <time
+                      dateTime={chat.updatedAt}
+                      className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400"
+                    >
+                      {formatCompactDisplayDate(chat.updatedAt)}
+                    </time>
+                  </div>
+
+                  {snippet ? (
+                    <p className="line-clamp-2 pl-11 text-sm text-zinc-500 dark:text-zinc-400">
+                      {snippet}
                     </p>
-                  </span>
+                  ) : null}
                 </Link>
                 <ItemActionsMenu
                   actions={[

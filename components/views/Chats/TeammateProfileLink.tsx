@@ -1,16 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import type { ChatTeammate } from "@/lib/chat-teammates";
 
 type TeammateProfileLinkProps = {
   teammate: ChatTeammate;
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 };
 
-export function getTeammateProfileHref(teammateId: ChatTeammate["id"]): string {
+function getTeammateProfileHref(teammateId: ChatTeammate["id"]): string {
   return `/chats/agents/${teammateId}`;
 }
 

@@ -2,6 +2,13 @@ export function toIsoString(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : value;
 }
 
+export function formatCompactDisplayDate(isoDate: string): string {
+  return new Date(isoDate).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export function formatDisplayDate(isoDate: string): string {
   return new Date(isoDate).toLocaleDateString(undefined, {
     year: "numeric",

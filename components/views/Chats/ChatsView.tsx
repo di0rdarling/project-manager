@@ -11,8 +11,8 @@ import { useFetchProjects } from "@/hooks/queries/useFetchProjects";
 import PageContent from "@/components/layout/PageContent";
 import type { ChatTeammateId } from "@/lib/chat-teammates";
 import ChatAgentsRow from "./ChatAgentsRow";
-import ChatsFilters from "./ChatsFilters";
 import ChatsList from "./ChatsList";
+import ChatsToolbar from "./ChatsToolbar";
 import CreateChatModal from "./modals/CreateChatModal";
 
 export default function ChatsView() {
@@ -60,56 +60,47 @@ export default function ChatsView() {
 
   return (
     <PageContent>
-      <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight">AI Chats</h1>
-          <p className="text-zinc-600 dark:text-zinc-400">
-            View and manage your conversations with the AI assistant.
-          </p>
-        </div>
+      <div className="space-y-2">
+        <h1 className="text-4xl font-bold tracking-tight">AI Chats</h1>
+        <p className="text-zinc-600 dark:text-zinc-400">
+          Your conversations with AI teammates across projects
+        </p>
       </div>
 
       <ChatAgentsRow />
 
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="mt-4 text-lg font-semibold">Your chats</h2>
-          <Button
-            type="button"
-            onClick={openCreateModal}
-            className="shrink-0"
-          >
-            New Chat
-          </Button>
-        </div>
+        <h2 className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+          Chats
+        </h2>
 
         {isPending ? (
           <LoadingMessage>Loading chats...</LoadingMessage>
         ) : isError ? (
           <ErrorMessage error={error} fallbackMessage="Failed to load chats" />
         ) : chats.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-zinc-300 px-4 py-8 text-center dark:border-zinc-700">
+          <div className="rounded-xl border border-dashed border-zinc-300 px-4 py-8 text-center dark:border-zinc-700">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              No chats yet. Start a new conversation to get help from the AI
-              assistant.
+              No chats yet. Start a new conversation to get help from your AI
+              teammates.
             </p>
             <Button type="button" onClick={openCreateModal} className="mt-4">
-              New Chat
+              New chat
             </Button>
           </div>
         ) : (
           <>
-            <ChatsFilters
+            <ChatsToolbar
               selectedTeammateId={selectedTeammateId}
               selectedProjectId={selectedProjectId}
               projects={projects}
               onTeammateChange={setSelectedTeammateId}
               onProjectChange={setSelectedProjectId}
-              onClear={clearFilters}
+              onNewChat={openCreateModal}
             />
 
             {filteredChats.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-zinc-300 px-4 py-8 text-center dark:border-zinc-700">
+              <div className="rounded-xl border border-dashed border-zinc-300 px-4 py-8 text-center dark:border-zinc-700">
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">
                   {hasActiveFilters
                     ? "No chats match these filters."

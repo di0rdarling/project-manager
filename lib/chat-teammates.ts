@@ -88,6 +88,10 @@ export const CHAT_TEAMMATES: ChatTeammate[] = [
   },
 ];
 
+export const CHAT_TEAMMATES_FOR_DISPLAY = CHAT_TEAMMATES.filter(
+  (teammate) => teammate.id !== "general",
+);
+
 /**
  * Role-specific personality and expertise only. First-person "you ARE this
  * agent, never speak in the third person" rules are centralized in
