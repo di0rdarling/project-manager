@@ -10,6 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import PageContent, { pageInnerClassName } from "@/components/layout/PageContent";
 import { Button } from "@/components/ui/Button";
+import { ContextTag } from "@/components/ui/ContextTag";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { CopyToClipboardButton } from "@/components/ui/CopyToClipboardButton";
 import { IconButton } from "@/components/ui/IconButton";
@@ -103,6 +104,47 @@ function ChatMessageBubble({
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+function ChatContextChips({
+  project,
+  requirement,
+  feature,
+}: {
+  project: { _id: string; name: string } | null;
+  requirement: { _id: string; title: string } | null;
+  feature: { _id: string; title: string } | null;
+}) {
+  if (!project && !requirement && !feature) {
+    return null;
+  }
+
+  const chipClassName =
+    "max-w-28 shrink sm:max-w-40 md:max-w-52";
+  const projectChipClassName = `${chipClassName} bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100`;
+  const contextChipClassName = `${chipClassName} bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300`;
+
+  return (
+    <div className="flex min-w-0 items-center gap-1.5">
+      {project ? (
+        <span title={project.name}>
+          <ContextTag className={projectChipClassName}>{project.name}</ContextTag>
+        </span>
+      ) : null}
+      {requirement ? (
+        <span title={requirement.title}>
+          <ContextTag className={contextChipClassName}>
+            {requirement.title}
+          </ContextTag>
+        </span>
+      ) : null}
+      {feature ? (
+        <span title={feature.title}>
+          <ContextTag className={contextChipClassName}>{feature.title}</ContextTag>
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -211,20 +253,22 @@ export default function ChatDetailView({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="shrink-0 border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
-        <div className={`flex items-center gap-4 ${pageInnerClassName}`}>
+      <div className="shrink-0 border-b border-zinc-200 bg-white px-4 py-3 sm:px-6 sm:py-4 dark:border-zinc-800 dark:bg-zinc-950">
+        <div className={`flex items-center gap-3 sm:gap-4 ${pageInnerClassName}`}>
           <Link
             href="/chats"
-            className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+            className="inline-flex shrink-0 items-center gap-2 rounded-lg px-2 py-1 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
           >
             <ArrowLeftIcon className="size-4" aria-hidden />
-            Back
+            <span className="hidden sm:inline">Back</span>
           </Link>
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <TeammateAvatar teammate={teammate} size="md" />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1">
-                <h1 className="truncate text-lg font-semibold">{chat.title}</h1>
+                <h1 className="truncate text-base font-semibold sm:text-lg">
+                  {chat.title}
+                </h1>
                 <IconButton
                   type="button"
                   aria-label="Edit chat title"
@@ -245,6 +289,11 @@ export default function ChatDetailView({
               </p>
             </div>
           </div>
+          <ChatContextChips
+            project={chat.project}
+            requirement={chat.requirement}
+            feature={chat.feature}
+          />
           <div className="flex shrink-0 items-center gap-1">
             {isArchived ? (
               <Button

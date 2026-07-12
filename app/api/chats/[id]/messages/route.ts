@@ -13,7 +13,7 @@ import { getTeammateChatSummaries } from "@/lib/chat-summaries";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { findUserById } from "@/lib/users";
-import { getProjectContext, getAllProjectsContext } from "@/lib/project-context";
+import { getTeammateProjectContext } from "@/lib/project-context";
 import {
   buildChatConversationSummaryPrompt,
   RECENT_MESSAGE_WINDOW,
@@ -33,9 +33,6 @@ import {
   type StoredChatMessage,
 } from "@/lib/serialize-chat";
 import type { Chat, ChatMessage } from "@/lib/types";
-import {
-  isCrossProjectTeammate,
-} from "@/lib/chat-teammates";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -113,19 +110,16 @@ export async function POST(request: Request, context: RouteContext) {
 
     const chatResponse = serializeChat(result.chat);
 
-    const projectContext = isCrossProjectTeammate(chatResponse.teammateId)
-      ? await getAllProjectsContext(result.client.db(), auth.userId)
-      : result.chat.projectId
-        ? await getProjectContext(
-            result.client.db(),
-            auth.userId,
-            result.chat.projectId,
-            {
-              requirementId: result.chat.requirementId ?? null,
-              featureId: result.chat.featureId ?? null,
-            },
-          )
-        : null;
+    const projectContext = await getTeammateProjectContext(
+      result.client.db(),
+      auth.userId,
+      chatResponse.teammateId,
+      result.chat.projectId ?? null,
+      {
+        requirementId: result.chat.requirementId ?? null,
+        featureId: result.chat.featureId ?? null,
+      },
+    );
 
     const otherChatSummaries = await getTeammateChatSummaries(
       result.client.db(),

@@ -219,7 +219,7 @@ export type ChatListItemResponse = ChatResponse & {
   feature: { _id: string; title: string } | null;
 };
 
-export type ChatWithMessagesResponse = ChatResponse & {
+export type ChatWithMessagesResponse = ChatListItemResponse & {
   messages: ChatMessageResponse[];
 };
 

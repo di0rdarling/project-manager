@@ -37,6 +37,9 @@ export function useSendChatMessage(options?: UseSendChatMessageOptions) {
           if (!current) {
             return {
               ...data.chat,
+              project: null,
+              requirement: null,
+              feature: null,
               messages: [data.userMessage, data.assistantMessage],
             };
           }
@@ -44,6 +47,9 @@ export function useSendChatMessage(options?: UseSendChatMessageOptions) {
           return {
             ...current,
             ...data.chat,
+            project: current.project,
+            requirement: current.requirement,
+            feature: current.feature,
             messages: [
               ...current.messages,
               data.userMessage,

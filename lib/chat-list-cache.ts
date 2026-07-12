@@ -18,14 +18,18 @@ export function mergeChatListItem(
   };
 }
 
+const CHAT_LIST_STATUSES = ["active", "archived", "all"] as const;
+
 export function updateAllChatListCaches(
   queryClient: QueryClient,
   updater: (
     current: ChatListItemResponse[] | undefined,
   ) => ChatListItemResponse[] | undefined,
 ): void {
-  queryClient.setQueriesData<ChatListItemResponse[]>(
-    { queryKey: chatKeys.all },
-    updater,
-  );
+  for (const status of CHAT_LIST_STATUSES) {
+    queryClient.setQueryData<ChatListItemResponse[]>(
+      chatKeys.list(status),
+      updater,
+    );
+  }
 }

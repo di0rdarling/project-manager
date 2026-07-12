@@ -1,4 +1,5 @@
 import type { Db, ObjectId } from "mongodb";
+import { isCrossProjectTeammate, type ChatTeammateId } from "@/lib/chat-teammates";
 import { buildChatProjectContext } from "@/lib/prompts/chat-project-context-prompt";
 import {
   featureDomainKnowledgeFilter,
@@ -366,4 +367,26 @@ export async function getAllProjectsContext(
   }
 
   return sections.join("\n\n");
+}
+
+/**
+ * Project context for a chat, scoped by teammate type. Cross-project agents
+ * (Jordan, Reid) receive all projects; project-scoped agents receive one.
+ */
+export async function getTeammateProjectContext(
+  db: Db,
+  userId: ObjectId,
+  teammateId: ChatTeammateId,
+  projectId?: ObjectId | null,
+  focus?: ProjectContextFocus,
+): Promise<string | null> {
+  if (isCrossProjectTeammate(teammateId)) {
+    return getAllProjectsContext(db, userId);
+  }
+
+  if (!projectId) {
+    return null;
+  }
+
+  return getProjectContext(db, userId, projectId, focus);
 }

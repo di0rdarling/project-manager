@@ -1,7 +1,10 @@
 import type { ChatTeammateId } from "@/lib/chat-teammates";
 import { buildAiTeammatesConversationSummaryRosterPrompt } from "@/lib/prompts/ai-teammates-roster";
 import { buildChatUserContextPrompt } from "@/lib/prompts/chat-user-context-prompt";
-import { PRESERVE_DETAIL_STYLE_GUIDE } from "@/lib/prompts/style-guide";
+import {
+  INTERNAL_ARTIFACT_STYLE_GUIDE,
+  PRESERVE_DETAIL_STYLE_GUIDE,
+} from "@/lib/prompts/style-guide";
 
 export type ConversationSummaryMessage = {
   role: "user" | "model";
@@ -60,10 +63,10 @@ export function buildChatConversationSummaryPrompt({
     "Cover every distinct useful topic raised in the conversation, in the order they came up.",
     "For each topic, capture: the specific options or approaches considered, the conclusion or decision that was reached and why, any concrete facts, numbers, or names involved, and anything left unresolved or open.",
     "Skip small talk, repeated acknowledgements, and process narration that does not change decisions, facts, or open loops.",
-    "You may mention in this transcript things the user discussed with a different AI teammate (referred to by name, e.g. Nova, Sandy, Theo, Arlo, Jordan). Preserve that attribution exactly as given — describe it as something the user discussed with that named teammate, not as a topic that you decided or worked through in this conversation. Do not blend it into this chat's own topics or decisions.",
+    "You may mention in this transcript things the user discussed with a different AI teammate (referred to by name, e.g. Nova, Sandy, Theo, Arlo, Jordan, Reid). Preserve that attribution exactly as given — describe it as something the user discussed with that named teammate, not as a topic that you decided or worked through in this conversation. Do not blend it into this chat's own topics or decisions.",
     "Be thorough on decisions, constraints, and open items. Do not merge distinct topics into one vague paragraph, and do not drop concrete detail to sound shorter — but do not pad with filler either.",
-    "Use clear plain text with no markdown or bullet lists.",
     ...PRESERVE_DETAIL_STYLE_GUIDE,
+    ...INTERNAL_ARTIFACT_STYLE_GUIDE,
     "",
     `Chat Title: ${chatTitle.trim() || "Untitled chat"}`,
   ];
@@ -88,7 +91,7 @@ export function buildChatConversationSummaryPrompt({
 
   sections.push(
     "",
-    "Return only the updated summary, written entirely in the first person from your perspective.",
+    "Return only the updated summary, written entirely in the first person from your perspective. No preamble, no sign-off, no self-introduction.",
   );
 
   return sections.join("\n");

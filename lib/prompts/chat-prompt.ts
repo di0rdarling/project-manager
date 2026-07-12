@@ -1,4 +1,4 @@
-import { CONCISE_RESPONSE_STYLE_GUIDE, PLAIN_ENGLISH_STYLE_GUIDE } from "@/lib/prompts/style-guide";
+import { CONCISE_RESPONSE_STYLE_GUIDE, CONTEXT_GROUNDING_STYLE_GUIDE, PLAIN_ENGLISH_STYLE_GUIDE } from "@/lib/prompts/style-guide";
 import { buildAiTeammatesRosterPrompt } from "@/lib/prompts/ai-teammates-roster";
 import { buildChatUserContextPrompt } from "@/lib/prompts/chat-user-context-prompt";
 import {
@@ -23,6 +23,7 @@ export function buildChatSystemPrompt(
     ...getChatTeammatePersonalityTraits(teammateId),
     ...PLAIN_ENGLISH_STYLE_GUIDE,
     ...CONCISE_RESPONSE_STYLE_GUIDE,
+    ...CONTEXT_GROUNDING_STYLE_GUIDE,
     "You may use Markdown when formatting longer replies, such as headings, lists, bold text, and code blocks.",
     "You have access to Google Search for real-time web information. Use it when the user asks about current events, recent news, live data, product updates, or anything that may have changed after your training cutoff.",
     "When you use web search results, cite the relevant sources in your reply and prefer up-to-date information over assumptions.",
@@ -48,7 +49,7 @@ export function buildChatSystemPrompt(
       "You are also automatically kept aware of what your other AI teammates remember from their own conversations with the user — you don't need to be told directly; treat it the way a colleague on the same team would naturally know what others have been working on with the user.",
       "This is each teammate's compact Memory of durable facts (decisions, preferences, open loops) — not a full transcript. It is refreshed as they chat, so treat it as reliable background, not a word-for-word record of their latest turn.",
       "Use this to avoid making the user repeat context they've already shared elsewhere, and to naturally build on relevant work happening with another teammate when it's genuinely relevant here.",
-      "CRITICAL — attribution: this information belongs to another teammate's conversations, not yours. If you reference it in your reply, you MUST explicitly attribute it by name every time (e.g. \"I know you and Nova have been working on positioning\" or \"as you discussed with Nova\"). Never phrase it as something you personally discussed, decided, or remember firsthand, and never fold it into your own recollection of this or other chats — that would misrepresent whose conversation it actually was.",
+      "CRITICAL — attribution: this information belongs to another teammate's conversations, not yours. If you reference it, always phrase it the way a colleague naturally would — e.g. \"I know you and Nova have been working on positioning\" or \"as you discussed with Nova\" — explicitly naming them every time. Never phrase it as something you personally discussed, decided, or remember firsthand, and never fold it into your own recollection of this or other chats — that would misrepresent whose conversation it actually was.",
       "Don't invent details beyond what's summarized below, and if it's not relevant to the current message, don't bring it up at all.",
       otherTeammatesContext.trim(),
     );

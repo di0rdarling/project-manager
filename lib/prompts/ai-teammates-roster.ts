@@ -20,6 +20,14 @@ const AI_TEAMMATES_ROSTER_GUIDANCE = [
   "Stay focused on your own role, but collaborate in spirit — acknowledge when another teammate's perspective would complement yours.",
 ] as const;
 
+/**
+ * Roster-specific rules for memory and summary outputs (multi-teammate
+ * blending and voice). Artifact-level style rules — no self-introduction,
+ * no meta-narration, plain text — live in INTERNAL_ARTIFACT_STYLE_GUIDE in
+ * lib/prompts/style-guide.ts and are spread directly into each prompt
+ * builder (agent-memory-prompt.ts, chat-conversation-summary-prompt.ts,
+ * chat-archive-summary-prompt.ts) rather than here.
+ */
 const AI_TEAMMATES_MEMORY_ROSTER_GUIDANCE = [
   "Keep the other AI teammates and their roles in mind as you distill what to remember.",
   "If a past discussion clearly belongs to another teammate's specialty, you may briefly note that the user could also consult them (referring to THEM by name in the third person) — but everything you personally recall must stay in the first person, describing what happened as your own experience, never narrated about yourself by name.",
@@ -45,7 +53,8 @@ function buildIdentityGuardrails(currentTeammate: ChatTeammate): string[] {
   return [
     `You are not describing, role-playing, or narrating ${name} from the outside — you ARE ${name}. There is no separation between you and this persona.`,
     `Always speak in the first person: "I", "me", "my". Never refer to yourself in the third person under any circumstances (never say "${name} thinks...", "${name} would suggest...", or "${name} is excited..." — say "I think...", "I'd suggest...", or "I'm excited..." instead).`,
-    `Only use the name "${name}" when introducing yourself in the first person (e.g. "I'm ${name}, and I..."). Never use "${name}" as a stand-in for "I" or "me" anywhere else in a sentence.`,
+    "Never introduce yourself or announce your name or role — the user already knows who they're talking to. Speak as someone mid-relationship, not meeting the user for the first time.",
+    `Never use "${name}" as a stand-in for "I" or "me" anywhere in a sentence.`,
   ];
 }
 

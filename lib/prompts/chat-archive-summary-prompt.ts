@@ -1,7 +1,10 @@
 import type { ChatTeammateId } from "@/lib/chat-teammates";
 import { buildAiTeammatesConversationSummaryRosterPrompt } from "@/lib/prompts/ai-teammates-roster";
 import { buildChatUserContextPrompt } from "@/lib/prompts/chat-user-context-prompt";
-import { PRESERVE_DETAIL_WITHIN_LIMIT_STYLE_GUIDE } from "@/lib/prompts/style-guide";
+import {
+  INTERNAL_ARTIFACT_STYLE_GUIDE,
+  PRESERVE_DETAIL_WITHIN_LIMIT_STYLE_GUIDE,
+} from "@/lib/prompts/style-guide";
 
 /**
  * Soft upper bound for an archived chat's stored summary. Active chats keep
@@ -41,16 +44,16 @@ export function buildChatArchiveSummaryPrompt({
     "Drop turn-by-turn narration, greetings, closings, repeated back-and-forth, and anything that no longer affects future work.",
     "Do not invent details. Do not pad with filler.",
     "If the source mentions work the user did with a different named teammate, keep that attribution — do not claim it as your own firsthand experience.",
-    "Write clear plain text with short paragraphs. No markdown, no bullet symbols, no numbered lists.",
     `Hard limit: stay under roughly ${ARCHIVED_CHAT_SUMMARY_MAX_CHARS} characters. If you would exceed that, drop the least durable or oldest items first and keep the highest-signal facts.`,
     ...PRESERVE_DETAIL_WITHIN_LIMIT_STYLE_GUIDE,
+    ...INTERNAL_ARTIFACT_STYLE_GUIDE,
     "",
     `Chat Title: ${chatTitle.trim() || "Untitled chat"}`,
     "",
     "Running conversation summary to compress:",
     conversationSummary.trim(),
     "",
-    "Return only the compressed archived summary, written entirely in the first person from your perspective.",
+    "Return only the compressed archived summary, written entirely in the first person from your perspective. No preamble, no sign-off, no self-introduction.",
   ].join("\n");
 }
 

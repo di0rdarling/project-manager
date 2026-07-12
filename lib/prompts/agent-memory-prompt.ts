@@ -2,9 +2,14 @@ import {
   formatDisplayDateTime,
   getRelativeDayLabel,
 } from "@/lib/dates";
-import { buildAiTeammatesMemoryRosterPrompt } from "@/lib/prompts/ai-teammates-roster";
+import {
+  buildAiTeammatesMemoryRosterPrompt,
+} from "@/lib/prompts/ai-teammates-roster";
 import { buildChatUserContextPrompt } from "@/lib/prompts/chat-user-context-prompt";
-import { PRESERVE_DETAIL_WITHIN_LIMIT_STYLE_GUIDE } from "@/lib/prompts/style-guide";
+import {
+  INTERNAL_ARTIFACT_STYLE_GUIDE,
+  PRESERVE_DETAIL_WITHIN_LIMIT_STYLE_GUIDE,
+} from "@/lib/prompts/style-guide";
 import type { ChatTeammateId } from "@/lib/chat-teammates";
 import type { TeammateChatSummary } from "@/lib/chat-summaries";
 
@@ -97,7 +102,7 @@ function buildSharedMemoryInstructions(
 ): string[] {
   return [
     `You are ${agentName}, the ${agentRole}.`,
-    "Write a compact first-person Memory the user can read on your profile, and that other AI teammates can use as background about what you and the user have already covered.",
+    "Write a compact first-person internal memory note. The user can read this on your profile; other AI teammates use it as background about what you and the user have already covered.",
     'Use "I" throughout. Never refer to yourself in the third person.',
     "This is NOT a full retelling of every chat. Chat-level conversation summaries already keep the detailed per-thread record.",
     "Keep only durable, useful information:",
@@ -109,10 +114,10 @@ function buildSharedMemoryInstructions(
     "Skip ephemeral chit-chat, turn-by-turn narration, greetings, closings, and role boilerplate.",
     "Do not invent details. Do not pad with filler.",
     "If a source mentions work the user did with a different named teammate, keep that attribution — do not claim it as your own firsthand experience.",
-    "Write clear plain text with short paragraphs (or short lines). No markdown, no bullet symbols, no numbered lists.",
     `Hard limit: stay under roughly ${AGENT_MEMORY_MAX_CHARS} characters. If you would exceed that, drop the least durable or oldest items first and keep the highest-signal facts.`,
     "Near the end, briefly signal what is most recent so recency is obvious.",
     ...PRESERVE_DETAIL_WITHIN_LIMIT_STYLE_GUIDE,
+    ...INTERNAL_ARTIFACT_STYLE_GUIDE,
   ];
 }
 
@@ -145,7 +150,7 @@ export function buildAgentMemoryPrompt({
     "Past conversations:",
     formatChatSummaries(chatSummaries, generatedAt),
     "",
-    `Return only ${agentName}'s compact first-person Memory.`,
+    "Return only the compact memory note. No preamble, no sign-off, no self-introduction.",
   ].join("\n");
 }
 
@@ -202,7 +207,7 @@ export function buildAgentMemoryMergePrompt({
     "Conversation summary:",
     conversationSummary.trim(),
     "",
-    `Return only ${agentName}'s updated compact first-person Memory.`,
+    "Return only the updated compact memory note. No preamble, no sign-off, no self-introduction.",
   );
 
   return sections.join("\n");

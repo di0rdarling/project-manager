@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { serializeChatsWithContext } from "@/lib/chat-list-items";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import {
@@ -49,15 +50,16 @@ export async function GET(_request: Request, context: RouteContext) {
       return result.error;
     }
 
-    const messages = await result.client
-      .db()
+    const db = result.client.db();
+    const [chatWithContext] = await serializeChatsWithContext(db, [result.chat]);
+    const messages = await db
       .collection<StoredChatMessage>("chat_messages")
       .find({ chatId: result.chatObjectId, userId: auth.userId })
       .sort({ createdAt: 1 })
       .toArray();
 
     return Response.json({
-      ...serializeChat(result.chat),
+      ...chatWithContext,
       messages: messages.map(serializeChatMessage),
     });
   } catch {
