@@ -3,13 +3,14 @@ import type { NextRequest } from "next/server";
 import { AUTH_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
 import { CURRENT_USER_ID_HEADER } from "@/lib/current-user";
 
-const PUBLIC_PAGE_PATHS = ["/", "/login", "/signup"];
+const PUBLIC_PAGE_PATHS = ["/", "/login", "/signup", "/waitlist"];
 // Only the auth endpoints that must work *without* an existing session.
 // Everything else under /api/auth/ (e.g. /api/auth/me) still requires one.
 const PUBLIC_API_PATHS = [
   "/api/auth/login",
   "/api/auth/signup",
   "/api/auth/logout",
+  "/api/waitlist",
 ];
 
 export async function proxy(request: NextRequest) {

@@ -36,6 +36,7 @@ export function buildChatArchiveSummaryPrompt({
     "",
     "Keep only durable, high-signal information:",
     "- Decisions the user made (and why, when known)",
+    "- The user's current direction and reasoning: what they're optimizing for, what concerns or trade-offs are shaping their choices, and how their thinking has evolved — not just the end decisions",
     "- Preferences, constraints, and non-negotiables",
     "- Concrete tech, tool, product, or process choices by name",
     "- Open loops, blockers, and unfinished next steps the user may return to",

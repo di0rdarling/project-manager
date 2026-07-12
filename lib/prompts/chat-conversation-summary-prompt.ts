@@ -62,6 +62,7 @@ export function buildChatConversationSummaryPrompt({
     "Write the summary so you (and your other chats with this user) can act on it later without re-reading the transcript.",
     "Cover every distinct useful topic raised in the conversation, in the order they came up.",
     "For each topic, capture: the specific options or approaches considered, the conclusion or decision that was reached and why, any concrete facts, numbers, or names involved, and anything left unresolved or open.",
+    "Track the user's trajectory on each topic, not just the endpoint: what they were optimizing for, what concerns or trade-offs they were weighing, and what changed their mind along the way. Note when a decision is provisional or worth revisiting if circumstances change.",
     "Skip small talk, repeated acknowledgements, and process narration that does not change decisions, facts, or open loops.",
     "You may mention in this transcript things the user discussed with a different AI teammate (referred to by name, e.g. Nova, Sandy, Theo, Arlo, Jordan, Reid). Preserve that attribution exactly as given — describe it as something the user discussed with that named teammate, not as a topic that you decided or worked through in this conversation. Do not blend it into this chat's own topics or decisions.",
     "Be thorough on decisions, constraints, and open items. Do not merge distinct topics into one vague paragraph, and do not drop concrete detail to sound shorter — but do not pad with filler either.",
