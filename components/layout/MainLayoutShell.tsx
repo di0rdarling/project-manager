@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import NavigationSidebar from "@/components/layout/NavigationSidebar";
 import { IconButton } from "@/components/ui/IconButton";
+import { ProjectManagerLogo } from "@/components/ui/ProjectManagerLogo";
 import { ProjectSectionNavProvider } from "@/components/views/ProjectDetail/ProjectSectionNavContext";
 
 function useIsMdUp() {
@@ -89,9 +90,7 @@ export default function MainLayoutShell({
                 <Bars3Icon className="size-5" aria-hidden />
               )}
             </IconButton>
-            <p className="text-sm font-semibold tracking-tight">
-              Project Manager
-            </p>
+            <ProjectManagerLogo className="h-8 w-auto" />
           </header>
 
           <main className="flex flex-1 flex-col overflow-y-auto">{children}</main>

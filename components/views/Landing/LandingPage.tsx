@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import { ProjectManagerLogo } from "@/components/ui/ProjectManagerLogo";
 import {
   ArchiveBoxIcon,
   ChevronRightIcon,
@@ -682,9 +683,7 @@ export default function LandingPage() {
     <div className="h-dvh overflow-y-auto bg-white dark:bg-zinc-950">
       <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-zinc-950/80">
         <div className="flex items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <p className="text-sm font-semibold tracking-tight text-gray-900 dark:text-white">
-            Project Manager
-          </p>
+          <ProjectManagerLogo className="h-9 w-auto" />
           <nav className="flex items-center gap-3">
             <Link
               href="/login"

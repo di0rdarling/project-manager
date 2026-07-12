@@ -13,6 +13,7 @@ import {
   UserCircleIcon,
 } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
+import { ProjectManagerLogo } from "@/components/ui/ProjectManagerLogo";
 import { useProjectSectionNav } from "@/components/views/ProjectDetail/ProjectSectionNavContext";
 import { useFetchCurrentUser } from "@/hooks/queries/useFetchCurrentUser";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
@@ -75,7 +76,7 @@ export default function NavigationSidebar({
       }`}
     >
       <div className="border-b border-zinc-200 px-4 py-5 dark:border-zinc-800">
-        <p className="text-sm font-semibold tracking-tight">Project Manager</p>
+        <ProjectManagerLogo className="h-9 w-auto" />
         {isProjectDetailPage && project?.name ? (
           <p className="mt-1 truncate text-xs text-zinc-500 dark:text-zinc-400">
             {project.name}
