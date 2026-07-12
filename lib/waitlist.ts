@@ -22,10 +22,12 @@ export async function findWaitlistEntryByEmail(db: Db, email: string) {
 }
 
 export async function createWaitlistEntry(db: Db, email: string) {
-  const result = await db.collection<WaitlistEntry>(WAITLIST_COLLECTION).insertOne({
-    email: normalizeEmail(email),
-    createdAt: new Date(),
-  });
+  const result = await db
+    .collection<Omit<WaitlistEntry, "_id">>(WAITLIST_COLLECTION)
+    .insertOne({
+      email: normalizeEmail(email),
+      createdAt: new Date(),
+    });
 
   return result.insertedId;
 }

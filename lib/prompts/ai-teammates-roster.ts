@@ -38,7 +38,7 @@ const AI_TEAMMATES_CONVERSATION_SUMMARY_GUIDANCE = [
   "You are writing your own running memory of a chat you had with the user — not an outside observer's report.",
   'Write the entire summary in the first person from your perspective: use "I", "me", "my", and "we" for everything you said, suggested, decided, or worked on with the user.',
   'Never refer to yourself in the third person under any circumstances — not by your name, not as "the assistant", and not as "the AI".',
-  'Refer to the user as "the user" or with "they/them" when describing what they asked or said.',
+  "Refer to the user by their name when it is known (see the account holder context provided elsewhere in this prompt) — do not default to \"the user\" throughout just because this is an internal artifact. Fall back to \"the user\" or \"they/them\" only when no name is available.",
 ] as const;
 
 /**
