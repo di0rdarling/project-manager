@@ -7,6 +7,7 @@ import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { AvatarSelect } from "@/components/ui/inputs/AvatarSelect";
 import { Select } from "@/components/ui/inputs/Select";
+import { ChatModelSelect } from "@/components/views/Chats/ChatModelSelect";
 import { Modal } from "@/components/ui/Modal";
 import { useCreateChat } from "@/hooks/mutations/chats/useCreateChat";
 import { useFetchFeatures } from "@/hooks/queries/useFetchFeatures";
@@ -17,6 +18,7 @@ import {
   DEFAULT_CHAT_TEAMMATE_ID,
   type ChatTeammateId,
 } from "@/lib/chat-teammates";
+import { DEFAULT_CHAT_MODEL_ID, type ChatModelId } from "@/lib/chat-models";
 
 type CreateChatModalProps = {
   open: boolean;
@@ -35,6 +37,8 @@ export default function CreateChatModal({
   const [selectedTeammateId, setSelectedTeammateId] = useState<ChatTeammateId>(
     DEFAULT_CHAT_TEAMMATE_ID,
   );
+  const [selectedModelId, setSelectedModelId] =
+    useState<ChatModelId>(DEFAULT_CHAT_MODEL_ID);
 
   const {
     data: projects = [],
@@ -77,6 +81,7 @@ export default function CreateChatModal({
       setSelectedRequirementId("");
       setSelectedFeatureId("");
       setSelectedTeammateId(DEFAULT_CHAT_TEAMMATE_ID);
+      setSelectedModelId(DEFAULT_CHAT_MODEL_ID);
       onSuccess(chat._id);
       onClose();
     },
@@ -94,6 +99,7 @@ export default function CreateChatModal({
       teammateId: selectedTeammateId,
       requirementId: selectedRequirementId || null,
       featureId: selectedFeatureId || null,
+      modelId: selectedModelId,
     });
   }
 
@@ -106,6 +112,7 @@ export default function CreateChatModal({
     setSelectedRequirementId("");
     setSelectedFeatureId("");
     setSelectedTeammateId(DEFAULT_CHAT_TEAMMATE_ID);
+    setSelectedModelId(DEFAULT_CHAT_MODEL_ID);
     createChatMutation.reset();
     onClose();
   }
@@ -137,6 +144,13 @@ export default function CreateChatModal({
           value={selectedTeammateId}
           onChange={(value) => setSelectedTeammateId(value as ChatTeammateId)}
           options={CHAT_TEAMMATE_SELECT_OPTIONS}
+        />
+
+        <ChatModelSelect
+          id="create-chat-model"
+          value={selectedModelId}
+          onChange={setSelectedModelId}
+          showLabel
         />
 
         {isLoadingProjects ? (

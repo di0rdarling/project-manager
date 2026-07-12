@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { isChatModelId } from "@/lib/chat-models";
 import { serializeChatsWithContext } from "@/lib/chat-list-items";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
@@ -82,18 +83,43 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const body = await request.json();
-    const title = typeof body.title === "string" ? body.title.trim() : "";
+    const updates: Record<string, unknown> = {};
+    const now = new Date().toISOString();
 
-    if (!title) {
-      return Response.json({ error: "Chat title is required" }, { status: 400 });
+    if (typeof body.title === "string") {
+      const title = body.title.trim();
+
+      if (!title) {
+        return Response.json({ error: "Chat title is required" }, { status: 400 });
+      }
+
+      if (title.length > 200) {
+        return Response.json(
+          { error: "Chat title must be 200 characters or fewer" },
+          { status: 400 },
+        );
+      }
+
+      updates.title = title;
+      updates.titleIsCustom = true;
     }
 
-    if (title.length > 200) {
+    if (body.modelId !== undefined) {
+      if (!isChatModelId(body.modelId)) {
+        return Response.json({ error: "Invalid chat model" }, { status: 400 });
+      }
+
+      updates.modelId = body.modelId;
+    }
+
+    if (Object.keys(updates).length === 0) {
       return Response.json(
-        { error: "Chat title must be 200 characters or fewer" },
+        { error: "At least one field to update is required" },
         { status: 400 },
       );
     }
+
+    updates.updatedAt = now;
 
     const updateResult = await result.client
       .db()
@@ -101,11 +127,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       .findOneAndUpdate(
         { _id: result.chatObjectId, userId: auth.userId },
         {
-          $set: {
-            title,
-            titleIsCustom: true,
-            updatedAt: new Date().toISOString(),
-          },
+          $set: updates,
         },
         { returnDocument: "after" },
       );

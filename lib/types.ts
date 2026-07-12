@@ -1,4 +1,5 @@
 import type { ObjectId } from "mongodb";
+import type { ChatModelId } from "@/lib/chat-models";
 import type { ChatTeammateId } from "@/lib/chat-teammates";
 
 type UserBase<TId> = {
@@ -201,6 +202,7 @@ type ChatBase<TId> = {
   requirementId: TId | null;
   featureId: TId | null;
   teammateId: ChatTeammateId;
+  modelId: ChatModelId;
   title: string;
   titleIsCustom: boolean;
   aiTitleGenerated: boolean;

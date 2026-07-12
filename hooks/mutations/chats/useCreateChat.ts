@@ -6,6 +6,7 @@ import {
   type UseMutationOptions,
 } from "@tanstack/react-query";
 import { createChat } from "@/lib/api/chats";
+import type { ChatModelId } from "@/lib/chat-models";
 import type { ChatTeammateId } from "@/lib/chat-teammates";
 import { chatKeys } from "@/lib/query-keys";
 import type { ChatListItemResponse } from "@/lib/types";
@@ -19,6 +20,7 @@ type UseCreateChatOptions = Omit<
       teammateId: ChatTeammateId;
       requirementId?: string | null;
       featureId?: string | null;
+      modelId?: ChatModelId;
     }
   >,
   "mutationFn"

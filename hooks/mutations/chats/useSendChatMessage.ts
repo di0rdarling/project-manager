@@ -50,6 +50,7 @@ export function useSendChatMessage(options?: UseSendChatMessageOptions) {
             project: current.project,
             requirement: current.requirement,
             feature: current.feature,
+            modelId: data.chat.modelId ?? current.modelId,
             messages: [
               ...current.messages,
               data.userMessage,

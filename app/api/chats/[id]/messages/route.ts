@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { refreshAgentMemoryFromChatSummary } from "@/lib/agent-memory-refresh";
+import { normalizeChatModelId } from "@/lib/chat-models";
 import {
   generateChatReply,
   generateChatTitle,
@@ -154,6 +155,7 @@ export async function POST(request: Request, context: RouteContext) {
       otherTeammatesContext,
       agentNotesContext,
       userName,
+      normalizeChatModelId(result.chat.modelId),
     );
     const now = new Date().toISOString();
     const userMessage: Omit<ChatMessage, "_id"> = {

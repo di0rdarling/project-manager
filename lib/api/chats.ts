@@ -1,4 +1,5 @@
 import { parseResponse } from "@/lib/api/response";
+import type { ChatModelId } from "@/lib/chat-models";
 import type { ChatTeammateId } from "@/lib/chat-teammates";
 import type {
   ChatListItemResponse,
@@ -26,6 +27,7 @@ export async function createChat(input: {
   teammateId: ChatTeammateId;
   requirementId?: string | null;
   featureId?: string | null;
+  modelId?: ChatModelId;
 }): Promise<ChatListItemResponse> {
   const response = await fetch("/api/chats", {
     method: "POST",
@@ -52,13 +54,14 @@ export async function sendChatMessage(input: {
 
 export async function updateChat(input: {
   chatId: string;
-  title: string;
+  title?: string;
+  modelId?: ChatModelId;
 }): Promise<ChatResponse> {
-  const { chatId, title } = input;
+  const { chatId, title, modelId } = input;
   const response = await fetch(`/api/chats/${chatId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title }),
+    body: JSON.stringify({ title, modelId }),
   });
 
   return parseResponse<ChatResponse>(response);

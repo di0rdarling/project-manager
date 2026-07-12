@@ -10,7 +10,7 @@ export type SelectOption = {
 };
 
 type SelectProps = {
-  label: string;
+  label?: string;
   id: string;
   options: SelectOption[];
 } & Omit<SelectHTMLAttributes<HTMLSelectElement>, "children">;
@@ -23,10 +23,12 @@ export function Select({
   ...props
 }: SelectProps) {
   return (
-    <div className="space-y-2">
-      <label htmlFor={id} className="block text-sm font-medium">
-        {label}
-      </label>
+    <div className={label ? "space-y-2" : undefined}>
+      {label ? (
+        <label htmlFor={id} className="block text-sm font-medium">
+          {label}
+        </label>
+      ) : null}
       <select
         id={id}
         className={

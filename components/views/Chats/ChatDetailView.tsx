@@ -17,6 +17,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { MarkdownContent } from "@/components/ui/MarkdownContent";
 import EditChatTitleModal from "@/components/views/Chats/modals/EditChatTitleModal";
+import { ChatModelSelect } from "@/components/views/Chats/ChatModelSelect";
 import ChatMessageGrounding from "@/components/views/Chats/ChatMessageGrounding";
 import ChatSummaryModal from "@/components/views/Chats/modals/ChatSummaryModal";
 import {
@@ -25,7 +26,13 @@ import {
 } from "@/components/views/Chats/TeammateProfileLink";
 import { useSendChatMessage } from "@/hooks/mutations/chats/useSendChatMessage";
 import { useUnarchiveChat } from "@/hooks/mutations/chats/useUnarchiveChat";
+import { useUpdateChat } from "@/hooks/mutations/chats/useUpdateChat";
 import { useFetchChat } from "@/hooks/queries/useFetchChat";
+import {
+  getChatModelLabel,
+  normalizeChatModelId,
+  type ChatModelId,
+} from "@/lib/chat-models";
 import { getChatTeammate, type ChatTeammate } from "@/lib/chat-teammates";
 import { formatDisplayDateTime } from "@/lib/dates";
 import type { ChatMessageResponse } from "@/lib/types";
@@ -193,7 +200,17 @@ export default function ChatDetailView({
     },
   });
 
+  const updateChatModelMutation = useUpdateChat({
+    onSuccess: (updatedChat) => {
+      toast.success(`Model changed to ${getChatModelLabel(updatedChat.modelId)}.`);
+    },
+    onError: (mutationError) => {
+      toast.error(mutationError.message);
+    },
+  });
+
   const isArchived = Boolean(chat?.archivedAt);
+  const selectedModelId = normalizeChatModelId(chat?.modelId);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -224,6 +241,21 @@ export default function ChatDetailView({
 
     event.preventDefault();
     sendMessage();
+  }
+
+  function handleModelChange(modelId: ChatModelId) {
+    if (
+      modelId === selectedModelId ||
+      updateChatModelMutation.isPending ||
+      isArchived
+    ) {
+      return;
+    }
+
+    updateChatModelMutation.mutate({
+      chatId,
+      modelId,
+    });
   }
 
   if (isPending) {
@@ -294,6 +326,18 @@ export default function ChatDetailView({
             requirement={chat.requirement}
             feature={chat.feature}
           />
+          <div className="w-28 shrink-0 sm:w-36 md:w-44">
+            <ChatModelSelect
+              id="chat-model"
+              value={selectedModelId}
+              onChange={handleModelChange}
+              disabled={
+                isArchived ||
+                updateChatModelMutation.isPending ||
+                sendMessageMutation.isPending
+              }
+            />
+          </div>
           <div className="flex shrink-0 items-center gap-1">
             {isArchived ? (
               <Button

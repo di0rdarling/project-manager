@@ -199,9 +199,10 @@ export async function generateChatReply(
   otherTeammatesContext?: string,
   agentNotesContext?: string,
   userName?: string | null,
+  modelName?: string,
 ): Promise<GenerateChatReplyResult> {
   const chat = getGenAIClient().chats.create({
-    model: getChatModelName(),
+    model: modelName ?? getChatModelName(),
     config: {
       systemInstruction: buildChatSystemPrompt(
         teammateId,

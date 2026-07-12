@@ -1,3 +1,4 @@
+import React from "react";
 import Link from "next/link";
 import {
   ArchiveBoxIcon,
@@ -9,13 +10,23 @@ import {
   ServerIcon,
 } from "@heroicons/react/20/solid";
 import {
-  BoltIcon,
+  ArrowLeftIcon,
+  ArrowRightOnRectangleIcon,
   BookOpenIcon,
   ChatBubbleLeftRightIcon,
   ClipboardDocumentListIcon,
   DocumentTextIcon,
+  ExclamationTriangleIcon,
+  HomeIcon,
+  PaperAirplaneIcon,
+  PencilIcon,
+  PlusIcon,
   PuzzlePieceIcon,
+  ShieldExclamationIcon,
   SparklesIcon,
+  UsersIcon,
+  UserCircleIcon,
+  WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
 
 const primaryFeatures = [
@@ -106,61 +117,241 @@ const footerNavigation = {
   ],
 } as const;
 
-function AppPreviewMockup() {
-  const sections = [
-    { label: "Overview", icon: SparklesIcon, active: false },
-    { label: "Requirements", icon: ClipboardDocumentListIcon, active: true },
-    { label: "Features", icon: PuzzlePieceIcon, active: false },
-    { label: "Notes", icon: DocumentTextIcon, active: false },
-  ];
+// ─── Hero Mockup: Project Detail Page ────────────────────────────────────────
 
+const SIDEBAR_SECTIONS: {
+  id: string;
+  label: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  active?: boolean;
+}[] = [
+  { id: "overview", label: "Overview", icon: SparklesIcon },
+  { id: "core-users", label: "Core Users", icon: UsersIcon },
+  { id: "pain-points", label: "Pain Points", icon: ExclamationTriangleIcon },
+  {
+    id: "current-challenges",
+    label: "Current Challenges",
+    icon: ShieldExclamationIcon,
+  },
+  { id: "domain-knowledge", label: "Domain Knowledge", icon: BookOpenIcon },
+  {
+    id: "requirements",
+    label: "Requirements",
+    icon: ClipboardDocumentListIcon,
+    active: true,
+  },
+  { id: "features", label: "Features", icon: PuzzlePieceIcon },
+  { id: "tools", label: "Tools", icon: WrenchScrewdriverIcon },
+  { id: "notes", label: "Notes", icon: DocumentTextIcon },
+];
+
+const MOCK_REQUIREMENTS = [
+  "Users can sign up with email/password or Google OAuth in a single step.",
+  "Onboarding completes in 3 steps or fewer with a visible progress indicator.",
+  "Dashboard loads and shows meaningful data within 2 seconds on first visit.",
+  "All screens are fully responsive down to 375px viewport width.",
+];
+
+const MOCK_FEATURES = [
+  {
+    name: "Single-step auth flow",
+    status: "in-progress",
+    reqIndex: 0,
+  },
+  {
+    name: "Guided onboarding wizard",
+    status: "planned",
+    reqIndex: 1,
+  },
+  {
+    name: "Dashboard skeleton loading",
+    status: "planned",
+    reqIndex: 2,
+  },
+] as const;
+
+function ProjectDetailMockup() {
   return (
-    <div className="w-full max-w-xl overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl ring-1 ring-zinc-900/5 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-white/10">
-      <div className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
-        <span className="size-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
-        <span className="size-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
-        <span className="size-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
-        <p className="ml-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-          Acme Onboarding Redesign
-        </p>
-      </div>
-      <div className="flex">
-        <div className="w-32 shrink-0 border-r border-zinc-200 p-3 dark:border-zinc-800">
-          {sections.map(({ label, icon: Icon, active }) => (
-            <div
-              key={label}
-              className={`mb-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium ${
-                active
-                  ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50"
-                  : "text-zinc-500 dark:text-zinc-400"
-              }`}
-            >
-              <Icon className="size-3.5 shrink-0" aria-hidden />
-              {label}
+    <div className="w-[56rem] overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl ring-1 ring-zinc-900/10 dark:border-zinc-700 dark:bg-zinc-900 dark:ring-white/10">
+      <div className="flex h-[34rem]">
+        {/* Sidebar */}
+        <aside className="flex w-48 shrink-0 flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="border-b border-zinc-200 px-4 py-3.5 dark:border-zinc-800">
+            <p className="text-[11px] font-semibold tracking-tight text-zinc-900 dark:text-white">
+              Project Manager
+            </p>
+            <p className="mt-0.5 truncate text-[10px] text-zinc-500 dark:text-zinc-400">
+              Acme Onboarding Redesign
+            </p>
+          </div>
+
+          <nav className="flex-1 overflow-hidden p-2">
+            <div className="mb-1 flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-zinc-600 dark:text-zinc-400">
+              <ArrowLeftIcon className="size-3.5 shrink-0" aria-hidden />
+              All projects
             </div>
-          ))}
-        </div>
-        <div className="flex-1 space-y-3 p-4">
-          <div className="h-2.5 w-2/3 rounded-full bg-zinc-200 dark:bg-zinc-800" />
-          <div className="h-2.5 w-1/2 rounded-full bg-zinc-100 dark:bg-zinc-900" />
-          <div className="mt-4 space-y-2 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
-            <div className="flex items-center gap-2">
-              <span className="size-1.5 rounded-full bg-zinc-400 dark:bg-zinc-600" />
-              <div className="h-2 w-3/4 rounded-full bg-zinc-200 dark:bg-zinc-800" />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="size-1.5 rounded-full bg-zinc-400 dark:bg-zinc-600" />
-              <div className="h-2 w-1/2 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+            <div className="my-1.5 border-t border-zinc-200 dark:border-zinc-800" />
+            {SIDEBAR_SECTIONS.map(({ id, label, icon: Icon, active }) => (
+              <div
+                key={id}
+                className={`mb-0.5 flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                  active
+                    ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50"
+                    : "text-zinc-600 dark:text-zinc-400"
+                }`}
+              >
+                <Icon className="size-3.5 shrink-0" aria-hidden />
+                {label}
+              </div>
+            ))}
+          </nav>
+
+          <div className="border-t border-zinc-200 p-2.5 dark:border-zinc-800">
+            <p className="mb-2 truncate px-1 text-[10px] text-zinc-500 dark:text-zinc-400">
+              design@acme.io
+            </p>
+            <div className="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-2 py-1.5 text-[11px] text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
+              <ArrowRightOnRectangleIcon className="size-3.5 shrink-0" aria-hidden />
+              Sign out
             </div>
           </div>
-          <div className="mt-4 flex items-start gap-2 rounded-xl bg-zinc-900 p-3 dark:bg-zinc-100">
-            <ChatBubbleLeftRightIcon
-              className="mt-0.5 size-4 shrink-0 text-zinc-300 dark:text-zinc-600"
-              aria-hidden
-            />
+        </aside>
+
+        {/* Main content */}
+        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-white dark:bg-zinc-900">
+          <div className="space-y-5 p-6">
+            {/* Back link */}
+            <div className="flex items-center gap-1.5 text-[11px] text-zinc-600 dark:text-zinc-400">
+              <ArrowLeftIcon className="size-3 shrink-0" aria-hidden />
+              Back to projects
+            </div>
+
+            {/* Project header */}
             <div className="space-y-1.5">
-              <div className="h-2 w-40 rounded-full bg-zinc-700 dark:bg-zinc-300" />
-              <div className="h-2 w-28 rounded-full bg-zinc-700 dark:bg-zinc-300" />
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+                  Acme Onboarding Redesign
+                </h2>
+                <div className="mt-0.5 shrink-0 rounded p-1 text-zinc-400 dark:text-zinc-500">
+                  <PencilIcon className="size-3.5" aria-hidden />
+                </div>
+              </div>
+              <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+                Redesigning the core user onboarding flow to reduce drop-off and
+                improve time-to-value across all sign-up channels.
+              </p>
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                Created Jun 3, 2026
+              </p>
+            </div>
+
+            {/* AI Summary */}
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/40">
+              <div className="mb-2.5 flex items-center gap-2">
+                <SparklesIcon
+                  className="size-3.5 shrink-0 text-indigo-500 dark:text-indigo-400"
+                  aria-hidden
+                />
+                <span className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-200">
+                  AI Summary
+                </span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400">
+                This project targets product teams and new users struggling with
+                initial setup. The primary pain point is a confusing multi-step
+                sign-up causing ~60% abandonment at step 2. Priority should be
+                simplifying auth, adding OAuth, and providing a guided wizard
+                with visible progress — all of which tie directly to your top
+                three requirements.
+              </p>
+            </div>
+
+            {/* Requirements section */}
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ClipboardDocumentListIcon
+                    className="size-4 shrink-0 text-zinc-700 dark:text-zinc-300"
+                    aria-hidden
+                  />
+                  <span className="text-sm font-semibold text-zinc-900 dark:text-white">
+                    Requirements
+                  </span>
+                  <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                    {MOCK_REQUIREMENTS.length}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 rounded-lg border border-zinc-200 px-2 py-1 text-[11px] text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
+                  <PlusIcon className="size-3" aria-hidden />
+                  Add
+                </div>
+              </div>
+              <div className="space-y-2">
+                {MOCK_REQUIREMENTS.map((req, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-2.5 rounded-lg border border-zinc-200 bg-zinc-50/50 px-3 py-2.5 dark:border-zinc-800 dark:bg-zinc-800/20"
+                  >
+                    <span className="mt-1 size-1.5 shrink-0 rounded-full bg-zinc-400 dark:bg-zinc-500" />
+                    <p className="text-[11px] leading-relaxed text-zinc-700 dark:text-zinc-300">
+                      {req}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Features section */}
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <PuzzlePieceIcon
+                    className="size-4 shrink-0 text-zinc-700 dark:text-zinc-300"
+                    aria-hidden
+                  />
+                  <span className="text-sm font-semibold text-zinc-900 dark:text-white">
+                    Features
+                  </span>
+                  <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                    {MOCK_FEATURES.length}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 rounded-lg border border-zinc-200 px-2 py-1 text-[11px] text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
+                  <PlusIcon className="size-3" aria-hidden />
+                  Add
+                </div>
+              </div>
+              <div className="space-y-2">
+                {MOCK_FEATURES.map((feat) => (
+                  <div
+                    key={feat.name}
+                    className="flex items-center gap-3 rounded-lg border border-zinc-200 px-3 py-2.5 dark:border-zinc-800"
+                  >
+                    <span
+                      className={`size-1.5 shrink-0 rounded-full ${
+                        feat.status === "in-progress"
+                          ? "bg-indigo-500"
+                          : "bg-zinc-300 dark:bg-zinc-600"
+                      }`}
+                    />
+                    <p className="flex-1 text-[11px] font-medium text-zinc-800 dark:text-zinc-200">
+                      {feat.name}
+                    </p>
+                    <span className="shrink-0 text-[10px] text-zinc-400 dark:text-zinc-500">
+                      Req {feat.reqIndex + 1}
+                    </span>
+                    <span
+                      className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                        feat.status === "in-progress"
+                          ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400"
+                          : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+                      }`}
+                    >
+                      {feat.status === "in-progress" ? "In Progress" : "Planned"}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -169,11 +360,283 @@ function AppPreviewMockup() {
   );
 }
 
+// ─── Secondary Mockup: AI Chats Detail ───────────────────────────────────────
+
+const MAIN_NAV = [
+  { label: "Home", icon: HomeIcon, active: false },
+  { label: "AI Chats", icon: ChatBubbleLeftRightIcon, active: true },
+  { label: "Account", icon: UserCircleIcon, active: false },
+] as const;
+
+const MOCK_CHATS = [
+  {
+    id: 1,
+    title: "Requirements deep-dive",
+    project: "Acme Onboarding",
+    ago: "3m ago",
+    active: true,
+  },
+  {
+    id: 2,
+    title: "Sprint prioritization",
+    project: "Acme Onboarding",
+    ago: "Yesterday",
+    active: false,
+  },
+  {
+    id: 3,
+    title: "Architecture review",
+    project: "Mobile App Rewrite",
+    ago: "Jul 9",
+    active: false,
+  },
+  {
+    id: 4,
+    title: "Onboarding copy audit",
+    project: "Acme Onboarding",
+    ago: "Jul 7",
+    active: false,
+  },
+] as const;
+
+const MOCK_MESSAGES = [
+  {
+    id: 1,
+    role: "agent" as const,
+    agent: { initials: "SA", color: "bg-violet-600 dark:bg-violet-500", name: "Sandy" },
+    text: "I reviewed your Requirements section. Requirement 2 describes a solution ('3-step wizard') rather than a user problem. A stronger framing would be: 'Users can complete onboarding without losing their progress between sessions.' Want me to draft a revised set?",
+  },
+  {
+    id: 2,
+    role: "user" as const,
+    text: "Yes — and can you check if anything's missing based on the pain points?",
+  },
+  {
+    id: 3,
+    role: "agent" as const,
+    agent: { initials: "SA", color: "bg-violet-600 dark:bg-violet-500", name: "Sandy" },
+    text: "Done. Two gaps stand out: you've captured 'sign-up abandonment' as a pain point, but there's no requirement covering email verification feedback or session persistence. I'd suggest adding these as ready-to-paste lines:",
+  },
+] as const;
+
+const SUGGESTED_REQUIREMENTS = [
+  "Users receive a clear confirmation email within 30 seconds of sign-up, with a working resend option.",
+  "Onboarding progress is saved automatically so users can resume from any device without starting over.",
+] as const;
+
+const MOCK_TEAMMATES = [
+  { initials: "JO", color: "bg-emerald-600 dark:bg-emerald-500", name: "Jordan" },
+  { initials: "SA", color: "bg-violet-600 dark:bg-violet-500", name: "Sandy" },
+  { initials: "AR", color: "bg-sky-600 dark:bg-sky-500", name: "Arlo" },
+  { initials: "RE", color: "bg-teal-600 dark:bg-teal-500", name: "Reid" },
+  { initials: "NO", color: "bg-rose-600 dark:bg-rose-500", name: "Nova" },
+  { initials: "TH", color: "bg-amber-600 dark:bg-amber-500", name: "Theo" },
+] as const;
+
+function AIChatsDetailMockup() {
+  return (
+    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl ring-1 ring-zinc-900/10 dark:border-zinc-700 dark:bg-zinc-900 dark:ring-white/10">
+      <div className="flex h-[36rem]">
+        {/* Sidebar */}
+        <aside className="flex w-48 shrink-0 flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="border-b border-zinc-200 px-4 py-3.5 dark:border-zinc-800">
+            <p className="text-[11px] font-semibold tracking-tight text-zinc-900 dark:text-white">
+              Project Manager
+            </p>
+          </div>
+
+          <nav className="flex-1 overflow-hidden p-2">
+            {MAIN_NAV.map(({ label, icon: Icon, active }) => (
+              <div
+                key={label}
+                className={`mb-0.5 flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[11px] font-medium ${
+                  active
+                    ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50"
+                    : "text-zinc-600 dark:text-zinc-400"
+                }`}
+              >
+                <Icon className="size-4 shrink-0" aria-hidden />
+                {label}
+              </div>
+            ))}
+          </nav>
+
+          <div className="border-t border-zinc-200 p-2.5 dark:border-zinc-800">
+            <p className="mb-2 truncate px-1 text-[10px] text-zinc-500 dark:text-zinc-400">
+              design@acme.io
+            </p>
+            <div className="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-2 py-1.5 text-[11px] text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
+              <ArrowRightOnRectangleIcon className="size-3.5 shrink-0" aria-hidden />
+              Sign out
+            </div>
+          </div>
+        </aside>
+
+        {/* Chats list panel */}
+        <div className="flex w-60 shrink-0 flex-col border-r border-zinc-200 dark:border-zinc-800">
+          <div className="border-b border-zinc-200 px-4 py-3.5 dark:border-zinc-800">
+            <h2 className="text-[11px] font-semibold text-zinc-900 dark:text-white">
+              AI Chats
+            </h2>
+            <p className="mt-0.5 text-[10px] text-zinc-500 dark:text-zinc-400">
+              Your conversations with AI teammates
+            </p>
+          </div>
+
+          {/* Teammate cards */}
+          <div className="border-b border-zinc-200 px-3 py-2.5 dark:border-zinc-800">
+            <p className="mb-2 text-[9px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+              Teammates
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {MOCK_TEAMMATES.map(({ initials, color, name }) => (
+                <div key={name} className="flex flex-col items-center gap-1">
+                  <div
+                    className={`flex size-7 items-center justify-center rounded-full text-[9px] font-bold text-white ${color}`}
+                  >
+                    {initials}
+                  </div>
+                  <span className="text-[9px] text-zinc-500 dark:text-zinc-400">
+                    {name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Chat entries */}
+          <div className="flex-1 overflow-hidden p-2">
+            <p className="mb-1.5 px-1 text-[9px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+              Active
+            </p>
+            {MOCK_CHATS.map((chat) => (
+              <div
+                key={chat.id}
+                className={`mb-1 rounded-lg px-2.5 py-2 ${
+                  chat.active
+                    ? "bg-zinc-100 dark:bg-zinc-800"
+                    : "hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-1">
+                  <p
+                    className={`text-[11px] font-medium leading-tight ${
+                      chat.active
+                        ? "text-zinc-900 dark:text-zinc-50"
+                        : "text-zinc-700 dark:text-zinc-300"
+                    }`}
+                  >
+                    {chat.title}
+                  </p>
+                  <span className="shrink-0 text-[9px] text-zinc-400 dark:text-zinc-500">
+                    {chat.ago}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-[10px] text-zinc-500 dark:text-zinc-400">
+                  {chat.project}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="border-t border-zinc-200 p-2.5 dark:border-zinc-800">
+            <div className="flex items-center justify-center gap-1.5 rounded-lg bg-zinc-900 px-3 py-1.5 text-[11px] font-semibold text-white dark:bg-white dark:text-zinc-900">
+              <PlusIcon className="size-3.5" aria-hidden />
+              New chat
+            </div>
+          </div>
+        </div>
+
+        {/* Chat detail */}
+        <div className="flex min-w-0 flex-1 flex-col bg-white dark:bg-zinc-900">
+          {/* Chat header */}
+          <div className="flex items-center gap-3 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-violet-600 text-[10px] font-bold text-white dark:bg-violet-500">
+              SA
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-xs font-semibold text-zinc-900 dark:text-white">
+                Requirements deep-dive
+              </p>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                Sandy · Business Analyst · Acme Onboarding Redesign
+              </p>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+            {MOCK_MESSAGES.map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex ${msg.role === "user" ? "justify-end" : "items-start gap-2.5"}`}
+              >
+                {msg.role === "agent" && (
+                  <div
+                    className={`flex size-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white ${msg.agent.color}`}
+                  >
+                    {msg.agent.initials}
+                  </div>
+                )}
+                <div
+                  className={`max-w-[80%] rounded-xl px-3 py-2 ${
+                    msg.role === "user"
+                      ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                      : "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
+                  }`}
+                >
+                  {msg.role === "agent" && (
+                    <p className="mb-1 text-[10px] font-semibold text-violet-600 dark:text-violet-400">
+                      {msg.agent.name}
+                    </p>
+                  )}
+                  <p className="text-[11px] leading-relaxed">{msg.text}</p>
+                </div>
+              </div>
+            ))}
+
+            {/* Sandy's suggested requirements */}
+            <div className="ml-8 space-y-1.5">
+              {SUGGESTED_REQUIREMENTS.map((req, i) => (
+                <div
+                  key={i}
+                  className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 dark:border-violet-500/20 dark:bg-violet-500/10"
+                >
+                  <p className="text-[10px] font-semibold text-violet-700 dark:text-violet-400">
+                    Suggested requirement
+                  </p>
+                  <p className="mt-0.5 text-[11px] italic text-violet-800 dark:text-violet-300">
+                    &ldquo;{req}&rdquo;
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Input area */}
+          <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
+            <div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-800">
+              <p className="flex-1 text-[11px] text-zinc-400 dark:text-zinc-500">
+                Ask Sandy anything about Acme Onboarding...
+              </p>
+              <div className="flex size-6 items-center justify-center rounded-lg bg-zinc-900 dark:bg-white">
+                <PaperAirplaneIcon className="size-3 text-white dark:text-zinc-900" aria-hidden />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Background decorations ───────────────────────────────────────────────────
+
 function BackgroundGrid() {
   return (
     <svg
       aria-hidden="true"
-      className="absolute inset-0 -z-10 size-full mask-[radial-gradient(100%_100%_at_top_right,white,transparent)] stroke-zinc-200 dark:stroke-white/10"
+      className="absolute inset-0 -z-10 size-full mask-[radial-gradient(100%_100%_at_top_right,white,transparent)] stroke-gray-200 dark:stroke-white/10"
     >
       <defs>
         <pattern
@@ -187,7 +650,7 @@ function BackgroundGrid() {
           <path d="M.5 200V.5H200" fill="none" />
         </pattern>
       </defs>
-      <svg x="50%" y={-1} className="overflow-visible fill-zinc-50 dark:fill-zinc-800/20">
+      <svg x="50%" y={-1} className="overflow-visible fill-gray-50 dark:fill-gray-800/20">
         <path
           d="M-200 0h201v201h-201Z M600 0h201v201h-201Z M-400 600h201v201h-201Z M200 800h201v201h-201Z"
           strokeWidth={0}
@@ -206,30 +669,32 @@ function GradientBlob({ className }: { className?: string }) {
           clipPath:
             "polygon(73.6% 51.7%, 91.7% 11.8%, 100% 46.4%, 97.4% 82.2%, 92.5% 84.9%, 75.7% 64%, 55.3% 47.5%, 46.5% 49.4%, 45% 62.9%, 50.3% 87.2%, 21.3% 64.1%, 0.1% 100%, 5.4% 51.1%, 21.4% 63.9%, 58.9% 0.2%, 73.6% 51.7%)",
         }}
-        className="aspect-[1108/632] w-[69.25rem] bg-gradient-to-r from-zinc-400 to-zinc-600 opacity-20 dark:from-zinc-600 dark:to-zinc-400 dark:opacity-10"
+        className="aspect-1108/632 w-277 flex-none bg-linear-to-r from-[#80caff] to-[#4f46e5] opacity-20"
       />
     </div>
   );
 }
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function LandingPage() {
   return (
-    <div className="min-h-dvh overflow-y-auto bg-white dark:bg-black">
-      <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-black/80">
+    <div className="h-dvh overflow-y-auto bg-white dark:bg-zinc-950">
+      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-zinc-950/80">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
-          <p className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white">
+          <p className="text-sm font-semibold tracking-tight text-gray-900 dark:text-white">
             Project Manager
           </p>
           <nav className="flex items-center gap-3">
             <Link
               href="/login"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
             >
               Sign in
             </Link>
             <Link
               href="/signup"
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-300"
+              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100"
             >
               Get started
             </Link>
@@ -245,24 +710,24 @@ export default function LandingPage() {
 
           <div className="mx-auto max-w-7xl px-6 pt-10 pb-24 sm:pb-32 lg:flex lg:px-8 lg:py-40">
             <div className="mx-auto max-w-2xl shrink-0 lg:mx-0 lg:pt-8">
-              <div>
+              <div className="mt-24 sm:mt-32 lg:mt-16">
                 <a href="#features" className="inline-flex space-x-6">
                   <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm/6 font-semibold text-zinc-700 ring-1 ring-inset ring-zinc-900/10 dark:bg-white/10 dark:text-zinc-200 dark:ring-white/20">
                     What&apos;s new
                   </span>
-                  <span className="inline-flex items-center space-x-2 text-sm/6 font-medium text-zinc-600 dark:text-zinc-300">
+                  <span className="inline-flex items-center space-x-2 text-sm/6 font-medium text-gray-600 dark:text-gray-300">
                     <span>AI teammates just shipped</span>
                     <ChevronRightIcon
                       aria-hidden="true"
-                      className="size-5 text-zinc-400 dark:text-zinc-500"
+                      className="size-5 text-gray-400 dark:text-gray-500"
                     />
                   </span>
                 </a>
               </div>
-              <h1 className="mt-10 text-5xl font-semibold tracking-tight text-pretty text-zinc-900 sm:text-7xl dark:text-white">
+              <h1 className="mt-10 text-5xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-7xl dark:text-white">
                 Plan, document, and ship with clarity
               </h1>
-              <p className="mt-8 text-lg font-medium text-pretty text-zinc-500 sm:text-xl/8 dark:text-zinc-400">
+              <p className="mt-8 text-lg font-medium text-pretty text-gray-500 sm:text-xl/8 dark:text-gray-400">
                 Project Manager helps teams capture product context, collaborate
                 with AI teammates, and move from idea to delivery without losing
                 the thread.
@@ -270,34 +735,35 @@ export default function LandingPage() {
               <div className="mt-10 flex items-center gap-x-6">
                 <Link
                   href="/signup"
-                  className="rounded-md bg-zinc-900 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-300 dark:focus-visible:outline-white"
+                  className="rounded-md bg-zinc-900 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 dark:focus-visible:outline-white"
                 >
                   Get started
                 </Link>
                 <a
                   href="#features"
-                  className="text-sm/6 font-semibold text-zinc-900 dark:text-white"
+                  className="text-sm/6 font-semibold text-gray-900 dark:text-white"
                 >
                   Learn more <span aria-hidden="true">→</span>
                 </a>
               </div>
             </div>
-            <div className="mx-auto mt-16 flex max-w-2xl justify-center sm:mt-24 lg:mt-0 lg:mr-0 lg:ml-10 lg:max-w-none lg:flex-none xl:ml-32">
-              <AppPreviewMockup />
+            {/* Hero mockup — fixed large width, overflows right like a product screenshot */}
+            <div className="mx-auto mt-16 flex max-w-2xl sm:mt-24 lg:mt-0 lg:mr-0 lg:ml-10 lg:max-w-none lg:flex-none xl:ml-32">
+              <ProjectDetailMockup />
             </div>
           </div>
         </div>
 
-        {/* Feature section */}
-        <div id="features" className="mx-auto mt-16 max-w-7xl px-6 sm:mt-24 lg:px-8">
+        {/* Primary feature section */}
+        <div id="features" className="mx-auto mt-32 max-w-7xl px-6 sm:mt-56 lg:px-8">
           <div className="mx-auto max-w-2xl lg:text-center">
             <h2 className="text-base/7 font-semibold text-zinc-500 dark:text-zinc-400">
               Everything in one place
             </h2>
-            <p className="mt-2 text-4xl font-semibold tracking-tight text-pretty text-zinc-900 sm:text-5xl lg:text-balance dark:text-white">
+            <p className="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl lg:text-balance dark:text-white">
               Everything you need to run a project
             </p>
-            <p className="mt-6 text-lg/8 text-zinc-600 dark:text-zinc-300">
+            <p className="mt-6 text-lg/8 text-gray-600 dark:text-gray-300">
               No more scattered docs and stale context. Requirements, features,
               tools, and conversations stay connected from day one.
             </p>
@@ -306,8 +772,8 @@ export default function LandingPage() {
             <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
               {primaryFeatures.map((feature) => (
                 <div key={feature.name} className="flex flex-col">
-                  <dt className="text-base/7 font-semibold text-zinc-900 dark:text-white">
-                    <div className="mb-6 flex size-10 items-center justify-center rounded-lg bg-zinc-900 dark:bg-white">
+                  <dt className="text-base/7 font-semibold text-gray-900 dark:text-white">
+                    <div className="mb-6 flex size-10 items-center justify-center rounded-lg bg-zinc-900 dark:bg-zinc-50">
                       <feature.icon
                         aria-hidden="true"
                         className="size-6 text-white dark:text-zinc-900"
@@ -315,8 +781,16 @@ export default function LandingPage() {
                     </div>
                     {feature.name}
                   </dt>
-                  <dd className="mt-1 flex flex-auto flex-col text-base/7 text-zinc-600 dark:text-zinc-400">
+                  <dd className="mt-1 flex flex-auto flex-col text-base/7 text-gray-600 dark:text-gray-400">
                     <p className="flex-auto">{feature.description}</p>
+                    <p className="mt-6">
+                      <a
+                        href={feature.href}
+                        className="text-sm/6 font-semibold text-zinc-900 hover:text-zinc-700 dark:text-white dark:hover:text-zinc-300"
+                      >
+                        Learn more <span aria-hidden="true">→</span>
+                      </a>
+                    </p>
                   </dd>
                 </div>
               ))}
@@ -331,23 +805,33 @@ export default function LandingPage() {
               <h2 className="text-base/7 font-semibold text-zinc-500 dark:text-zinc-400">
                 Built for how teams actually work
               </h2>
-              <p className="mt-2 text-4xl font-semibold tracking-tight text-pretty text-zinc-900 sm:text-5xl sm:text-balance dark:text-white">
+              <p className="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl sm:text-balance dark:text-white">
                 No extra tools required
               </p>
-              <p className="mt-6 text-lg/8 text-zinc-600 dark:text-zinc-300">
+              <p className="mt-6 text-lg/8 text-gray-600 dark:text-gray-300">
                 Every project comes with the same set of building blocks, so
                 nothing important slips through the cracks.
               </p>
             </div>
           </div>
+          <div className="relative overflow-hidden pt-16">
+            <div className="mx-auto max-w-7xl px-6 lg:px-8">
+              <div className="mb-[-12%]">
+                <AIChatsDetailMockup />
+              </div>
+              <div aria-hidden="true" className="relative">
+                <div className="absolute -inset-x-20 bottom-0 bg-linear-to-t from-white pt-[7%] dark:from-zinc-950" />
+              </div>
+            </div>
+          </div>
           <div className="mx-auto mt-16 max-w-7xl px-6 sm:mt-20 md:mt-24 lg:px-8">
-            <dl className="mx-auto grid max-w-2xl grid-cols-1 gap-x-6 gap-y-10 text-base/7 text-zinc-600 sm:grid-cols-2 lg:mx-0 lg:max-w-none lg:grid-cols-3 lg:gap-x-8 lg:gap-y-16 dark:text-zinc-400">
+            <dl className="mx-auto grid max-w-2xl grid-cols-1 gap-x-6 gap-y-10 text-base/7 text-gray-600 sm:grid-cols-2 lg:mx-0 lg:max-w-none lg:grid-cols-3 lg:gap-x-8 lg:gap-y-16 dark:text-gray-400">
               {secondaryFeatures.map((feature) => (
                 <div key={feature.name} className="relative pl-9">
-                  <dt className="inline font-semibold text-zinc-900 dark:text-white">
+                  <dt className="inline font-semibold text-gray-900 dark:text-white">
                     <feature.icon
                       aria-hidden="true"
-                      className="absolute top-1 left-1 size-5 text-zinc-500 dark:text-zinc-400"
+                      className="absolute top-1 left-1 size-5 text-zinc-700 dark:text-zinc-400"
                     />
                     {feature.name}
                   </dt>{" "}
@@ -364,19 +848,19 @@ export default function LandingPage() {
             <h2 className="text-base/8 font-semibold text-zinc-500 dark:text-zinc-400">
               Why teams choose us
             </h2>
-            <p className="mt-2 text-4xl font-semibold tracking-tight text-pretty text-zinc-900 sm:text-5xl dark:text-white">
+            <p className="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl dark:text-white">
               Built to keep your project&nbsp;organized
             </p>
-            <p className="mt-6 text-lg/8 text-zinc-700 dark:text-zinc-300">
+            <p className="mt-6 text-lg/8 text-gray-700 dark:text-gray-300">
               Every project starts with the same structure, so your team always
               knows where to look and what to trust.
             </p>
           </div>
-          <dl className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-10 text-zinc-900 sm:mt-20 sm:grid-cols-2 sm:gap-y-16 lg:mx-0 lg:max-w-none lg:grid-cols-4 dark:text-white">
+          <dl className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-10 text-gray-900 sm:mt-20 sm:grid-cols-2 sm:gap-y-16 lg:mx-0 lg:max-w-none lg:grid-cols-4 dark:text-white">
             {stats.map((stat) => (
               <div
                 key={stat.id}
-                className="flex flex-col gap-y-3 border-l border-zinc-900/15 pl-6 dark:border-white/10"
+                className="flex flex-col gap-y-3 border-l border-gray-900/15 pl-6 dark:border-white/10"
               >
                 <dt className="text-sm/6">{stat.name}</dt>
                 <dd className="order-first text-3xl font-semibold tracking-tight">
@@ -390,26 +874,36 @@ export default function LandingPage() {
         {/* CTA section */}
         <div className="relative isolate mt-32 px-6 py-32 sm:mt-56 sm:py-40 lg:px-8">
           <BackgroundGrid />
-          <GradientBlob className="absolute inset-x-0 top-10 -z-10 flex transform-gpu justify-center overflow-hidden blur-3xl" />
-
+          <div
+            aria-hidden="true"
+            className="absolute inset-x-0 top-10 -z-10 flex transform-gpu justify-center overflow-hidden blur-3xl"
+          >
+            <div
+              style={{
+                clipPath:
+                  "polygon(73.6% 51.7%, 91.7% 11.8%, 100% 46.4%, 97.4% 82.2%, 92.5% 84.9%, 75.7% 64%, 55.3% 47.5%, 46.5% 49.4%, 45% 62.9%, 50.3% 87.2%, 21.3% 64.1%, 0.1% 100%, 5.4% 51.1%, 21.4% 63.9%, 58.9% 0.2%, 73.6% 51.7%)",
+              }}
+              className="aspect-1108/632 w-277 flex-none bg-linear-to-r from-[#80caff] to-[#4f46e5] opacity-20"
+            />
+          </div>
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-4xl font-semibold tracking-tight text-balance text-zinc-900 sm:text-5xl dark:text-white">
+            <h2 className="text-4xl font-semibold tracking-tight text-balance text-gray-900 sm:text-5xl dark:text-white">
               Give your next project a clear home
             </h2>
-            <p className="mx-auto mt-6 max-w-xl text-lg/8 text-pretty text-zinc-600 dark:text-zinc-300">
+            <p className="mx-auto mt-6 max-w-xl text-lg/8 text-pretty text-gray-600 dark:text-gray-300">
               Create your first project, invite your AI teammates, and see
               everything come together in one workspace.
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <Link
                 href="/signup"
-                className="rounded-md bg-zinc-900 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:bg-white dark:text-zinc-900 dark:shadow-none dark:hover:bg-zinc-300 dark:focus-visible:outline-white"
+                className="rounded-md bg-zinc-900 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:bg-white dark:text-zinc-900 dark:shadow-none dark:hover:bg-zinc-100 dark:focus-visible:outline-white"
               >
                 Get started
               </Link>
               <Link
                 href="/login"
-                className="text-sm/6 font-semibold text-zinc-900 dark:text-white"
+                className="text-sm/6 font-semibold text-gray-900 dark:text-white"
               >
                 Sign in <span aria-hidden="true">→</span>
               </Link>
@@ -420,10 +914,10 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="border-t border-zinc-200 py-12 dark:border-white/10">
+        <div className="border-t border-gray-200 py-12 dark:border-white/10">
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
             <div>
-              <h3 className="text-sm/6 font-semibold text-zinc-900 dark:text-white">
+              <h3 className="text-sm/6 font-semibold text-gray-900 dark:text-white">
                 Product
               </h3>
               <ul className="mt-4 space-y-3">
@@ -431,7 +925,7 @@ export default function LandingPage() {
                   <li key={item.name}>
                     <Link
                       href={item.href}
-                      className="text-sm/6 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+                      className="text-sm/6 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
                     >
                       {item.name}
                     </Link>
@@ -440,7 +934,7 @@ export default function LandingPage() {
               </ul>
             </div>
             <div>
-              <h3 className="text-sm/6 font-semibold text-zinc-900 dark:text-white">
+              <h3 className="text-sm/6 font-semibold text-gray-900 dark:text-white">
                 Company
               </h3>
               <ul className="mt-4 space-y-3">
@@ -448,7 +942,7 @@ export default function LandingPage() {
                   <li key={item.name}>
                     <a
                       href={item.href}
-                      className="text-sm/6 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+                      className="text-sm/6 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
                     >
                       {item.name}
                     </a>
@@ -457,7 +951,7 @@ export default function LandingPage() {
               </ul>
             </div>
             <div>
-              <h3 className="text-sm/6 font-semibold text-zinc-900 dark:text-white">
+              <h3 className="text-sm/6 font-semibold text-gray-900 dark:text-white">
                 Legal
               </h3>
               <ul className="mt-4 space-y-3">
@@ -465,7 +959,7 @@ export default function LandingPage() {
                   <li key={item.name}>
                     <a
                       href={item.href}
-                      className="text-sm/6 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+                      className="text-sm/6 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
                     >
                       {item.name}
                     </a>
@@ -474,7 +968,7 @@ export default function LandingPage() {
               </ul>
             </div>
           </div>
-          <p className="mt-12 text-sm/6 text-zinc-600 dark:text-zinc-400">
+          <p className="mt-12 text-sm/6 text-gray-600 dark:text-gray-400">
             &copy; {new Date().getFullYear()} Project Manager. All rights
             reserved.
           </p>

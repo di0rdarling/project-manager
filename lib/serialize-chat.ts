@@ -1,4 +1,5 @@
 import { DEFAULT_CHAT_TEAMMATE_ID, isChatTeammateId } from "@/lib/chat-teammates";
+import { normalizeChatModelId } from "@/lib/chat-models";
 import { toIsoString } from "@/lib/dates";
 import type {
   Chat,
@@ -16,12 +17,14 @@ export type StoredChat = Omit<
   | "featureId"
   | "titleIsCustom"
   | "aiTitleGenerated"
+  | "modelId"
 > & {
   requirementId?: Chat["requirementId"];
   featureId?: Chat["featureId"];
   teammateId?: Chat["teammateId"];
   titleIsCustom?: Chat["titleIsCustom"];
   aiTitleGenerated?: Chat["aiTitleGenerated"];
+  modelId?: Chat["modelId"];
   createdAt: string | Date;
   updatedAt: string | Date;
 };
@@ -41,6 +44,7 @@ export function serializeChat(chat: StoredChat): ChatResponse {
     teammateId: isChatTeammateId(chat.teammateId)
       ? chat.teammateId
       : DEFAULT_CHAT_TEAMMATE_ID,
+    modelId: normalizeChatModelId(chat.modelId),
     title: chat.title,
     titleIsCustom: chat.titleIsCustom ?? false,
     aiTitleGenerated: chat.aiTitleGenerated ?? false,

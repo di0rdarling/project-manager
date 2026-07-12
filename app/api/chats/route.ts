@@ -3,6 +3,10 @@ import {
   DEFAULT_CHAT_TEAMMATE_ID,
   isChatTeammateId,
 } from "@/lib/chat-teammates";
+import {
+  DEFAULT_CHAT_MODEL_ID,
+  isChatModelId,
+} from "@/lib/chat-models";
 import { serializeChatsWithContext } from "@/lib/chat-list-items";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
@@ -78,6 +82,9 @@ export async function POST(request: Request) {
     const teammateId = isChatTeammateId(body.teammateId)
       ? body.teammateId
       : DEFAULT_CHAT_TEAMMATE_ID;
+    const modelId = isChatModelId(body.modelId)
+      ? body.modelId
+      : DEFAULT_CHAT_MODEL_ID;
 
     const requirementId =
       typeof body.requirementId === "string" && body.requirementId.trim()
@@ -133,6 +140,7 @@ export async function POST(request: Request) {
       requirementId: requirementId ? new ObjectId(requirementId) : null,
       featureId: featureId ? new ObjectId(featureId) : null,
       teammateId,
+      modelId,
       title: "New Chat",
       titleIsCustom: false,
       aiTitleGenerated: false,
