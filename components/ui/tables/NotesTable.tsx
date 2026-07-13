@@ -5,6 +5,7 @@ import {
   DataTable,
   type DataTableColumn,
   type DataTableRowAction,
+  type DataTableSortDirection,
 } from "@/components/ui/tables/DataTable";
 import type { ReactNode } from "react";
 
@@ -14,6 +15,8 @@ export type NotesTableColumn<T> = {
   className?: string;
   cellClassName?: string;
   render: (item: T) => ReactNode;
+  getSortValue?: (item: T) => string | number | null | undefined;
+  sortable?: boolean;
 };
 
 export type NotesTableRowAction<T> = DataTableRowAction<T>;
@@ -24,6 +27,10 @@ type NotesTableProps<T extends { _id: string }> = {
   getItemHref: (item: T) => string;
   getItemLabel: (item: T) => string;
   rowActions?: NotesTableRowAction<T>[];
+  defaultSort?: {
+    columnKey: string;
+    direction: DataTableSortDirection;
+  };
 };
 
 export function NotesTable<T extends { _id: string }>({
@@ -32,6 +39,7 @@ export function NotesTable<T extends { _id: string }>({
   getItemHref,
   getItemLabel,
   rowActions = [],
+  defaultSort,
 }: Readonly<NotesTableProps<T>>) {
   const router = useRouter();
 
@@ -41,6 +49,8 @@ export function NotesTable<T extends { _id: string }>({
     headerClassName: column.className,
     cellClassName: column.cellClassName,
     render: column.render,
+    getSortValue: column.getSortValue,
+    sortable: column.sortable,
   }));
 
   return (
@@ -51,6 +61,7 @@ export function NotesTable<T extends { _id: string }>({
       getRowLabel={getItemLabel}
       rowActions={rowActions}
       onRowClick={(item) => router.push(getItemHref(item))}
+      defaultSort={defaultSort}
       aria-label="Notes"
     />
   );

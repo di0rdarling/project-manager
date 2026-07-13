@@ -33,6 +33,7 @@ export default function NotesList({
     <>
       <NotesTable
         items={notes}
+        defaultSort={{ columnKey: "createdAt", direction: "desc" }}
         columns={[
           {
             key: "title",
@@ -40,12 +41,22 @@ export default function NotesList({
             cellClassName:
               "px-4 py-3 text-sm font-medium text-zinc-900 dark:text-zinc-100",
             render: (note) => note.title || "Untitled note",
+            getSortValue: (note) =>
+              (note.title || "Untitled note").toLocaleLowerCase(),
           },
           {
-            key: "date",
+            key: "createdAt",
             header: "Created",
             cellClassName: "px-4 py-3 text-sm text-zinc-500 dark:text-zinc-400",
             render: (note) => <ListItemDate dateTime={note.createdAt} />,
+            getSortValue: (note) => note.createdAt,
+          },
+          {
+            key: "updatedAt",
+            header: "Updated",
+            cellClassName: "px-4 py-3 text-sm text-zinc-500 dark:text-zinc-400",
+            render: (note) => <ListItemDate dateTime={note.updatedAt} />,
+            getSortValue: (note) => note.updatedAt,
           },
         ]}
         getItemHref={(note) => getNoteDetailPath(projectId, note._id)}

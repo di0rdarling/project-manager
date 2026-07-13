@@ -37,6 +37,19 @@ function formatSharedWithLabel(
   return formatAgentNoteSharedWithNames(sharedWithTeammateIds) ?? "Private";
 }
 
+function getSharedWithSortValue(
+  note: AgentNoteResponse,
+  teammateId: ChatTeammateId,
+): string {
+  const isOwner = isAgentNoteOwner(note, teammateId);
+
+  if (!isOwner) {
+    return getChatTeammate(teammateId).name.toLocaleLowerCase();
+  }
+
+  return formatSharedWithLabel(note.sharedWithTeammateIds).toLocaleLowerCase();
+}
+
 export default function AIAgentNotesList({
   teammateId,
   notes,
@@ -57,6 +70,7 @@ export default function AIAgentNotesList({
     <>
       <NotesTable
         items={notes}
+        defaultSort={{ columnKey: "createdAt", direction: "desc" }}
         columns={[
           {
             key: "title",
@@ -64,6 +78,8 @@ export default function AIAgentNotesList({
             cellClassName:
               "px-4 py-3 text-sm font-medium text-zinc-900 dark:text-zinc-100",
             render: (note) => note.title || "Untitled note",
+            getSortValue: (note) =>
+              (note.title || "Untitled note").toLocaleLowerCase(),
           },
           {
             key: "shared",
@@ -75,12 +91,21 @@ export default function AIAgentNotesList({
                 ? formatSharedWithLabel(note.sharedWithTeammateIds)
                 : currentAgentName;
             },
+            getSortValue: (note) => getSharedWithSortValue(note, teammateId),
           },
           {
-            key: "date",
+            key: "createdAt",
             header: "Created",
             cellClassName: "px-4 py-3 text-sm text-zinc-500 dark:text-zinc-400",
             render: (note) => <ListItemDate dateTime={note.createdAt} />,
+            getSortValue: (note) => note.createdAt,
+          },
+          {
+            key: "updatedAt",
+            header: "Updated",
+            cellClassName: "px-4 py-3 text-sm text-zinc-500 dark:text-zinc-400",
+            render: (note) => <ListItemDate dateTime={note.updatedAt} />,
+            getSortValue: (note) => note.updatedAt,
           },
         ]}
         getItemHref={(note) => getAgentNoteDetailPath(teammateId, note._id)}
