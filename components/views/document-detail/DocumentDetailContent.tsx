@@ -47,12 +47,10 @@ export function DocumentDetailContent({
   }
 
   return (
-    <div className="p-4">
-      <RichTextContent
-        content={readContent}
-        headings={headings}
-        className="text-sm text-zinc-800 dark:text-zinc-200"
-      />
-    </div>
+    <RichTextContent
+      content={readContent}
+      headings={headings}
+      className="text-sm text-zinc-800 dark:text-zinc-200"
+    />
   );
 }

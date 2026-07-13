@@ -6,6 +6,8 @@ import { TableOfContents } from "@/components/views/document-detail/TableOfConte
 export const documentContentPanelClassName =
   "note-toc-content rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950";
 
+export const documentReadContentPanelClassName = "note-toc-content";
+
 const tocClassName =
   "lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:w-64 lg:shrink-0 lg:overflow-y-auto";
 
@@ -37,7 +39,12 @@ export function DocumentDetailLayout({
   tocTitle,
 }: Readonly<DocumentDetailLayoutProps>) {
   const contentPanel = (
-    <div ref={contentPanelRef} className={documentContentPanelClassName}>
+    <div
+      ref={contentPanelRef}
+      className={
+        isEditing ? documentContentPanelClassName : documentReadContentPanelClassName
+      }
+    >
       {children}
     </div>
   );

@@ -9,14 +9,24 @@ import {
   ArrowsPointingInIcon,
   ArrowsPointingOutIcon,
   BoldIcon,
+  CheckIcon,
+  ClipboardDocumentIcon,
   ItalicIcon,
   LinkIcon,
   PencilSquareIcon,
   SparklesIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
+import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
+import { documentDetailToolbarButtonClassName } from "@/components/views/document-detail/DocumentDetailToolbarActions";
 import { useEnhanceRichText } from "@/hooks/mutations/useEnhanceRichText";
 import type { RichTextEnhanceAction } from "@/lib/prompts/rich-text-enhance-prompt";
+import {
+  prepareRichTextHtmlForDisplay,
+  stripRichText,
+} from "@/lib/rich-text";
 import {
   bubbleMenuFloatingOptions,
   getBubbleMenuPlacement,
@@ -27,6 +37,17 @@ import {
 type EnhancedRichTextEditorSelectionToolbarProps = {
   editor: Editor | null;
   onEnhanced: (html: string) => void;
+};
+
+type SelectionRange = {
+  from: number;
+  to: number;
+};
+
+type AiSelectionPreview = {
+  html: string;
+  range: SelectionRange;
+  actionLabel: string;
 };
 
 type SelectionToolbarButtonProps = {
@@ -86,6 +107,90 @@ const AI_SELECTION_OPTIONS: Array<{
   },
 ];
 
+const compactToolbarButtonClassName = `${documentDetailToolbarButtonClassName} inline-flex items-center gap-1`;
+
+function AiSelectionPreviewPanel({
+  preview,
+  onAccept,
+  onReject,
+  onCopy,
+}: {
+  preview: AiSelectionPreview;
+  onAccept: () => void;
+  onReject: () => void;
+  onCopy: () => void;
+}) {
+  const previewHtml = prepareRichTextHtmlForDisplay(preview.html);
+
+  return (
+    <div className="w-72 max-w-[calc(100vw-2rem)] space-y-2 p-1">
+      <div className="flex items-center justify-between gap-2 px-0.5">
+        <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+          {preview.actionLabel} suggestion
+        </p>
+        <IconButton
+          type="button"
+          aria-label="Dismiss preview"
+          onClick={onReject}
+          className="rounded-md p-0.5"
+        >
+          <XMarkIcon className="size-3.5" aria-hidden />
+        </IconButton>
+      </div>
+
+      <div className="max-h-40 overflow-y-auto rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-2 dark:border-zinc-700 dark:bg-zinc-900/60">
+        <div
+          className="tiptap-content text-xs text-zinc-800 dark:text-zinc-200"
+          dangerouslySetInnerHTML={{ __html: previewHtml }}
+        />
+      </div>
+
+      <div className="flex items-center gap-1">
+        <Button
+          type="button"
+          onClick={onAccept}
+          className={compactToolbarButtonClassName}
+        >
+          <CheckIcon className="size-3.5" aria-hidden />
+          Accept
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={onReject}
+          className={compactToolbarButtonClassName}
+        >
+          Reject
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={onCopy}
+          className={compactToolbarButtonClassName}
+        >
+          <ClipboardDocumentIcon className="size-3.5" aria-hidden />
+          Copy
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function createSelectionVirtualElement(editor: Editor, range: SelectionRange) {
+  const start = editor.view.coordsAtPos(range.from);
+  const end = editor.view.coordsAtPos(range.to);
+
+  return {
+    getBoundingClientRect: () =>
+      DOMRect.fromRect({
+        x: start.left,
+        y: start.top,
+        width: Math.max(end.right - start.left, 0),
+        height: Math.max(end.bottom - start.top, 0),
+      }),
+  };
+}
+
 export function EnhancedRichTextEditorSelectionToolbar({
   editor,
   onEnhanced,
@@ -93,27 +198,33 @@ export function EnhancedRichTextEditorSelectionToolbar({
   const [isLinkEditorOpen, setIsLinkEditorOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [isAskAiOpen, setIsAskAiOpen] = useState(false);
+  const [aiPreview, setAiPreview] = useState<AiSelectionPreview | null>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
-  const selectionRangeRef = useRef({ from: 0, to: 0 });
+  const selectionRangeRef = useRef<SelectionRange>({ from: 0, to: 0 });
+  const pendingActionRef = useRef<RichTextEnhanceAction | null>(null);
+  const aiPreviewRef = useRef<AiSelectionPreview | null>(null);
+
+  useEffect(() => {
+    aiPreviewRef.current = aiPreview;
+  }, [aiPreview]);
 
   const enhanceRichTextMutation = useEnhanceRichText({
     onSuccess: (result) => {
-      if (!editor || editor.isDestroyed) {
-        return;
-      }
+      const action = pendingActionRef.current;
+      const actionLabel =
+        AI_SELECTION_OPTIONS.find((option) => option.action === action)?.label ??
+        "AI";
 
-      const { from, to } = selectionRangeRef.current;
-      editor
-        .chain()
-        .focus()
-        .insertContentAt({ from, to }, result.html)
-        .run();
-
-      onEnhanced(editor.getHTML());
+      setAiPreview({
+        html: result.html,
+        range: selectionRangeRef.current,
+        actionLabel,
+      });
+      pendingActionRef.current = null;
       setIsAskAiOpen(false);
-      toast.success("Selection updated with AI.");
     },
     onError: (error) => {
+      pendingActionRef.current = null;
       toast.error(error.message || "Failed to enhance selection.");
     },
   });
@@ -124,17 +235,21 @@ export function EnhancedRichTextEditorSelectionToolbar({
     selector: ({ editor: currentEditor }) =>
       currentEditor ? getBubbleMenuPlacement(currentEditor) : "top",
   }) ?? "top";
+
   const bubbleMenuOptions = useMemo(
     () => ({
       ...bubbleMenuFloatingOptions,
-      placement,
+      placement: aiPreview ? "bottom" : placement,
       onHide: () => {
         setIsLinkEditorOpen(false);
         setIsAskAiOpen(false);
+        setAiPreview(null);
+        pendingActionRef.current = null;
       },
     }),
-    [placement],
+    [aiPreview, placement],
   );
+
   const state = useEditorState({
     editor,
     selector: ({ editor: currentEditor }) => {
@@ -177,8 +292,31 @@ export function EnhancedRichTextEditorSelectionToolbar({
     };
   }, [isAskAiOpen]);
 
+  useEffect(() => {
+    if (!aiPreview) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setAiPreview(null);
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [aiPreview]);
+
   if (!editor || !state) {
     return null;
+  }
+
+  function clearAiPreview() {
+    setAiPreview(null);
+    pendingActionRef.current = null;
   }
 
   function closePanels() {
@@ -187,6 +325,7 @@ export function EnhancedRichTextEditorSelectionToolbar({
   }
 
   function openLinkEditor() {
+    clearAiPreview();
     setIsAskAiOpen(false);
     setLinkUrl(editor?.getAttributes("link").href ?? "");
     setIsLinkEditorOpen(true);
@@ -214,7 +353,7 @@ export function EnhancedRichTextEditorSelectionToolbar({
   }
 
   function handleAskAiAction(action: RichTextEnhanceAction) {
-    if (!editor || isProcessing) {
+    if (!editor || isProcessing || aiPreview) {
       return;
     }
 
@@ -224,27 +363,78 @@ export function EnhancedRichTextEditorSelectionToolbar({
     }
 
     selectionRangeRef.current = getEditorSelectionRange(editor);
+    pendingActionRef.current = action;
     enhanceRichTextMutation.mutate({
       html: selectedHtml,
       action,
     });
   }
 
+  function acceptAiPreview() {
+    if (!editor || !aiPreview) {
+      return;
+    }
+
+    const { from, to } = aiPreview.range;
+    editor
+      .chain()
+      .focus()
+      .insertContentAt({ from, to }, aiPreview.html)
+      .run();
+
+    onEnhanced(editor.getHTML());
+    clearAiPreview();
+    toast.success("Selection updated with AI.");
+  }
+
+  function rejectAiPreview() {
+    clearAiPreview();
+  }
+
+  async function copyAiPreview() {
+    if (!aiPreview) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(stripRichText(aiPreview.html));
+      toast.success("Suggestion copied to clipboard.");
+    } catch {
+      toast.error("Failed to copy suggestion.");
+    }
+  }
+
   return (
     <BubbleMenu
       editor={editor}
       className="z-30"
-      shouldShow={({ editor: currentEditor, state: editorState }) =>
-        currentEditor.isEditable && !editorState.selection.empty
+      shouldShow={({ editor: currentEditor, state: editorState }) => {
+        if (aiPreviewRef.current) {
+          return currentEditor.isEditable;
+        }
+
+        return currentEditor.isEditable && !editorState.selection.empty;
+      }}
+      getReferencedVirtualElement={
+        aiPreview
+          ? () => createSelectionVirtualElement(editor, aiPreview.range)
+          : undefined
       }
       options={bubbleMenuOptions}
     >
       <div
         ref={toolbarRef}
-        className="flex items-center gap-0.5 rounded-lg border border-zinc-200 bg-white px-1 py-0.5 shadow-lg dark:border-zinc-700 dark:bg-zinc-950"
+        className="rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-950"
       >
-        {isLinkEditorOpen ? (
-          <div className="flex items-center gap-1 px-0.5">
+        {aiPreview ? (
+          <AiSelectionPreviewPanel
+            preview={aiPreview}
+            onAccept={acceptAiPreview}
+            onReject={rejectAiPreview}
+            onCopy={copyAiPreview}
+          />
+        ) : isLinkEditorOpen ? (
+          <div className="flex items-center gap-1 px-1 py-0.5">
             <input
               type="url"
               value={linkUrl}
@@ -265,28 +455,30 @@ export function EnhancedRichTextEditorSelectionToolbar({
               className="w-44 rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-900 outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500"
               autoFocus
             />
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={applyLink}
-              className="rounded-md px-2 py-1 text-xs font-medium text-zinc-700 transition hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className={documentDetailToolbarButtonClassName}
             >
               Apply
-            </button>
+            </Button>
             {state.isLink ? (
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={() => {
                   editor.chain().focus().extendMarkRange("link").unsetLink().run();
                   setIsLinkEditorOpen(false);
                 }}
-                className="rounded-md px-2 py-1 text-xs font-medium text-zinc-500 transition hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                className={documentDetailToolbarButtonClassName}
               >
                 Remove
-              </button>
+              </Button>
             ) : null}
           </div>
         ) : (
-          <>
+          <div className="flex items-center gap-0.5 px-1 py-0.5">
             <SelectionToolbarButton
               ariaLabel="Bold"
               isActive={state.isBold}
@@ -362,7 +554,7 @@ export function EnhancedRichTextEditorSelectionToolbar({
                 </div>
               ) : null}
             </div>
-          </>
+          </div>
         )}
       </div>
     </BubbleMenu>
