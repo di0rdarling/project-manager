@@ -24,6 +24,10 @@ export function useUpdateAgentNote(options?: UseUpdateAgentNoteOptions) {
     mutationFn: updateAgentNote,
     ...restOptions,
     onSuccess: (note, variables, onMutateResult, context) => {
+      queryClient.setQueryData(
+        agentNoteKeys.detail(variables.teammateId, note._id),
+        note,
+      );
       queryClient.setQueryData<AgentNoteResponse[]>(
         agentNoteKeys.list(variables.teammateId),
         (current) =>

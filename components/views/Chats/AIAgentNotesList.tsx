@@ -1,15 +1,14 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import {
-  deleteItemAction,
-  editItemAction,
-  ItemActionsMenu,
-  shareItemAction,
-} from "@/components/ui/ItemActionsMenu";
+import { ShareIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { ListItemDate } from "@/components/ui/ListItemDate";
-import { TruncatedRichTextContent } from "@/components/ui/inputs/richText/TruncatedRichTextContent";
-import { isAgentNoteOwner } from "@/lib/agents/agent-notes";
+import { NotesTable } from "@/components/ui/tables/NotesTable";
+import {
+  formatAgentNoteSharedWithNames,
+  getAgentNoteDetailPath,
+  isAgentNoteOwner,
+} from "@/lib/agents/agent-notes";
 import {
   getChatTeammate,
   type ChatTeammateId,
@@ -26,10 +25,8 @@ interface ItemModalRenderProps {
 interface AIAgentNotesListProps {
   teammateId: ChatTeammateId;
   notes: AgentNoteResponse[];
-  onEditSuccess?: () => void;
   onDeleteSuccess?: () => void;
   onShareSuccess?: () => void;
-  renderEditModal: (props: ItemModalRenderProps) => ReactNode;
   renderDeleteModal: (props: ItemModalRenderProps) => ReactNode;
   renderShareModal: (props: ItemModalRenderProps) => ReactNode;
 }
@@ -37,107 +34,73 @@ interface AIAgentNotesListProps {
 function formatSharedWithLabel(
   sharedWithTeammateIds: ChatTeammateId[],
 ): string {
-  if (sharedWithTeammateIds.length === 0) {
-    return "";
-  }
-
-  const names = sharedWithTeammateIds.map(
-    (id) => getChatTeammate(id).name,
-  );
-
-  if (names.length === 1) {
-    return `Shared with ${names[0]}`;
-  }
-
-  if (names.length === 2) {
-    return `Shared with ${names[0]} and ${names[1]}`;
-  }
-
-  return `Shared with ${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
+  return formatAgentNoteSharedWithNames(sharedWithTeammateIds) ?? "Private";
 }
 
 export default function AIAgentNotesList({
   teammateId,
   notes,
-  onEditSuccess,
   onDeleteSuccess,
   onShareSuccess,
-  renderEditModal,
   renderDeleteModal,
   renderShareModal,
 }: Readonly<AIAgentNotesListProps>) {
-  const [noteToEdit, setNoteToEdit] = useState<AgentNoteResponse | null>(null);
   const [noteToDelete, setNoteToDelete] = useState<AgentNoteResponse | null>(
     null,
   );
   const [noteToShare, setNoteToShare] = useState<AgentNoteResponse | null>(
     null,
   );
+  const currentAgentName = getChatTeammate(teammateId).name;
 
   return (
     <>
-      <ul className="space-y-3">
-        {notes.map((note) => {
-          const isOwner = isAgentNoteOwner(note, teammateId);
-          const currentAgentName = getChatTeammate(teammateId).name;
-          const sharedWithLabel = isOwner
-            ? formatSharedWithLabel(note.sharedWithTeammateIds)
-            : `Shared with ${currentAgentName}`;
-          return (
-            <li
-              key={note._id}
-              className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1 space-y-2">
-                  <div className="space-y-1">
-                    {note.title ? (
-                      <h3 className="text-md font-semibold text-zinc-900 dark:text-zinc-100">
-                        {note.title}
-                      </h3>
-                    ) : null}
-                    <ListItemDate dateTime={note.createdAt} />
-                    {sharedWithLabel ? (
-                      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                        {sharedWithLabel}
-                      </p>
-                    ) : null}
-                  </div>
-                  <TruncatedRichTextContent
-                    content={note.content}
-                    className="text-sm text-zinc-800 dark:text-zinc-200"
-                  />
-                </div>
-                <ItemActionsMenu
-                  actions={
-                    isOwner
-                      ? [
-                          shareItemAction("Share note", () =>
-                            setNoteToShare(note),
-                          ),
-                          editItemAction("Edit note", () => setNoteToEdit(note)),
-                          deleteItemAction("Delete note", () =>
-                            setNoteToDelete(note),
-                          ),
-                        ]
-                      : []
-                  }
-                />
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-
-      {renderEditModal({
-        open: noteToEdit !== null,
-        item: noteToEdit,
-        onClose: () => setNoteToEdit(null),
-        onSuccess: () => {
-          setNoteToEdit(null);
-          onEditSuccess?.();
-        },
-      })}
+      <NotesTable
+        items={notes}
+        columns={[
+          {
+            key: "title",
+            header: "Title",
+            cellClassName:
+              "px-4 py-3 text-sm font-medium text-zinc-900 dark:text-zinc-100",
+            render: (note) => note.title || "Untitled note",
+          },
+          {
+            key: "shared",
+            header: "Shared with",
+            cellClassName: "px-4 py-3 text-sm text-zinc-500 dark:text-zinc-400",
+            render: (note) => {
+              const isOwner = isAgentNoteOwner(note, teammateId);
+              return isOwner
+                ? formatSharedWithLabel(note.sharedWithTeammateIds)
+                : currentAgentName;
+            },
+          },
+          {
+            key: "date",
+            header: "Created",
+            cellClassName: "px-4 py-3 text-sm text-zinc-500 dark:text-zinc-400",
+            render: (note) => <ListItemDate dateTime={note.createdAt} />,
+          },
+        ]}
+        getItemHref={(note) => getAgentNoteDetailPath(teammateId, note._id)}
+        getItemLabel={(note) => note.title || "note"}
+        rowActions={[
+          {
+            key: "share",
+            label: "Share",
+            icon: <ShareIcon className="size-4" aria-hidden />,
+            onClick: (note) => setNoteToShare(note),
+          },
+          {
+            key: "delete",
+            label: "Delete",
+            icon: <TrashIcon className="size-4" aria-hidden />,
+            variant: "danger",
+            onClick: (note) => setNoteToDelete(note),
+          },
+        ]}
+      />
 
       {renderDeleteModal({
         open: noteToDelete !== null,

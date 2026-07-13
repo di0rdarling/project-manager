@@ -88,3 +88,15 @@ export async function getOwnedAgentNote(
     teammateId: ownerTeammateId,
   });
 }
+
+export async function getVisibleAgentNote(
+  db: Db,
+  userId: ObjectId,
+  viewingTeammateId: ChatTeammateId,
+  noteId: import("mongodb").ObjectId,
+): Promise<StoredAgentNote | null> {
+  return db.collection<StoredAgentNote>(AGENT_NOTES_COLLECTION).findOne({
+    _id: noteId,
+    ...agentNotesVisibilityFilter(userId, viewingTeammateId),
+  });
+}

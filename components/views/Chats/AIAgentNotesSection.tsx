@@ -8,7 +8,6 @@ import AgentSection from "./AgentSection";
 import AIAgentNotesList from "./AIAgentNotesList";
 import CreateAgentNoteModal from "./modals/agent-notes/CreateAgentNoteModal";
 import DeleteAgentNoteModal from "./modals/agent-notes/DeleteAgentNoteModal";
-import EditAgentNoteModal from "./modals/agent-notes/EditAgentNoteModal";
 import ShareAgentNoteModal from "./modals/agent-notes/ShareAgentNoteModal";
 
 type AIAgentNotesSectionProps = {
@@ -47,18 +46,8 @@ export default function AIAgentNotesSection({
         <AIAgentNotesList
           teammateId={teammateId}
           notes={notes}
-          onEditSuccess={() => toast.success("Note updated successfully.")}
           onDeleteSuccess={() => toast.success("Note deleted successfully.")}
           onShareSuccess={() => toast.success("Note sharing updated.")}
-          renderEditModal={({ open, item, onClose, onSuccess }) => (
-            <EditAgentNoteModal
-              open={open}
-              teammateId={teammateId}
-              note={item}
-              onClose={onClose}
-              onSuccess={onSuccess}
-            />
-          )}
           renderDeleteModal={({ open, item, onClose, onSuccess }) => (
             <DeleteAgentNoteModal
               open={open}

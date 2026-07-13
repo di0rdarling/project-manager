@@ -3,7 +3,7 @@ import { isChatTeammateId } from "@/lib/chats/chat-teammates";
 import { parseSharedWithTeammateIds } from "@/lib/agents/agent-notes";
 import {
   AGENT_NOTES_COLLECTION,
-  getOwnedAgentNote,
+  getVisibleAgentNote,
   serializeAgentNote,
 } from "@/lib/agents/agent-notes-store";
 import { requireUserId } from "@/lib/current-user";
@@ -37,6 +37,39 @@ function parseRouteParams(teammateId: string, noteId: string) {
   return { teammateId, noteId };
 }
 
+export async function GET(_request: Request, context: RouteContext) {
+  try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
+    const { teammateId: rawTeammateId, noteId: rawNoteId } =
+      await context.params;
+    const parsed = parseRouteParams(rawTeammateId, rawNoteId);
+
+    if ("error" in parsed) {
+      return parsed.error;
+    }
+
+    const client = await getClientPromise();
+    const note = await getVisibleAgentNote(
+      client.db(),
+      auth.userId,
+      parsed.teammateId,
+      new ObjectId(parsed.noteId),
+    );
+
+    if (!note) {
+      return Response.json({ error: "Note not found" }, { status: 404 });
+    }
+
+    return Response.json(serializeAgentNote(note));
+  } catch {
+    return Response.json({ error: "Failed to fetch agent note" }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: Request, context: RouteContext) {
   try {
     const auth = await requireUserId();
@@ -65,7 +98,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const client = await getClientPromise();
-    const existingNote = await getOwnedAgentNote(
+    const existingNote = await getVisibleAgentNote(
       client.db(),
       auth.userId,
       parsed.teammateId,
@@ -75,6 +108,10 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (!existingNote) {
       return Response.json({ error: "Note not found" }, { status: 404 });
     }
+
+    const ownerTeammateId = isChatTeammateId(existingNote.teammateId)
+      ? existingNote.teammateId
+      : parsed.teammateId;
 
     const updates: Record<string, unknown> = {
       updatedAt: new Date().toISOString(),
@@ -99,7 +136,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (hasSharedWith) {
       const sharedWithTeammateIds = parseSharedWithTeammateIds(
         body.sharedWithTeammateIds,
-        parsed.teammateId,
+        ownerTeammateId,
       );
 
       if (!sharedWithTeammateIds) {
@@ -119,7 +156,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         {
           _id: new ObjectId(parsed.noteId),
           userId: auth.userId,
-          teammateId: parsed.teammateId,
+          teammateId: ownerTeammateId,
         },
         { $set: updates },
         { returnDocument: "after" },
@@ -151,13 +188,23 @@ export async function DELETE(_request: Request, context: RouteContext) {
     }
 
     const client = await getClientPromise();
+    const note = await getVisibleAgentNote(
+      client.db(),
+      auth.userId,
+      parsed.teammateId,
+      new ObjectId(parsed.noteId),
+    );
+
+    if (!note) {
+      return Response.json({ error: "Note not found" }, { status: 404 });
+    }
+
     const result = await client
       .db()
       .collection(AGENT_NOTES_COLLECTION)
       .deleteOne({
         _id: new ObjectId(parsed.noteId),
         userId: auth.userId,
-        teammateId: parsed.teammateId,
       });
 
     if (result.deletedCount === 0) {

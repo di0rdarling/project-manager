@@ -1,6 +1,7 @@
 import type { ObjectId } from "mongodb";
 import {
   CHAT_TEAMMATE_IDS,
+  getChatTeammate,
   isChatTeammateId,
   type ChatTeammateId,
 } from "@/lib/chats/chat-teammates";
@@ -46,4 +47,31 @@ export function isAgentNoteOwner(
   viewingTeammateId: ChatTeammateId,
 ): boolean {
   return note.teammateId === viewingTeammateId;
+}
+
+export function getAgentNoteDetailPath(
+  teammateId: ChatTeammateId,
+  noteId: string,
+) {
+  return `/chats/agents/${teammateId}/notes/${noteId}`;
+}
+
+export function formatAgentNoteSharedWithNames(
+  sharedWithTeammateIds: ChatTeammateId[],
+): string | null {
+  if (sharedWithTeammateIds.length === 0) {
+    return null;
+  }
+
+  const names = sharedWithTeammateIds.map((id) => getChatTeammate(id).name);
+
+  if (names.length === 1) {
+    return names[0];
+  }
+
+  if (names.length === 2) {
+    return `${names[0]} and ${names[1]}`;
+  }
+
+  return `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
 }

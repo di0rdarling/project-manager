@@ -11,6 +11,7 @@ import type { AgentNoteResponse } from "@/lib/types";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 
 type DeleteAgentNoteInput = Parameters<typeof deleteAgentNote>[0] & {
+  ownerTeammateId?: ChatTeammateId;
   sharedWithTeammateIds?: ChatTeammateId[];
 };
 
@@ -35,8 +36,9 @@ export function useDeleteAgentNote(options?: UseDeleteAgentNoteOptions) {
 
       const affectedTeammateIds = new Set<ChatTeammateId>([
         variables.teammateId,
+        variables.ownerTeammateId,
         ...(variables.sharedWithTeammateIds ?? []),
-      ]);
+      ].filter((id): id is ChatTeammateId => Boolean(id)));
 
       for (const teammateId of affectedTeammateIds) {
         queryClient.invalidateQueries({

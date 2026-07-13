@@ -5,7 +5,6 @@ import toast from "react-hot-toast";
 import { useFetchNotes } from "@/hooks/queries/useFetchNotes";
 import CreateNoteModal from "./modals/notes/CreateNoteModal";
 import DeleteNoteModal from "./modals/notes/DeleteNoteModal";
-import EditNoteModal from "./modals/notes/EditNoteModal";
 import NotesList from "./NotesList";
 import ProjectSection from "./ProjectSection";
 import type { ProjectDetailSectionId } from "@/lib/project-detail-sections";
@@ -55,17 +54,7 @@ export default function NotesSection({
         <NotesList
           projectId={projectId}
           notes={notes}
-          onEditSuccess={() => toast.success("Note updated successfully.")}
           onDeleteSuccess={() => toast.success("Note deleted successfully.")}
-          renderEditModal={({ open, item, onClose, onSuccess }) => (
-            <EditNoteModal
-              open={open}
-              projectId={projectId}
-              note={item}
-              onClose={onClose}
-              onSuccess={onSuccess}
-            />
-          )}
           renderDeleteModal={({ open, item, onClose, onSuccess }) => (
             <DeleteNoteModal
               open={open}

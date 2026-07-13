@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { useDeleteAgentNote } from "@/hooks/mutations/agent-notes/useDeleteAgentNote";
+import { formatAgentNoteSharedWithNames } from "@/lib/agents/agent-notes";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type { AgentNoteResponse } from "@/lib/types";
 import { getRichTextPreview } from "@/lib/rich-text";
@@ -37,6 +38,7 @@ export default function DeleteAgentNoteModal({
     deleteAgentNoteMutation.mutate({
       teammateId,
       noteId: note._id,
+      ownerTeammateId: note.teammateId,
       sharedWithTeammateIds: note.sharedWithTeammateIds,
     });
   }
@@ -55,6 +57,10 @@ export default function DeleteAgentNoteModal({
       ? deleteAgentNoteMutation.error.message
       : null;
 
+  const sharedWithNames = note
+    ? formatAgentNoteSharedWithNames(note.sharedWithTeammateIds)
+    : null;
+
   return (
     <Modal open={open} onClose={handleClose} title="Delete note" size="narrow">
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -71,6 +77,16 @@ export default function DeleteAgentNoteModal({
         ) : null}
         ? This action cannot be undone.
       </p>
+
+      {sharedWithNames ? (
+        <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+          This note is shared with{" "}
+          <span className="font-medium text-zinc-900 dark:text-zinc-100">
+            {sharedWithNames}
+          </span>
+          . Deleting it will remove it from their profiles as well.
+        </p>
+      ) : null}
 
       {formError ? (
         <p className="mt-3 text-sm text-red-600 dark:text-red-400">{formError}</p>

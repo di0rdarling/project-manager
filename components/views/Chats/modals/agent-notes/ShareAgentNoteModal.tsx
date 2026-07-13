@@ -22,7 +22,7 @@ type ShareAgentNoteModalProps = {
 
 export default function ShareAgentNoteModal({
   open,
-  teammateId,
+  teammateId: viewingTeammateId,
   note,
   onClose,
   onSuccess,
@@ -44,8 +44,14 @@ export default function ShareAgentNoteModal({
     },
   });
 
+  if (!open || !note) {
+    return null;
+  }
+
+  const ownerTeammateId = note.teammateId;
+  const ownerName = getChatTeammate(ownerTeammateId).name;
   const shareableTeammates = CHAT_TEAMMATES.filter(
-    (teammate) => teammate.id !== teammateId,
+    (teammate) => teammate.id !== ownerTeammateId,
   );
 
   function toggleTeammate(id: ChatTeammateId) {
@@ -64,9 +70,10 @@ export default function ShareAgentNoteModal({
     }
 
     shareAgentNoteMutation.mutate({
-      teammateId,
+      teammateId: viewingTeammateId,
       noteId: note._id,
       sharedWithTeammateIds: selectedTeammateIds,
+      ownerTeammateId,
       previousSharedWithTeammateIds: note.sharedWithTeammateIds,
     });
   }
@@ -84,12 +91,6 @@ export default function ShareAgentNoteModal({
     shareAgentNoteMutation.error instanceof Error
       ? shareAgentNoteMutation.error.message
       : null;
-
-  if (!open || !note) {
-    return null;
-  }
-
-  const ownerName = getChatTeammate(teammateId).name;
 
   return (
     <Modal open={open} onClose={handleClose} title="Share note">

@@ -9,6 +9,17 @@ export async function fetchAgentNotes(
   return parseResponse<AgentNoteResponse[]>(response);
 }
 
+export async function fetchAgentNote(input: {
+  teammateId: ChatTeammateId;
+  noteId: string;
+}): Promise<AgentNoteResponse> {
+  const { teammateId, noteId } = input;
+  const response = await fetch(
+    `/api/chats/agents/${teammateId}/notes/${noteId}`,
+  );
+  return parseResponse<AgentNoteResponse>(response);
+}
+
 export async function createAgentNote(input: {
   teammateId: ChatTeammateId;
   title: string;
