@@ -4,7 +4,7 @@ import {
   createSessionToken,
   getAuthCookieOptions,
   hashPassword,
-} from "@/lib/auth";
+} from "@/lib/auth/auth";
 import getClientPromise from "@/lib/mongodb";
 import {
   createUser,

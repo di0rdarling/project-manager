@@ -3,7 +3,7 @@ import {
   CHAT_TEAMMATE_IDS,
   isChatTeammateId,
   type ChatTeammateId,
-} from "@/lib/chat-teammates";
+} from "@/lib/chats/chat-teammates";
 
 export function agentNotesVisibilityFilter(
   userId: ObjectId,

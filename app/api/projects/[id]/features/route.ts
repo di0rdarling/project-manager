@@ -6,7 +6,7 @@ import {
 } from "@/lib/feature-requirements";
 import getClientPromise from "@/lib/mongodb";
 import { isRichTextEmpty } from "@/lib/rich-text";
-import { serializeFeature, type StoredFeature } from "@/lib/serialize-feature";
+import { serializeFeature, type StoredFeature } from "@/lib/serialize/serialize-feature";
 import type { Feature } from "@/lib/types";
 
 type RouteContext = {

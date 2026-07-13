@@ -6,7 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/inputs/Input";
 import { RichTextEditor } from "@/components/ui/inputs/richText/RichTextEditor";
 import { useCreateAgentNote } from "@/hooks/mutations/agent-notes/useCreateAgentNote";
-import type { ChatTeammateId } from "@/lib/chat-teammates";
+import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import { isRichTextEmpty } from "@/lib/rich-text";
 
 type CreateAgentNoteModalProps = {

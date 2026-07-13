@@ -3,7 +3,7 @@ import getClientPromise from "@/lib/mongodb";
 import {
   serializeProject,
   type StoredProject,
-} from "@/lib/serialize-project";
+} from "@/lib/serialize/serialize-project";
 import type { Project } from "@/lib/types";
 
 export async function GET() {

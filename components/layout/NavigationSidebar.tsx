@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { clearAuthQueryCache } from "@/lib/auth-query-cache";
+import { clearAuthQueryCache } from "@/lib/auth/auth-query-cache";
 import {
   ArrowLeftIcon,
   ArrowRightOnRectangleIcon,

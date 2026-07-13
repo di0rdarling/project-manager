@@ -1,4 +1,4 @@
-import type { AgentNoteContextItem } from "@/lib/agent-notes-store";
+import type { AgentNoteContextItem } from "@/lib/agents/agent-notes-store";
 
 function formatAgentNote(note: AgentNoteContextItem, index: number): string {
   const title = note.title.trim() || `Note ${index + 1}`;

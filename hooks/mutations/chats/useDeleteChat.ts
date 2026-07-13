@@ -6,7 +6,7 @@ import {
   type UseMutationOptions,
 } from "@tanstack/react-query";
 import { deleteChat } from "@/lib/api/chats";
-import { updateAllChatListCaches } from "@/lib/chat-list-cache";
+import { updateAllChatListCaches } from "@/lib/chats/chat-list-cache";
 import { chatKeys } from "@/lib/query-keys";
 
 type UseDeleteChatOptions = Omit<

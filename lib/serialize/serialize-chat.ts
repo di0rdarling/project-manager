@@ -1,5 +1,5 @@
-import { DEFAULT_CHAT_TEAMMATE_ID, isChatTeammateId } from "@/lib/chat-teammates";
-import { normalizeChatModelId } from "@/lib/chat-models";
+import { DEFAULT_CHAT_TEAMMATE_ID, isChatTeammateId } from "@/lib/chats/chat-teammates";
+import { normalizeChatModelId } from "@/lib/chats/chat-models";
 import { toIsoString } from "@/lib/dates";
 import type {
   Chat,

@@ -1,9 +1,9 @@
-import { isChatTeammateId } from "@/lib/chat-teammates";
+import { isChatTeammateId } from "@/lib/chats/chat-teammates";
 import {
   AGENT_NOTES_COLLECTION,
   serializeAgentNote,
-} from "@/lib/agent-notes-store";
-import { agentNotesVisibilityFilter } from "@/lib/agent-notes";
+} from "@/lib/agents/agent-notes-store";
+import { agentNotesVisibilityFilter } from "@/lib/agents/agent-notes";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { isRichTextEmpty } from "@/lib/rich-text";

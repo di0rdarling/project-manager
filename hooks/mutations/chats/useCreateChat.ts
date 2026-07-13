@@ -6,8 +6,8 @@ import {
   type UseMutationOptions,
 } from "@tanstack/react-query";
 import { createChat } from "@/lib/api/chats";
-import type { ChatModelId } from "@/lib/chat-models";
-import type { ChatTeammateId } from "@/lib/chat-teammates";
+import type { ChatModelId } from "@/lib/chats/chat-models";
+import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import { chatKeys } from "@/lib/query-keys";
 import type { ChatListItemResponse } from "@/lib/types";
 

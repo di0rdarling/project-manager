@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { AUTH_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
+import { AUTH_COOKIE_NAME, verifySessionToken } from "@/lib/auth/auth";
 import { CURRENT_USER_ID_HEADER } from "@/lib/current-user";
 
 const PUBLIC_PAGE_PATHS = ["/", "/login", "/signup", "/waitlist"];

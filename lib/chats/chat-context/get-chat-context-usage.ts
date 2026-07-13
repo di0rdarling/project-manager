@@ -2,11 +2,11 @@ import type { Db, ObjectId } from "mongodb";
 import {
   buildChatContextUsage,
   CHAT_CONTEXT_TOKEN_LIMIT,
-} from "@/lib/chat-context/chat-context-usage";
-import { loadChatGenerationContext } from "@/lib/chat-context/chat-generation-context";
+} from "@/lib/chats/chat-context/chat-context-usage";
+import { loadChatGenerationContext } from "@/lib/chats/chat-context/chat-generation-context";
 import { countChatContextTokens, countTextTokens } from "@/lib/gemini";
 import { buildChatSystemPrompt } from "@/lib/prompts/chat-prompt";
-import type { StoredChat, StoredChatMessage } from "@/lib/serialize-chat";
+import type { StoredChat, StoredChatMessage } from "@/lib/serialize/serialize-chat";
 import type { ChatContextUsage, ChatContextUsageCategory } from "@/lib/types";
 
 const BREAKDOWN_CATEGORY_LABELS: Record<

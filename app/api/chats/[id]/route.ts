@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
-import { isChatModelId } from "@/lib/chat-models";
-import { getChatContextUsage } from "@/lib/chat-context/get-chat-context-usage";
-import { serializeChatsWithContext } from "@/lib/chat-list-items";
+import { isChatModelId } from "@/lib/chats/chat-models";
+import { getChatContextUsage } from "@/lib/chats/chat-context/get-chat-context-usage";
+import { serializeChatsWithContext } from "@/lib/chats/chat-list-items";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { findUserById } from "@/lib/users";
@@ -10,7 +10,7 @@ import {
   serializeChatMessage,
   type StoredChat,
   type StoredChatMessage,
-} from "@/lib/serialize-chat";
+} from "@/lib/serialize/serialize-chat";
 
 type RouteContext = {
   params: Promise<{ id: string }>;

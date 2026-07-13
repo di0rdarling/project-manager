@@ -9,7 +9,7 @@ import { sendChatMessage } from "@/lib/api/chats";
 import {
   mergeChatListItem,
   updateAllChatListCaches,
-} from "@/lib/chat-list-cache";
+} from "@/lib/chats/chat-list-cache";
 import { agentMemoryKeys, chatKeys } from "@/lib/query-keys";
 import type {
   ChatWithMessagesResponse,

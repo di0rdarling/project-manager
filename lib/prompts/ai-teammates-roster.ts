@@ -3,7 +3,7 @@ import {
   getChatTeammate,
   type ChatTeammate,
   type ChatTeammateId,
-} from "@/lib/chat-teammates";
+} from "@/lib/chats/chat-teammates";
 
 /**
  * Cross-teammate behaviour guidance. Teammate names, roles, and descriptions

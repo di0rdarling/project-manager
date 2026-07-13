@@ -9,7 +9,7 @@ import {
   deleteItemAction,
   ItemActionsMenu,
 } from "@/components/ui/ItemActionsMenu";
-import { getChatTeammate } from "@/lib/chat-teammates";
+import { getChatTeammate } from "@/lib/chats/chat-teammates";
 import { formatCompactDisplayDate } from "@/lib/dates";
 import type { ChatListItemResponse } from "@/lib/types";
 import { useUnarchiveChat } from "@/hooks/mutations/chats/useUnarchiveChat";

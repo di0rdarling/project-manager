@@ -1,4 +1,4 @@
-import type { TeammateChatSummary } from "@/lib/chat-summaries";
+import type { TeammateChatSummary } from "@/lib/chats/chat-summaries";
 
 function formatProjectContext(
   project: NonNullable<TeammateChatSummary["project"]>,

@@ -4,7 +4,7 @@ import getClientPromise from "@/lib/mongodb";
 import {
   serializeProject,
   type StoredProject,
-} from "@/lib/serialize-project";
+} from "@/lib/serialize/serialize-project";
 
 type RouteContext = {
   params: Promise<{ id: string }>;

@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { clearAuthQueryCache } from "@/lib/auth-query-cache";
+import { clearAuthQueryCache } from "@/lib/auth/auth-query-cache";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/inputs/Input";
 

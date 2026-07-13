@@ -9,11 +9,11 @@ import {
 } from "@/components/ui/ItemActionsMenu";
 import { ListItemDate } from "@/components/ui/ListItemDate";
 import { TruncatedRichTextContent } from "@/components/ui/inputs/richText/TruncatedRichTextContent";
-import { isAgentNoteOwner } from "@/lib/agent-notes";
+import { isAgentNoteOwner } from "@/lib/agents/agent-notes";
 import {
   getChatTeammate,
   type ChatTeammateId,
-} from "@/lib/chat-teammates";
+} from "@/lib/chats/chat-teammates";
 import type { AgentNoteResponse } from "@/lib/types";
 
 interface ItemModalRenderProps {

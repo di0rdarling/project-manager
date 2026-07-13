@@ -13,12 +13,12 @@ import { useCreateChat } from "@/hooks/mutations/chats/useCreateChat";
 import { useFetchFeatures } from "@/hooks/queries/useFetchFeatures";
 import { useFetchProjects } from "@/hooks/queries/useFetchProjects";
 import { useFetchRequirements } from "@/hooks/queries/useFetchRequirements";
-import { CHAT_TEAMMATE_SELECT_OPTIONS } from "@/lib/chat-teammate-options";
+import { CHAT_TEAMMATE_SELECT_OPTIONS } from "@/lib/chats/chat-teammate-options";
 import {
   DEFAULT_CHAT_TEAMMATE_ID,
   type ChatTeammateId,
-} from "@/lib/chat-teammates";
-import { DEFAULT_CHAT_MODEL_ID, type ChatModelId } from "@/lib/chat-models";
+} from "@/lib/chats/chat-teammates";
+import { DEFAULT_CHAT_MODEL_ID, type ChatModelId } from "@/lib/chats/chat-models";
 
 type CreateChatModalProps = {
   open: boolean;

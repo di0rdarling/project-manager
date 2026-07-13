@@ -1,12 +1,12 @@
 import { ObjectId, type Db } from "mongodb";
-import { getChatTeammate, type ChatTeammateId } from "@/lib/chat-teammates";
-import { getAgentMemory, upsertAgentMemory } from "@/lib/agent-memory-store";
+import { getChatTeammate, type ChatTeammateId } from "@/lib/chats/chat-teammates";
+import { getAgentMemory, upsertAgentMemory } from "@/lib/agents/agent-memory-store";
 import { generateAgentMemory } from "@/lib/gemini";
 import {
   buildAgentMemoryMergePrompt,
   clampAgentMemory,
 } from "@/lib/prompts/agent-memory-prompt";
-import type { StoredProject } from "@/lib/serialize-project";
+import type { StoredProject } from "@/lib/serialize/serialize-project";
 
 /**
  * After a chat's conversation summary changes, fold durable facts into this

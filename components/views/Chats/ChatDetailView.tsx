@@ -33,8 +33,8 @@ import {
   getChatModelLabel,
   normalizeChatModelId,
   type ChatModelId,
-} from "@/lib/chat-models";
-import { getChatTeammate, type ChatTeammate } from "@/lib/chat-teammates";
+} from "@/lib/chats/chat-models";
+import { getChatTeammate, type ChatTeammate } from "@/lib/chats/chat-teammates";
 import { formatDisplayDateTime } from "@/lib/dates";
 import type { ChatMessageResponse } from "@/lib/types";
 

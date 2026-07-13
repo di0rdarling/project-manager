@@ -5,7 +5,7 @@ import { toIsoString } from "@/lib/dates";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import { parseRequirementPriority } from "@/lib/requirements";
 import type { Requirement, RequirementResponse } from "@/lib/types";
-import type { StoredFeature } from "@/lib/serialize-feature";
+import type { StoredFeature } from "@/lib/serialize/serialize-feature";
 
 type RouteContext = {
   params: Promise<{ id: string; requirementId: string }>;

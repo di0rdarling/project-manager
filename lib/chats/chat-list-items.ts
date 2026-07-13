@@ -1,5 +1,5 @@
 import { ObjectId, type Db } from "mongodb";
-import { serializeChat, type StoredChat } from "@/lib/serialize-chat";
+import { serializeChat, type StoredChat } from "@/lib/serialize/serialize-chat";
 import type { ChatListItemResponse } from "@/lib/types";
 
 type ContextEntity = {

@@ -8,7 +8,7 @@ import {
 import { shareAgentNote } from "@/lib/api/agent-notes";
 import { agentNoteKeys } from "@/lib/query-keys";
 import type { AgentNoteResponse } from "@/lib/types";
-import type { ChatTeammateId } from "@/lib/chat-teammates";
+import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 
 type ShareAgentNoteInput = Parameters<typeof shareAgentNote>[0] & {
   previousSharedWithTeammateIds?: ChatTeammateId[];

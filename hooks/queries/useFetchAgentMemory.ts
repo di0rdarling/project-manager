@@ -2,7 +2,7 @@
 
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
 import { fetchAgentMemory } from "@/lib/api/agent-memory";
-import type { ChatTeammateId } from "@/lib/chat-teammates";
+import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import { agentMemoryKeys } from "@/lib/query-keys";
 import type { AgentMemoryResponse } from "@/lib/types";
 

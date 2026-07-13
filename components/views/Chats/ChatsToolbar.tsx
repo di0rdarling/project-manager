@@ -5,7 +5,7 @@ import { FilterPill } from "@/components/ui/FilterPill";
 import {
   CHAT_TEAMMATES_FOR_DISPLAY,
   type ChatTeammateId,
-} from "@/lib/chat-teammates";
+} from "@/lib/chats/chat-teammates";
 import type { ProjectResponse } from "@/lib/types";
 
 const projectSelectClassName =

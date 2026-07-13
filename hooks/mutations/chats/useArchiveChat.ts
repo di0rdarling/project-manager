@@ -8,7 +8,7 @@ import {
 import { archiveChat } from "@/lib/api/chats";
 import {
   mergeChatListItem,
-} from "@/lib/chat-list-cache";
+} from "@/lib/chats/chat-list-cache";
 import { agentMemoryKeys, chatKeys } from "@/lib/query-keys";
 import type { ChatListItemResponse, ChatResponse } from "@/lib/types";
 

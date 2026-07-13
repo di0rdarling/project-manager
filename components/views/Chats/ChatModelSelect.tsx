@@ -4,7 +4,7 @@ import { Select } from "@/components/ui/inputs/Select";
 import {
   CHAT_MODEL_OPTIONS,
   type ChatModelId,
-} from "@/lib/chat-models";
+} from "@/lib/chats/chat-models";
 
 const compactSelectClassName =
   "!px-2 !py-1 !text-xs sm:!px-2.5 sm:!py-1.5";

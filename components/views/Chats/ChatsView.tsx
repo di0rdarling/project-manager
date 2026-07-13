@@ -11,7 +11,7 @@ import { useFetchChats } from "@/hooks/queries/useFetchChats";
 import { useFetchProjects } from "@/hooks/queries/useFetchProjects";
 import PageContent from "@/components/layout/PageContent";
 import type { ChatListStatus } from "@/lib/api/chats";
-import type { ChatTeammateId } from "@/lib/chat-teammates";
+import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import ChatAgentsRow from "./ChatAgentsRow";
 import ChatsList from "./ChatsList";
 import ChatsToolbar from "./ChatsToolbar";

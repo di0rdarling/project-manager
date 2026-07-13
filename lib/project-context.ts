@@ -1,5 +1,5 @@
 import type { Db, ObjectId } from "mongodb";
-import { isCrossProjectTeammate, type ChatTeammateId } from "@/lib/chat-teammates";
+import { isCrossProjectTeammate, type ChatTeammateId } from "@/lib/chats/chat-teammates";
 import { buildChatProjectContext } from "@/lib/prompts/chat-project-context-prompt";
 import {
   featureDomainKnowledgeFilter,
@@ -15,7 +15,7 @@ import {
   getRequirementPriorityLabel,
   parseRequirementPriority,
 } from "@/lib/requirements";
-import type { StoredProject } from "@/lib/serialize-project";
+import type { StoredProject } from "@/lib/serialize/serialize-project";
 import type { CoreUser, DomainKnowledge, Feature, Note, PainPoint, Requirement, Tool, Challenge } from "@/lib/types";
 import { featureNotesFilter, projectLevelNotesFilter } from "@/lib/notes";
 import {

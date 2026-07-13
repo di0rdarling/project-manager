@@ -1,9 +1,9 @@
 import { ObjectId, type Db } from "mongodb";
-import type { ChatTeammateId } from "@/lib/chat-teammates";
+import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import { toIsoString } from "@/lib/dates";
 import { stripRichText } from "@/lib/rich-text";
-import type { StoredChat } from "@/lib/serialize-chat";
-import type { StoredProject } from "@/lib/serialize-project";
+import type { StoredChat } from "@/lib/serialize/serialize-chat";
+import type { StoredProject } from "@/lib/serialize/serialize-project";
 
 export type TeammateChatSummary = {
   chatId: string;

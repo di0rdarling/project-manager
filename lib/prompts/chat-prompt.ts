@@ -6,7 +6,7 @@ import {
   getChatTeammatePersonalityTraits,
   isCrossProjectTeammate,
   type ChatTeammateId,
-} from "@/lib/chat-teammates";
+} from "@/lib/chats/chat-teammates";
 
 export function buildChatSystemPrompt(
   teammateId: ChatTeammateId = DEFAULT_CHAT_TEAMMATE_ID,

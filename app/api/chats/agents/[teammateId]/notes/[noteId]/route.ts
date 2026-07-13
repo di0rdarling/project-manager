@@ -1,11 +1,11 @@
 import { ObjectId } from "mongodb";
-import { isChatTeammateId } from "@/lib/chat-teammates";
-import { parseSharedWithTeammateIds } from "@/lib/agent-notes";
+import { isChatTeammateId } from "@/lib/chats/chat-teammates";
+import { parseSharedWithTeammateIds } from "@/lib/agents/agent-notes";
 import {
   AGENT_NOTES_COLLECTION,
   getOwnedAgentNote,
   serializeAgentNote,
-} from "@/lib/agent-notes-store";
+} from "@/lib/agents/agent-notes-store";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { isRichTextEmpty } from "@/lib/rich-text";

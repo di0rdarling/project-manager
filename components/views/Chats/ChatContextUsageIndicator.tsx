@@ -12,7 +12,7 @@ import {
   formatCompactTokenCount,
   formatSpacedCompactTokenCount,
   getChatContextUsagePercent,
-} from "@/lib/chat-context/chat-context-usage";
+} from "@/lib/chats/chat-context/chat-context-usage";
 import type {
   ChatContextUsage,
   ChatContextUsageCategoryKey,

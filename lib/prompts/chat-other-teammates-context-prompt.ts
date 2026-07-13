@@ -1,5 +1,5 @@
-import { getChatTeammate } from "@/lib/chat-teammates";
-import type { OtherTeammateMemory } from "@/lib/agent-memory-store";
+import { getChatTeammate } from "@/lib/chats/chat-teammates";
+import type { OtherTeammateMemory } from "@/lib/agents/agent-memory-store";
 
 function formatTeammateMemory(teammateMemory: OtherTeammateMemory): string {
   const teammate = getChatTeammate(teammateMemory.teammateId);

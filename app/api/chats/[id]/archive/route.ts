@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { refreshAgentMemoryFromChatSummary } from "@/lib/agent-memory-refresh";
+import { refreshAgentMemoryFromChatSummary } from "@/lib/agents/agent-memory-refresh";
 import { requireUserId } from "@/lib/current-user";
 import { generateArchivedChatSummary } from "@/lib/gemini";
 import getClientPromise from "@/lib/mongodb";
@@ -7,9 +7,9 @@ import {
   buildChatArchiveSummaryPrompt,
   clampArchivedChatSummary,
 } from "@/lib/prompts/chat-archive-summary-prompt";
-import { serializeChat, type StoredChat } from "@/lib/serialize-chat";
+import { serializeChat, type StoredChat } from "@/lib/serialize/serialize-chat";
 import { findUserById } from "@/lib/users";
-import { isChatTeammateId } from "@/lib/chat-teammates";
+import { isChatTeammateId } from "@/lib/chats/chat-teammates";
 
 type RouteContext = {
   params: Promise<{ id: string }>;

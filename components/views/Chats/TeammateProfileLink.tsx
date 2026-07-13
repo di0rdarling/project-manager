@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Avatar } from "@/components/ui/Avatar";
-import type { ChatTeammate } from "@/lib/chat-teammates";
+import type { ChatTeammate } from "@/lib/chats/chat-teammates";
 
 type TeammateProfileLinkProps = {
   teammate: ChatTeammate;

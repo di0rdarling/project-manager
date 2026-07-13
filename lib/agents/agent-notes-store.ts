@@ -2,12 +2,12 @@ import type { Db, ObjectId } from "mongodb";
 import {
   agentNotesVisibilityFilter,
   parseSharedWithTeammateIds,
-} from "@/lib/agent-notes";
+} from "@/lib/agents/agent-notes";
 import {
   DEFAULT_CHAT_TEAMMATE_ID,
   isChatTeammateId,
   type ChatTeammateId,
-} from "@/lib/chat-teammates";
+} from "@/lib/chats/chat-teammates";
 import { toIsoString } from "@/lib/dates";
 import { stripRichText } from "@/lib/rich-text";
 import type { AgentNote } from "@/lib/types";

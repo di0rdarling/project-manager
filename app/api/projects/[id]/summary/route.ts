@@ -5,7 +5,7 @@ import { generateProjectSummary } from "@/lib/gemini";
 import {
   serializeProject,
   type StoredProject,
-} from "@/lib/serialize-project";
+} from "@/lib/serialize/serialize-project";
 import type { CoreUser, DomainKnowledge, Feature, Note, PainPoint, Requirement, Tool, Challenge } from "@/lib/types";
 import { projectLevelNotesFilter } from "@/lib/notes";
 import { projectLevelChallengesFilter } from "@/lib/challenges";
@@ -16,7 +16,7 @@ import {
   getLinkedRequirementTitles,
   getStoredRequirementIds,
 } from "@/lib/feature-requirements";
-import type { StoredFeature } from "@/lib/serialize-feature";
+import type { StoredFeature } from "@/lib/serialize/serialize-feature";
 
 type RouteContext = {
   params: Promise<{ id: string }>;

@@ -2,16 +2,16 @@ import { ObjectId } from "mongodb";
 import {
   DEFAULT_CHAT_TEAMMATE_ID,
   isChatTeammateId,
-} from "@/lib/chat-teammates";
+} from "@/lib/chats/chat-teammates";
 import {
   DEFAULT_CHAT_MODEL_ID,
   isChatModelId,
-} from "@/lib/chat-models";
-import { serializeChatsWithContext } from "@/lib/chat-list-items";
+} from "@/lib/chats/chat-models";
+import { serializeChatsWithContext } from "@/lib/chats/chat-list-items";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
-import type { StoredChat } from "@/lib/serialize-chat";
-import type { StoredProject } from "@/lib/serialize-project";
+import type { StoredChat } from "@/lib/serialize/serialize-chat";
+import type { StoredProject } from "@/lib/serialize/serialize-project";
 import type { Chat } from "@/lib/types";
 
 export async function GET(request: Request) {

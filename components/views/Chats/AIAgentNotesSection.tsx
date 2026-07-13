@@ -3,7 +3,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useFetchAgentNotes } from "@/hooks/queries/useFetchAgentNotes";
-import type { ChatTeammateId } from "@/lib/chat-teammates";
+import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import AgentSection from "./AgentSection";
 import AIAgentNotesList from "./AIAgentNotesList";
 import CreateAgentNoteModal from "./modals/agent-notes/CreateAgentNoteModal";

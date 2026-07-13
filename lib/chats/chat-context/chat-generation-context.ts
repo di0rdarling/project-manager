@@ -1,9 +1,9 @@
 import type { Db, ObjectId } from "mongodb";
-import { normalizeChatModelId } from "@/lib/chat-models";
-import { getOtherTeammatesMemories } from "@/lib/agent-memory-store";
-import { getAgentNotes } from "@/lib/agent-notes-store";
-import { getTeammateChatSummaries } from "@/lib/chat-summaries";
-import type { ChatTeammateId } from "@/lib/chat-teammates";
+import { normalizeChatModelId } from "@/lib/chats/chat-models";
+import { getOtherTeammatesMemories } from "@/lib/agents/agent-memory-store";
+import { getAgentNotes } from "@/lib/agents/agent-notes-store";
+import { getTeammateChatSummaries } from "@/lib/chats/chat-summaries";
+import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type { GeminiChatMessage } from "@/lib/gemini";
 import { getTeammateProjectContext } from "@/lib/project-context";
 import { buildAgentNotesContext } from "@/lib/prompts/agent-notes-context-prompt";
@@ -13,7 +13,7 @@ import {
   serializeChat,
   type StoredChat,
   type StoredChatMessage,
-} from "@/lib/serialize-chat";
+} from "@/lib/serialize/serialize-chat";
 
 export type ChatGenerationContext = {
   history: GeminiChatMessage[];

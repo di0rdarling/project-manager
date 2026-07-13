@@ -10,7 +10,7 @@ import { DeleteAISummaryModal } from "@/components/ui/DeleteAISummaryModal";
 import { useDeleteAgentMemory } from "@/hooks/mutations/chats/useDeleteAgentMemory";
 import { useGenerateAgentMemory } from "@/hooks/mutations/chats/useGenerateAgentMemory";
 import { useFetchAgentMemory } from "@/hooks/queries/useFetchAgentMemory";
-import type { ChatTeammateId } from "@/lib/chat-teammates";
+import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 
 const AGENT_MEMORY_MESSAGES: AISummaryMessages = {
   emptyDescription:

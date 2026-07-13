@@ -1,4 +1,4 @@
-import type { ChatTeammateId } from "@/lib/chat-teammates";
+import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import { buildAiTeammatesConversationSummaryRosterPrompt } from "@/lib/prompts/ai-teammates-roster";
 import { buildChatUserContextPrompt } from "@/lib/prompts/chat-user-context-prompt";
 import {

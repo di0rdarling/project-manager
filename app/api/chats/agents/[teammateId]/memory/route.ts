@@ -2,13 +2,13 @@ import {
   getChatTeammate,
   isChatTeammateId,
   type ChatTeammateId,
-} from "@/lib/chat-teammates";
+} from "@/lib/chats/chat-teammates";
 import {
   getAgentMemory,
   upsertAgentMemory,
   type StoredAgentMemory,
-} from "@/lib/agent-memory-store";
-import { getTeammateChatSummaries } from "@/lib/chat-summaries";
+} from "@/lib/agents/agent-memory-store";
+import { getTeammateChatSummaries } from "@/lib/chats/chat-summaries";
 import { requireUserId } from "@/lib/current-user";
 import { generateAgentMemory } from "@/lib/gemini";
 import getClientPromise from "@/lib/mongodb";

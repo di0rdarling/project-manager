@@ -1,6 +1,6 @@
 import { Avatar } from "@/components/ui/Avatar";
 import type { AvatarSelectOption } from "@/components/ui/inputs/AvatarSelect";
-import { CHAT_TEAMMATES } from "@/lib/chat-teammates";
+import { CHAT_TEAMMATES } from "@/lib/chats/chat-teammates";
 
 export const CHAT_TEAMMATE_SELECT_OPTIONS: AvatarSelectOption[] =
   CHAT_TEAMMATES.map((teammate) => ({

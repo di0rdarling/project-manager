@@ -13,8 +13,8 @@ import { buildFeatureSummaryPrompt } from "@/lib/prompts/feature-summary-prompt"
 import {
   serializeFeature,
   type StoredFeature,
-} from "@/lib/serialize-feature";
-import type { StoredProject } from "@/lib/serialize-project";
+} from "@/lib/serialize/serialize-feature";
+import type { StoredProject } from "@/lib/serialize/serialize-project";
 import type { Challenge, DomainKnowledge, Note, Requirement } from "@/lib/types";
 
 type RouteContext = {

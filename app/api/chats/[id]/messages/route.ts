@@ -1,10 +1,10 @@
 import { ObjectId } from "mongodb";
-import { refreshAgentMemoryFromChatSummary } from "@/lib/agent-memory-refresh";
+import { refreshAgentMemoryFromChatSummary } from "@/lib/agents/agent-memory-refresh";
 import {
   CHAT_CONTEXT_TOKEN_LIMIT,
   getChatContextUsage,
-} from "@/lib/chat-context/get-chat-context-usage";
-import { loadChatGenerationContext } from "@/lib/chat-context/chat-generation-context";
+} from "@/lib/chats/chat-context/get-chat-context-usage";
+import { loadChatGenerationContext } from "@/lib/chats/chat-context/chat-generation-context";
 import {
   generateChatReply,
   generateChatTitle,
@@ -27,7 +27,7 @@ import {
   serializeChatMessage,
   type StoredChat,
   type StoredChatMessage,
-} from "@/lib/serialize-chat";
+} from "@/lib/serialize/serialize-chat";
 import type { Chat, ChatMessage } from "@/lib/types";
 
 type RouteContext = {

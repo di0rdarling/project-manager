@@ -1,6 +1,6 @@
 "use client";
 
-import { CHAT_TEAMMATES_FOR_DISPLAY } from "@/lib/chat-teammates";
+import { CHAT_TEAMMATES_FOR_DISPLAY } from "@/lib/chats/chat-teammates";
 import TeammateCard from "./TeammateCard";
 
 export default function ChatAgentsRow() {

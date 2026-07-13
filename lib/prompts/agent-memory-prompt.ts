@@ -10,8 +10,8 @@ import {
   INTERNAL_ARTIFACT_STYLE_GUIDE,
   PRESERVE_DETAIL_WITHIN_LIMIT_STYLE_GUIDE,
 } from "@/lib/prompts/style-guide";
-import type { ChatTeammateId } from "@/lib/chat-teammates";
-import type { TeammateChatSummary } from "@/lib/chat-summaries";
+import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
+import type { TeammateChatSummary } from "@/lib/chats/chat-summaries";
 
 /**
  * Soft upper bound for stored agent memory. Keeps cross-teammate prompt

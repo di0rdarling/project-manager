@@ -3,7 +3,7 @@ import {
   DEFAULT_CHAT_TEAMMATE_ID,
   isChatTeammateId,
   type ChatTeammateId,
-} from "@/lib/chat-teammates";
+} from "@/lib/chats/chat-teammates";
 import { toIsoString } from "@/lib/dates";
 
 export const AGENT_MEMORIES_COLLECTION = "agent_memories";

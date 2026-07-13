@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GoogleGenAI, type GenerateContentResponse } from "@google/genai";
-import type { ChatTeammateId } from "@/lib/chat-teammates";
+import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import { buildChatSystemPrompt } from "@/lib/prompts/chat-prompt";
 import type { ChatGroundingSource } from "@/lib/types";
 

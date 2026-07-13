@@ -9,7 +9,7 @@ import {
   getChatTeammateById,
   getChatTeammatePersonalityTraits,
   isChatTeammateId,
-} from "@/lib/chat-teammates";
+} from "@/lib/chats/chat-teammates";
 import AIAgentMemory from "@/components/views/Chats/AIAgentMemory";
 import AIAgentNotesSection from "@/components/views/Chats/AIAgentNotesSection";
 

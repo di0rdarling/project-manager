@@ -9,7 +9,7 @@ import {
   CHAT_TEAMMATES,
   getChatTeammate,
   type ChatTeammateId,
-} from "@/lib/chat-teammates";
+} from "@/lib/chats/chat-teammates";
 import type { AgentNoteResponse } from "@/lib/types";
 
 type ShareAgentNoteModalProps = {

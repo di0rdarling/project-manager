@@ -1,6 +1,6 @@
 import type { ObjectId } from "mongodb";
-import type { ChatModelId } from "@/lib/chat-models";
-import type { ChatTeammateId } from "@/lib/chat-teammates";
+import type { ChatModelId } from "@/lib/chats/chat-models";
+import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 
 type UserBase<TId> = {
   _id: TId;
