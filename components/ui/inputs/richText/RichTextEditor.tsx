@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
-import { getRichTextExtensions } from "@/lib/tiptap-extensions";
+import { getRichTextExtensions } from "@/lib/tiptap/tiptap-extensions";
 import { RichTextEditorAiDropdown } from "./RichTextEditorAiDropdown";
 import { RichTextEditorToolbar } from "./RichTextEditorToolbar";
 

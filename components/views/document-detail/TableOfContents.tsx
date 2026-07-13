@@ -7,17 +7,19 @@ import {
   createNoteTocClickHandler,
 } from "@/lib/note-toc-scroll";
 
-type NoteTableOfContentsProps = {
+type TableOfContentsProps = {
   contentKey: string;
   contentElement: HTMLElement | null;
   className?: string;
+  title?: string;
 };
 
-export function NoteTableOfContents({
+export function TableOfContents({
   contentKey,
   contentElement,
   className,
-}: Readonly<NoteTableOfContentsProps>) {
+  title = "Table of contents",
+}: Readonly<TableOfContentsProps>) {
   const tocRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -55,7 +57,7 @@ export function NoteTableOfContents({
 
   return (
     <nav
-      aria-label="Table of contents"
+      aria-label={title}
       className={
         className
           ? `rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 ${className}`
@@ -63,7 +65,7 @@ export function NoteTableOfContents({
       }
     >
       <h2 className="mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-        Table of contents
+        {title}
       </h2>
       <div ref={tocRef} className="note-toc" />
     </nav>

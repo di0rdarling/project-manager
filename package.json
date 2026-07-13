@@ -20,6 +20,7 @@
     "@mui/material-nextjs": "^9.1.1",
     "@tanstack/react-query": "^5.101.2",
     "@tiptap/extension-highlight": "^3.27.1",
+    "@tiptap/extension-link": "^3.27.1",
     "@tiptap/extension-placeholder": "^3.27.1",
     "@tiptap/extension-underline": "^3.27.1",
     "@tiptap/pm": "^3.27.1",
