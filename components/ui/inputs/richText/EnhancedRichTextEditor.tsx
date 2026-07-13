@@ -13,7 +13,7 @@ type EnhancedRichTextEditorProps = {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  onContentElementChange?: (element: HTMLElement | null) => void;
+  onEditorReady?: () => void;
   hideLabel?: boolean;
   variant?: "default" | "embedded";
   toolbarActions?: React.ReactNode;
@@ -25,7 +25,7 @@ export function EnhancedRichTextEditor({
   value,
   onChange,
   placeholder = "Write your note...",
-  onContentElementChange,
+  onEditorReady,
   hideLabel = false,
   variant = "default",
   toolbarActions,
@@ -60,18 +60,23 @@ export function EnhancedRichTextEditor({
   }, [editor, value]);
 
   useEffect(() => {
-    if (!onContentElementChange) {
+    if (!editor || editor.isDestroyed || !onEditorReady) {
       return undefined;
     }
 
-    onContentElementChange(
-      editor && !editor.isDestroyed ? (editor.view.dom as HTMLElement) : null,
-    );
+    // Wait a frame for the editor's initial DOM (including headings) to
+    // paint before notifying, since this fires once per editor instance
+    // rather than on every keystroke.
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        onEditorReady();
+      });
+    });
 
     return () => {
-      onContentElementChange(null);
+      cancelAnimationFrame(frame);
     };
-  }, [editor, onContentElementChange]);
+  }, [editor, onEditorReady]);
 
   return (
     <div className={isEmbedded ? undefined : "space-y-2"}>

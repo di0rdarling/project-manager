@@ -1,85 +1,31 @@
 const HEADING_SCROLL_OFFSET = 24;
+const EDIT_MODE_HEADING_SCROLL_OFFSET = 56;
+const ACTIVE_HEADING_THRESHOLD = 10;
 
-function getHeadingIdFromHref(href: string): string | null {
-  const hashIndex = href.lastIndexOf("#");
-  if (hashIndex === -1) {
-    return null;
-  }
-
-  const id = href.slice(hashIndex + 1);
-  if (!id) {
-    return null;
-  }
-
-  try {
-    return decodeURIComponent(id);
-  } catch {
-    return id;
-  }
+export function getNoteHeadingScrollOffset(isEditing: boolean) {
+  return isEditing ? EDIT_MODE_HEADING_SCROLL_OFFSET : HEADING_SCROLL_OFFSET;
 }
 
-export function assignDomHeadingIds(contentElement: HTMLElement) {
-  const headingMap: Record<string, number> = {};
-
-  contentElement.querySelectorAll("h1, h2, h3").forEach((heading) => {
-    if (heading.id) {
-      return;
-    }
-
-    let id =
-      heading.textContent
-        ?.trim()
-        .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/[^a-z0-9-]/g, "") ?? "";
-
-    if (!id) {
-      id = "section";
-    }
-
-    if (headingMap[id] !== undefined) {
-      headingMap[id] += 1;
-      heading.id = `${id}-${headingMap[id]}`;
-      return;
-    }
-
-    headingMap[id] = 0;
-    heading.id = id;
-  });
+/**
+ * Headings are looked up positionally (in document order) rather than by id.
+ * Rich text ids are assigned when content is rendered for reading, but rich
+ * text editors (e.g. Tiptap) don't necessarily preserve arbitrary `id`
+ * attributes when parsing HTML into their document schema, so DOM heading
+ * ids can't be relied on while editing.
+ */
+export function getNoteHeadingElements(contentElement: HTMLElement): HTMLElement[] {
+  return Array.from(contentElement.querySelectorAll<HTMLElement>("h1, h2, h3"));
 }
 
-function findNoteHeading(
-  contentElement: HTMLElement,
-  headingId: string,
-): HTMLElement | null {
-  try {
-    const bySelector = contentElement.querySelector(
-      `#${CSS.escape(headingId)}`,
-    );
-    if (bySelector instanceof HTMLElement) {
-      return bySelector;
-    }
-  } catch {
-    // Fall through to getElementById.
-  }
-
-  const byId = document.getElementById(headingId);
-  return byId instanceof HTMLElement ? byId : null;
-}
-
-export function scrollToNoteHeading(
-  contentElement: HTMLElement,
-  headingId: string,
-) {
-  const heading = findNoteHeading(contentElement, headingId);
-
-  if (!heading) {
-    return;
-  }
-
+function getMainScrollContainer(): HTMLElement | null {
   const scrollContainer = document.querySelector("main");
+  return scrollContainer instanceof HTMLElement ? scrollContainer : null;
+}
 
-  if (!(scrollContainer instanceof HTMLElement)) {
+export function scrollToNoteHeadingElement(heading: HTMLElement, offset = HEADING_SCROLL_OFFSET) {
+  const scrollContainer = getMainScrollContainer();
+
+  if (!scrollContainer) {
     heading.scrollIntoView({ behavior: "smooth", block: "start" });
     return;
   }
@@ -88,7 +34,7 @@ export function scrollToNoteHeading(
     scrollContainer.scrollTop +
     heading.getBoundingClientRect().top -
     scrollContainer.getBoundingClientRect().top -
-    HEADING_SCROLL_OFFSET;
+    offset;
 
   scrollContainer.scrollTo({
     top: Math.max(headingTop, 0),
@@ -96,22 +42,36 @@ export function scrollToNoteHeading(
   });
 }
 
-export function createNoteTocClickHandler(contentElement: HTMLElement) {
-  return (event: MouseEvent) => {
-    event.preventDefault();
+/**
+ * Returns the index (within `headingElements`) of the section the user is
+ * currently reading: the last heading whose top has scrolled past the
+ * offset line. Uses `getBoundingClientRect`, which reflects true on-screen
+ * position regardless of the CSS positioning scheme of ancestor elements
+ * (unlike `offsetTop`, which can be unreliable across sticky/positioned
+ * containers).
+ */
+export function getActiveNoteHeadingIndex(
+  headingElements: HTMLElement[],
+  offset = HEADING_SCROLL_OFFSET,
+): number {
+  const scrollContainer = getMainScrollContainer();
 
-    const target = event.currentTarget as HTMLAnchorElement | null;
-    const href = target?.getAttribute("href");
+  if (!scrollContainer || headingElements.length === 0) {
+    return -1;
+  }
 
-    if (!href) {
-      return;
+  const containerTop = scrollContainer.getBoundingClientRect().top;
+  const threshold = offset + ACTIVE_HEADING_THRESHOLD;
+  let activeIndex = -1;
+
+  for (let i = 0; i < headingElements.length; i += 1) {
+    const headingTop = headingElements[i].getBoundingClientRect().top - containerTop;
+    if (headingTop <= threshold) {
+      activeIndex = i;
+    } else {
+      break;
     }
+  }
 
-    const headingId = getHeadingIdFromHref(href);
-    if (!headingId) {
-      return;
-    }
-
-    scrollToNoteHeading(contentElement, headingId);
-  };
+  return activeIndex;
 }

@@ -67,9 +67,10 @@ export default function NoteDetailView({
     headings,
     hasHeadings,
     headingsKey,
+    editorReadyKey,
     contentElement,
-    setContentElement,
     contentPanelRef,
+    notifyEditorReady,
   } = useEditableDocument(note, {
     titleRequiredMessage: "Note title is required",
     contentRequiredMessage: "Note content is required",
@@ -166,11 +167,12 @@ export default function NoteDetailView({
           headings={headings}
           hasHeadings={hasHeadings}
           headingsKey={headingsKey}
+          editorReadyKey={editorReadyKey}
           contentElement={contentElement}
           contentPanelRef={contentPanelRef}
           onTitleChange={setTitle}
           onContentChange={setContent}
-          onContentElementChange={setContentElement}
+          onEditorReady={notifyEditorReady}
           onStartEditing={handleStartEditing}
           onCancelEditing={handleCancelEditing}
           onSubmit={handleSubmit}

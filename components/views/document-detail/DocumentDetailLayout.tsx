@@ -2,9 +2,10 @@
 
 import type { FormEvent, ReactNode } from "react";
 import { TableOfContents } from "@/components/views/document-detail/TableOfContents";
+import type { RichTextHeading } from "@/lib/rich-text";
 
 export const documentContentPanelClassName =
-  "note-toc-content rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950";
+  "note-toc-content note-toc-content-editing rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950";
 
 export const documentReadContentPanelClassName = "note-toc-content";
 
@@ -14,6 +15,7 @@ const tocClassName =
 type DocumentDetailLayoutProps = {
   hasHeadings: boolean;
   tocContentKey: string;
+  headings: RichTextHeading[];
   contentElement: HTMLElement | null;
   header: ReactNode;
   contentPanelRef: React.RefObject<HTMLDivElement | null>;
@@ -28,6 +30,7 @@ type DocumentDetailLayoutProps = {
 export function DocumentDetailLayout({
   hasHeadings,
   tocContentKey,
+  headings,
   contentElement,
   header,
   contentPanelRef,
@@ -55,6 +58,8 @@ export function DocumentDetailLayout({
         <TableOfContents
           contentKey={tocContentKey}
           contentElement={contentElement}
+          headings={headings}
+          isEditing={isEditing}
           className={tocClassName}
           title={tocTitle}
         />

@@ -13,7 +13,7 @@ export function useDocumentHeadings(content: string) {
     [headings],
   );
 
-  const syncReadContentElement = useCallback(() => {
+  const syncContentPanelElement = useCallback(() => {
     if (contentPanelRef.current) {
       setContentElement(contentPanelRef.current);
     }
@@ -24,8 +24,7 @@ export function useDocumentHeadings(content: string) {
     hasHeadings: headings.length > 0,
     headingsKey,
     contentElement,
-    setContentElement,
     contentPanelRef,
-    syncReadContentElement,
+    syncContentPanelElement,
   };
 }

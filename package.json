@@ -33,8 +33,7 @@
     "react-dom": "19.2.4",
     "react-hot-toast": "^2.6.0",
     "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1",
-    "tocbot": "^4.36.8"
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

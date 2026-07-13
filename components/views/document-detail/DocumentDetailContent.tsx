@@ -13,7 +13,7 @@ type DocumentDetailContentProps = {
   readContent: string;
   headings: RichTextHeading[];
   onContentChange: (value: string) => void;
-  onContentElementChange: (element: HTMLElement | null) => void;
+  onEditorReady?: () => void;
   toolbarActions?: ReactNode;
   contentLabel?: string;
 };
@@ -26,7 +26,7 @@ export function DocumentDetailContent({
   readContent,
   headings,
   onContentChange,
-  onContentElementChange,
+  onEditorReady,
   toolbarActions,
   contentLabel = "Document content",
 }: Readonly<DocumentDetailContentProps>) {
@@ -38,7 +38,7 @@ export function DocumentDetailContent({
         label={contentLabel}
         value={editContent}
         onChange={onContentChange}
-        onContentElementChange={onContentElementChange}
+        onEditorReady={onEditorReady}
         hideLabel
         variant="embedded"
         toolbarActions={toolbarActions}

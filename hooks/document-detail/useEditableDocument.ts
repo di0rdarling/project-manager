@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import { useDocumentHeadings } from "@/hooks/document-detail/useDocumentHeadings";
 
@@ -27,6 +27,7 @@ export function useEditableDocument(
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [editorReadyKey, setEditorReadyKey] = useState(0);
   const documentHeadings = useDocumentHeadings(content);
 
   useEffect(() => {
@@ -37,11 +38,24 @@ export function useEditableDocument(
     }
   }, [document]);
 
+  const notifyEditorReady = useCallback(() => {
+    requestAnimationFrame(() => {
+      documentHeadings.syncContentPanelElement();
+      setEditorReadyKey((key) => key + 1);
+    });
+  }, [documentHeadings.syncContentPanelElement]);
+
   useEffect(() => {
-    if (!isEditing) {
-      documentHeadings.syncReadContentElement();
-    }
-  }, [isEditing, documentHeadings.headingsKey, documentHeadings.syncReadContentElement]);
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        documentHeadings.syncContentPanelElement();
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [isEditing, documentHeadings.headingsKey, documentHeadings.syncContentPanelElement]);
 
   function startEditing() {
     if (!document || !canEdit) {
@@ -94,6 +108,8 @@ export function useEditableDocument(
     cancelEditing,
     validate,
     clearValidationError,
+    editorReadyKey,
+    notifyEditorReady,
     ...documentHeadings,
   };
 }

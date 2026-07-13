@@ -30,11 +30,12 @@ type EditableDocumentDetailProps = {
   headings: RichTextHeading[];
   hasHeadings: boolean;
   headingsKey: string;
+  editorReadyKey?: number;
   contentElement: HTMLElement | null;
   contentPanelRef: React.RefObject<HTMLDivElement | null>;
   onTitleChange: (value: string) => void;
   onContentChange: (value: string) => void;
-  onContentElementChange: (element: HTMLElement | null) => void;
+  onEditorReady?: () => void;
   onStartEditing: () => void;
   onCancelEditing: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -57,11 +58,12 @@ export function EditableDocumentDetail({
   headings,
   hasHeadings,
   headingsKey,
+  editorReadyKey = 0,
   contentElement,
   contentPanelRef,
   onTitleChange,
   onContentChange,
-  onContentElementChange,
+  onEditorReady,
   onStartEditing,
   onCancelEditing,
   onSubmit,
@@ -79,7 +81,8 @@ export function EditableDocumentDetail({
   return (
     <DocumentDetailLayout
       hasHeadings={hasHeadings}
-      tocContentKey={`${document._id}-${isEditing ? "edit" : "read"}-${headingsKey}`}
+      tocContentKey={`${document._id}-${isEditing ? "edit" : "read"}-${headingsKey}-${editorReadyKey}`}
+      headings={headings}
       contentElement={contentElement}
       contentPanelRef={contentPanelRef}
       isEditing={isEditing}
@@ -113,7 +116,7 @@ export function EditableDocumentDetail({
         readContent={document.content}
         headings={headings}
         onContentChange={onContentChange}
-        onContentElementChange={onContentElementChange}
+        onEditorReady={onEditorReady}
         contentLabel={`${label} content`}
         toolbarActions={
           <DocumentDetailToolbarActions

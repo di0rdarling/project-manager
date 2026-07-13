@@ -480,15 +480,16 @@ body {
   scroll-margin-top: 1.5rem;
 }
 
-.note-toc .note-toc-list {
+.note-toc-content-editing h1,
+.note-toc-content-editing h2,
+.note-toc-content-editing h3 {
+  scroll-margin-top: 3.5rem;
+}
+
+.note-toc-list {
   list-style: none;
   margin: 0;
   padding: 0;
-}
-
-.note-toc .note-toc-list .note-toc-list {
-  margin-top: 0.25rem;
-  padding-left: 0.75rem;
 }
 
 .note-toc-link {
