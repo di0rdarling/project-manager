@@ -459,7 +459,10 @@ body {
 
 .note-toc-content h1,
 .note-toc-content h2,
-.note-toc-content h3 {
+.note-toc-content h3,
+.tiptap-editor h1,
+.tiptap-editor h2,
+.tiptap-editor h3 {
   scroll-margin-top: 1.5rem;
 }
 
