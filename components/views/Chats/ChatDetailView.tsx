@@ -17,6 +17,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { MarkdownContent } from "@/components/ui/MarkdownContent";
 import EditChatTitleModal from "@/components/views/Chats/modals/EditChatTitleModal";
+import { ChatContextUsageIndicator } from "@/components/views/Chats/ChatContextUsageIndicator";
 import { ChatModelSelect } from "@/components/views/Chats/ChatModelSelect";
 import ChatMessageGrounding from "@/components/views/Chats/ChatMessageGrounding";
 import ChatSummaryModal from "@/components/views/Chats/modals/ChatSummaryModal";
@@ -210,6 +211,7 @@ export default function ChatDetailView({
   });
 
   const isArchived = Boolean(chat?.archivedAt);
+  const isAtContextLimit = Boolean(chat?.contextUsage?.isAtLimit);
   const selectedModelId = normalizeChatModelId(chat?.modelId);
 
   useEffect(() => {
@@ -219,7 +221,12 @@ export default function ChatDetailView({
   function sendMessage() {
     const trimmedMessage = message.trim();
 
-    if (!trimmedMessage || sendMessageMutation.isPending || isArchived) {
+    if (
+      !trimmedMessage ||
+      sendMessageMutation.isPending ||
+      isArchived ||
+      isAtContextLimit
+    ) {
       return;
     }
 
@@ -365,6 +372,13 @@ export default function ChatDetailView({
 
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
         <div className={`flex min-h-full flex-col justify-end gap-4 ${pageInnerClassName}`}>
+          {isAtContextLimit ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+              This conversation has reached its context limit. Start a new chat
+              to continue.
+            </div>
+          ) : null}
+
           {isArchived ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
               This chat is archived. Its summary has been compressed for your AI
@@ -402,6 +416,16 @@ export default function ChatDetailView({
           <p className={`text-sm text-zinc-500 dark:text-zinc-400 ${pageInnerClassName}`}>
             Archived chats are read-only. Unarchive this chat to send new messages.
           </p>
+        ) : isAtContextLimit ? (
+          <div className={`flex items-center gap-3 ${pageInnerClassName}`}>
+            {chat.contextUsage ? (
+              <ChatContextUsageIndicator usage={chat.contextUsage} />
+            ) : null}
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              This conversation is read-only because it has reached the context
+              limit. Start a new chat to continue.
+            </p>
+          </div>
         ) : (
           <form
             onSubmit={handleSubmit}
@@ -416,13 +440,17 @@ export default function ChatDetailView({
               disabled={sendMessageMutation.isPending}
               className="w-full resize-none rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-zinc-500 disabled:opacity-60 dark:border-zinc-700 dark:focus:border-zinc-400"
             />
-            <Button
-              type="submit"
-              disabled={!message.trim() || sendMessageMutation.isPending}
-              className="shrink-0"
-            >
-              {sendMessageMutation.isPending ? "Sending..." : "Send"}
-            </Button>
+            <div className="flex shrink-0 flex-col items-center gap-2 pb-1">
+              {chat.contextUsage ? (
+                <ChatContextUsageIndicator usage={chat.contextUsage} />
+              ) : null}
+              <Button
+                type="submit"
+                disabled={!message.trim() || sendMessageMutation.isPending}
+              >
+                {sendMessageMutation.isPending ? "Sending..." : "Send"}
+              </Button>
+            </div>
           </form>
         )}
       </div>

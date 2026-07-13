@@ -221,14 +221,36 @@ export type ChatListItemResponse = ChatResponse & {
   feature: { _id: string; title: string } | null;
 };
 
+export type ChatContextUsageCategoryKey =
+  | "systemPrompt"
+  | "agentMemory"
+  | "sharedMemory"
+  | "projectContext"
+  | "conversation";
+
+export type ChatContextUsageCategory = {
+  key: ChatContextUsageCategoryKey;
+  label: string;
+  tokens: number;
+};
+
+export type ChatContextUsage = {
+  usedTokens: number;
+  limitTokens: number;
+  isAtLimit: boolean;
+  breakdown: ChatContextUsageCategory[];
+};
+
 export type ChatWithMessagesResponse = ChatListItemResponse & {
   messages: ChatMessageResponse[];
+  contextUsage: ChatContextUsage;
 };
 
 export type SendChatMessageResponse = {
   chat: ChatResponse;
   userMessage: ChatMessageResponse;
   assistantMessage: ChatMessageResponse;
+  contextUsage: ChatContextUsage;
 };
 
 export type AgentMemoryResponse = {

@@ -271,3 +271,75 @@ export async function generateArchivedChatSummary(
 ): Promise<string> {
   return generateText(prompt, getMemoryModelName());
 }
+
+export type CountChatContextTokensInput = {
+  history: GeminiChatMessage[];
+  teammateId?: ChatTeammateId;
+  projectContext?: string;
+  otherConversationsContext?: string;
+  otherTeammatesContext?: string;
+  agentNotesContext?: string;
+  userName?: string | null;
+  modelName?: string;
+  pendingMessage?: string;
+};
+
+export async function countChatContextTokens(
+  input: CountChatContextTokensInput,
+): Promise<number> {
+  const {
+    history,
+    teammateId,
+    projectContext,
+    otherConversationsContext,
+    otherTeammatesContext,
+    agentNotesContext,
+    userName,
+    modelName,
+    pendingMessage,
+  } = input;
+
+  const model = getGeminiClient().getGenerativeModel({
+    model: modelName ?? getChatModelName(),
+    systemInstruction: buildChatSystemPrompt(
+      teammateId,
+      projectContext,
+      otherConversationsContext,
+      otherTeammatesContext,
+      agentNotesContext,
+      userName,
+    ),
+  });
+
+  const contents = history.map((entry) => ({
+    role: entry.role,
+    parts: [{ text: entry.content }],
+  }));
+
+  if (pendingMessage?.trim()) {
+    contents.push({
+      role: "user",
+      parts: [{ text: pendingMessage.trim() }],
+    });
+  }
+
+  const result = await model.countTokens({ contents });
+
+  return result.totalTokens;
+}
+
+export async function countTextTokens(
+  text: string,
+  modelName?: string,
+): Promise<number> {
+  if (!text.trim()) {
+    return 0;
+  }
+
+  const model = getGeminiClient().getGenerativeModel({
+    model: modelName ?? getChatModelName(),
+  });
+
+  const result = await model.countTokens(text);
+  return result.totalTokens;
+}

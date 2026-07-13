@@ -1,8 +1,10 @@
 import { ObjectId } from "mongodb";
 import { isChatModelId } from "@/lib/chat-models";
+import { getChatContextUsage } from "@/lib/chat-context/get-chat-context-usage";
 import { serializeChatsWithContext } from "@/lib/chat-list-items";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
+import { findUserById } from "@/lib/users";
 import {
   serializeChat,
   serializeChatMessage,
@@ -52,6 +54,8 @@ export async function GET(_request: Request, context: RouteContext) {
     }
 
     const db = result.client.db();
+    const currentUser = await findUserById(db, auth.userId);
+    const userName = currentUser?.name ?? null;
     const [chatWithContext] = await serializeChatsWithContext(db, [result.chat]);
     const messages = await db
       .collection<StoredChatMessage>("chat_messages")
@@ -59,9 +63,18 @@ export async function GET(_request: Request, context: RouteContext) {
       .sort({ createdAt: 1 })
       .toArray();
 
+    const contextUsage = await getChatContextUsage(
+      db,
+      auth.userId,
+      result.chat,
+      messages,
+      userName,
+    );
+
     return Response.json({
       ...chatWithContext,
       messages: messages.map(serializeChatMessage),
+      contextUsage,
     });
   } catch {
     return Response.json({ error: "Failed to fetch chat" }, { status: 500 });

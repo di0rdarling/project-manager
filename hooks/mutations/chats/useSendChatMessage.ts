@@ -40,6 +40,7 @@ export function useSendChatMessage(options?: UseSendChatMessageOptions) {
               project: null,
               requirement: null,
               feature: null,
+              contextUsage: data.contextUsage,
               messages: [data.userMessage, data.assistantMessage],
             };
           }
@@ -51,6 +52,7 @@ export function useSendChatMessage(options?: UseSendChatMessageOptions) {
             requirement: current.requirement,
             feature: current.feature,
             modelId: data.chat.modelId ?? current.modelId,
+            contextUsage: data.contextUsage,
             messages: [
               ...current.messages,
               data.userMessage,

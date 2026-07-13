@@ -1,27 +1,22 @@
 import { ObjectId } from "mongodb";
 import { refreshAgentMemoryFromChatSummary } from "@/lib/agent-memory-refresh";
-import { normalizeChatModelId } from "@/lib/chat-models";
+import {
+  CHAT_CONTEXT_TOKEN_LIMIT,
+  getChatContextUsage,
+} from "@/lib/chat-context/get-chat-context-usage";
+import { loadChatGenerationContext } from "@/lib/chat-context/chat-generation-context";
 import {
   generateChatReply,
   generateChatTitle,
   generateConversationSummary,
 } from "@/lib/gemini";
-import {
-  getOtherTeammatesMemories,
-} from "@/lib/agent-memory-store";
-import { getAgentNotes } from "@/lib/agent-notes-store";
-import { getTeammateChatSummaries } from "@/lib/chat-summaries";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { findUserById } from "@/lib/users";
-import { getTeammateProjectContext } from "@/lib/project-context";
 import {
   buildChatConversationSummaryPrompt,
   RECENT_MESSAGE_WINDOW,
 } from "@/lib/prompts/chat-conversation-summary-prompt";
-import { buildChatOtherConversationsContext } from "@/lib/prompts/chat-other-conversations-prompt";
-import { buildOtherTeammatesContext } from "@/lib/prompts/chat-other-teammates-context-prompt";
-import { buildAgentNotesContext } from "@/lib/prompts/agent-notes-context-prompt";
 import {
   buildChatTitlePrompt,
   CHAT_TITLE_GENERATION_TURN_THRESHOLD,
@@ -110,52 +105,42 @@ export async function POST(request: Request, context: RouteContext) {
     }));
 
     const chatResponse = serializeChat(result.chat);
-
-    const projectContext = await getTeammateProjectContext(
+    const generationContext = await loadChatGenerationContext(
       result.client.db(),
       auth.userId,
-      chatResponse.teammateId,
-      result.chat.projectId ?? null,
-      {
-        requirementId: result.chat.requirementId ?? null,
-        featureId: result.chat.featureId ?? null,
-      },
+      result.chat,
+      existingMessages,
+      userName,
     );
 
-    const otherChatSummaries = await getTeammateChatSummaries(
+    const contextUsage = await getChatContextUsage(
       result.client.db(),
       auth.userId,
-      chatResponse.teammateId,
-      { excludeChatId: result.chatObjectId, excludeArchived: true },
+      result.chat,
+      existingMessages,
+      userName,
+      content,
     );
-    const otherConversationsContext =
-      buildChatOtherConversationsContext(otherChatSummaries) ?? undefined;
 
-    const otherTeammatesMemories = await getOtherTeammatesMemories(
-      result.client.db(),
-      auth.userId,
-      chatResponse.teammateId,
-    );
-    const otherTeammatesContext =
-      buildOtherTeammatesContext(otherTeammatesMemories) ?? undefined;
-
-    const agentNotes = await getAgentNotes(
-      result.client.db(),
-      auth.userId,
-      chatResponse.teammateId,
-    );
-    const agentNotesContext = buildAgentNotesContext(agentNotes) ?? undefined;
+    if (contextUsage.isAtLimit) {
+      return Response.json(
+        {
+          error: `This conversation has reached the ${CHAT_CONTEXT_TOKEN_LIMIT.toLocaleString()}-token context limit. Start a new chat to continue.`,
+        },
+        { status: 400 },
+      );
+    }
 
     const assistantReply = await generateChatReply(
       history,
       content,
-      chatResponse.teammateId,
-      projectContext ?? undefined,
-      otherConversationsContext,
-      otherTeammatesContext,
-      agentNotesContext,
-      userName,
-      normalizeChatModelId(result.chat.modelId),
+      generationContext.teammateId,
+      generationContext.projectContext,
+      generationContext.otherConversationsContext,
+      generationContext.otherTeammatesContext,
+      generationContext.agentNotesContext,
+      generationContext.userName,
+      generationContext.modelId,
     );
     const now = new Date().toISOString();
     const userMessage: Omit<ChatMessage, "_id"> = {
@@ -285,6 +270,23 @@ export async function POST(request: Request, context: RouteContext) {
       ...updatedChat,
     });
 
+    const updatedMessages = await db
+      .collection<StoredChatMessage>("chat_messages")
+      .find({ chatId: result.chatObjectId, userId: auth.userId })
+      .sort({ createdAt: 1 })
+      .toArray();
+
+    const updatedContextUsage = await getChatContextUsage(
+      db,
+      auth.userId,
+      {
+        ...result.chat,
+        ...updatedChat,
+      },
+      updatedMessages,
+      userName,
+    );
+
     return Response.json({
       chat,
       userMessage: serializeChatMessage({
@@ -295,6 +297,7 @@ export async function POST(request: Request, context: RouteContext) {
         ...assistantMessage,
         _id: assistantInsertResult.insertedId,
       }),
+      contextUsage: updatedContextUsage,
     });
   } catch (error) {
     if (

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
+import MuiThemeProvider from "@/components/providers/MuiThemeProvider";
 import QueryProvider from "@/components/providers/QueryProvider";
 import ToastProvider from "@/components/providers/ToastProvider";
 import "./globals.css";
@@ -30,10 +32,14 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="h-dvh overflow-hidden">
-        <QueryProvider>
-          {children}
-          <ToastProvider />
-        </QueryProvider>
+        <AppRouterCacheProvider>
+          <MuiThemeProvider>
+            <QueryProvider>
+              {children}
+              <ToastProvider />
+            </QueryProvider>
+          </MuiThemeProvider>
+        </AppRouterCacheProvider>
       </body>
     </html>
   );
