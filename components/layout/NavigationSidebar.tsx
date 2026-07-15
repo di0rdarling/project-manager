@@ -11,6 +11,7 @@ import {
   ChatBubbleLeftRightIcon,
   HomeIcon,
   UserCircleIcon,
+  UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
 import { ProjectManagerLogo } from "@/components/ui/ProjectManagerLogo";
@@ -24,7 +25,8 @@ import {
 
 const navItems = [
   { href: "/home", label: "Home", icon: HomeIcon },
-  { href: "/chats", label: "AI Chats", icon: ChatBubbleLeftRightIcon },
+  { href: "/agents", label: "Agents", icon: UserGroupIcon },
+  { href: "/chats", label: "Chats", icon: ChatBubbleLeftRightIcon },
   { href: "/account", label: "Account", icon: UserCircleIcon },
 ] as const;
 

@@ -12,7 +12,6 @@ import { useFetchProjects } from "@/hooks/queries/useFetchProjects";
 import PageContent from "@/components/layout/PageContent";
 import type { ChatListStatus } from "@/lib/api/chats";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
-import ChatAgentsRow from "./ChatAgentsRow";
 import ChatsList from "./ChatsList";
 import ChatsToolbar from "./ChatsToolbar";
 import CreateChatModal from "./modals/CreateChatModal";
@@ -81,8 +80,6 @@ export default function ChatsView() {
           Your conversations with AI teammates across projects
         </p>
       </div>
-
-      <ChatAgentsRow />
 
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
