@@ -4,6 +4,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { useFetchAgentNotes } from "@/hooks/queries/useFetchAgentNotes";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
+import type { AgentProfileFrom } from "@/lib/chats/agent-profile-navigation";
 import AgentSection from "./AgentSection";
 import AIAgentNotesList from "./AIAgentNotesList";
 import CreateAgentNoteModal from "./modals/agent-notes/CreateAgentNoteModal";
@@ -13,11 +14,13 @@ import ShareAgentNoteModal from "./modals/agent-notes/ShareAgentNoteModal";
 type AIAgentNotesSectionProps = {
   teammateId: ChatTeammateId;
   agentName: string;
+  profileFrom?: AgentProfileFrom | null;
 };
 
 export default function AIAgentNotesSection({
   teammateId,
   agentName,
+  profileFrom,
 }: Readonly<AIAgentNotesSectionProps>) {
   const [isCreateNoteModalOpen, setIsCreateNoteModalOpen] = useState(false);
 
@@ -46,6 +49,7 @@ export default function AIAgentNotesSection({
         <AIAgentNotesList
           teammateId={teammateId}
           notes={notes}
+          profileFrom={profileFrom}
           onDeleteSuccess={() => toast.success("Note deleted successfully.")}
           onShareSuccess={() => toast.success("Note sharing updated.")}
           renderDeleteModal={({ open, item, onClose, onSuccess }) => (

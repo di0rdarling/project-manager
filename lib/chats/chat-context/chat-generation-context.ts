@@ -1,8 +1,10 @@
 import type { Db, ObjectId } from "mongodb";
 import { normalizeChatModelId } from "@/lib/chats/chat-models";
-import { getOtherTeammatesMemories } from "@/lib/agents/agent-memory-store";
 import { getAgentNotes } from "@/lib/agents/agent-notes-store";
-import { getTeammateChatSummaries } from "@/lib/chats/chat-summaries";
+import {
+  getOtherTeammatesRecentChatSummaries,
+  getTeammateChatSummaries,
+} from "@/lib/chats/chat-summaries";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type { GeminiChatMessage } from "@/lib/gemini";
 import { getTeammateProjectContext } from "@/lib/project-context";
@@ -59,13 +61,13 @@ export async function loadChatGenerationContext(
   const otherConversationsContext =
     buildChatOtherConversationsContext(otherChatSummaries) ?? undefined;
 
-  const otherTeammatesMemories = await getOtherTeammatesMemories(
+  const otherTeammatesChatSummaries = await getOtherTeammatesRecentChatSummaries(
     db,
     userId,
     chatResponse.teammateId,
   );
   const otherTeammatesContext =
-    buildOtherTeammatesContext(otherTeammatesMemories) ?? undefined;
+    buildOtherTeammatesContext(otherTeammatesChatSummaries) ?? undefined;
 
   const agentNotes = await getAgentNotes(db, userId, chatResponse.teammateId);
   const agentNotesContext = buildAgentNotesContext(agentNotes) ?? undefined;

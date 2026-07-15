@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { ArrowLeftIcon, PencilIcon, ShareIcon } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
@@ -19,6 +20,11 @@ import {
   getChatTeammate,
   isChatTeammateId,
 } from "@/lib/chats/chat-teammates";
+import {
+  AGENT_PROFILE_FROM_SEARCH_PARAM,
+  appendAgentProfileFrom,
+  parseAgentProfileFrom,
+} from "@/lib/chats/agent-profile-navigation";
 
 const AGENT_NOTE_FORM_ID = "agent-note-form";
 
@@ -31,6 +37,10 @@ export default function AgentNoteDetailView({
   teammateId: rawTeammateId,
   noteId,
 }: Readonly<AgentNoteDetailViewProps>) {
+  const searchParams = useSearchParams();
+  const profileFrom = parseAgentProfileFrom(
+    searchParams.get(AGENT_PROFILE_FROM_SEARCH_PARAM),
+  );
   const teammateId = isChatTeammateId(rawTeammateId) ? rawTeammateId : null;
   const agentName = teammateId ? getChatTeammate(teammateId).name : "Agent";
 
@@ -93,7 +103,10 @@ export default function AgentNoteDetailView({
   }
 
   const viewingTeammateId = teammateId;
-  const backHref = `/chats/agents/${viewingTeammateId}`;
+  const backHref = appendAgentProfileFrom(
+    `/chats/agents/${viewingTeammateId}`,
+    profileFrom,
+  );
   const backLabel = `Back to ${agentName}`;
 
   function handleStartEditing() {

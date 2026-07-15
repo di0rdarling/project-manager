@@ -23,12 +23,9 @@ export type OtherTeammateMemory = {
 
 /**
  * Each other teammate's compact first-person Memory (see the agent profile
- * page). This is a capped distillate of durable facts — decisions,
- * preferences, open loops — rather than a full retelling of every chat.
- *
- * Memories are updated automatically after each chat message once that
- * chat's conversation summary refreshes (incremental merge). They can also
- * be fully rebuilt from the profile page Generate / Regenerate action.
+ * page). Used when building that teammate's own profile memory — not injected
+ * into live cross-agent chat context (that uses recent conversation summaries
+ * via getOtherTeammatesRecentChatSummaries instead).
  */
 export async function getOtherTeammatesMemories(
   db: Db,

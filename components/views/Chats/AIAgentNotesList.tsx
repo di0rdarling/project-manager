@@ -13,6 +13,10 @@ import {
   getChatTeammate,
   type ChatTeammateId,
 } from "@/lib/chats/chat-teammates";
+import {
+  appendAgentProfileFrom,
+  type AgentProfileFrom,
+} from "@/lib/chats/agent-profile-navigation";
 import type { AgentNoteResponse } from "@/lib/types";
 
 interface ItemModalRenderProps {
@@ -25,6 +29,7 @@ interface ItemModalRenderProps {
 interface AIAgentNotesListProps {
   teammateId: ChatTeammateId;
   notes: AgentNoteResponse[];
+  profileFrom?: AgentProfileFrom | null;
   onDeleteSuccess?: () => void;
   onShareSuccess?: () => void;
   renderDeleteModal: (props: ItemModalRenderProps) => ReactNode;
@@ -53,6 +58,7 @@ function getSharedWithSortValue(
 export default function AIAgentNotesList({
   teammateId,
   notes,
+  profileFrom,
   onDeleteSuccess,
   onShareSuccess,
   renderDeleteModal,
@@ -108,7 +114,12 @@ export default function AIAgentNotesList({
             getSortValue: (note) => note.updatedAt,
           },
         ]}
-        getItemHref={(note) => getAgentNoteDetailPath(teammateId, note._id)}
+        getItemHref={(note) =>
+          appendAgentProfileFrom(
+            getAgentNoteDetailPath(teammateId, note._id),
+            profileFrom ?? null,
+          )
+        }
         getItemLabel={(note) => note.title || "note"}
         rowActions={[
           {

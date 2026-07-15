@@ -1,3 +1,5 @@
+import { MapPinIcon } from "@heroicons/react/24/outline";
+
 type AgentStableContextProps = {
   items: string[];
 };
@@ -7,7 +9,8 @@ export default function AgentStableContext({
 }: Readonly<AgentStableContextProps>) {
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+      <h2 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+        <MapPinIcon className="size-4" aria-hidden />
         Stable context
       </h2>
       {items.length === 0 ? (

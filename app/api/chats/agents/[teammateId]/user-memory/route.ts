@@ -10,7 +10,7 @@ import {
   upsertUserMemory,
   type StoredUserMemory,
 } from "@/lib/agents/user-memory-store";
-import { getTeammateChatSummaries } from "@/lib/chats/chat-summaries";
+import { getTeammateChatSummaries, RECENT_CHAT_SUMMARY_LIMIT } from "@/lib/chats/chat-summaries";
 import { requireUserId } from "@/lib/current-user";
 import { generateUserMemory } from "@/lib/gemini";
 import getClientPromise from "@/lib/mongodb";
@@ -96,6 +96,7 @@ export async function POST(_request: Request, context: RouteContext) {
       client.db(),
       auth.userId,
       parsed.teammateId,
+      { limit: RECENT_CHAT_SUMMARY_LIMIT },
     );
 
     if (chatSummaries.length === 0) {

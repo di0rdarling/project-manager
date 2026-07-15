@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import PageContent from "@/components/layout/PageContent";
 import { Avatar } from "@/components/ui/Avatar";
@@ -10,6 +11,11 @@ import {
   getChatTeammatePersonalityTraits,
   isChatTeammateId,
 } from "@/lib/chats/chat-teammates";
+import {
+  AGENT_PROFILE_FROM_SEARCH_PARAM,
+  getAgentProfileBackNavigation,
+  parseAgentProfileFrom,
+} from "@/lib/chats/agent-profile-navigation";
 import AIAgentMemory from "@/components/views/Chats/AIAgentMemory";
 import AIAgentNotesSection from "@/components/views/Chats/AIAgentNotesSection";
 import AgentUserMemoryOverview from "@/components/views/Chats/AgentUserMemoryOverview";
@@ -21,15 +27,21 @@ interface ChatAgentProfileViewProps {
 export default function ChatAgentProfileView({
   teammateId,
 }: Readonly<ChatAgentProfileViewProps>) {
+  const searchParams = useSearchParams();
+  const profileFrom = parseAgentProfileFrom(
+    searchParams.get(AGENT_PROFILE_FROM_SEARCH_PARAM),
+  );
+  const backNavigation = getAgentProfileBackNavigation(profileFrom);
+
   if (!isChatTeammateId(teammateId)) {
     return (
       <PageContent className="gap-6">
         <Link
-          href="/chats"
+          href={backNavigation.href}
           className="inline-flex w-fit items-center gap-2 text-sm font-medium text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
         >
           <ArrowLeftIcon className="size-4" aria-hidden />
-          Back to AI Chats
+          {backNavigation.label}
         </Link>
         <ErrorMessage error={null} fallbackMessage="AI teammate not found" />
       </PageContent>
@@ -42,11 +54,11 @@ export default function ChatAgentProfileView({
   return (
     <PageContent>
       <Link
-        href="/chats"
+        href={backNavigation.href}
         className="inline-flex w-fit items-center gap-2 text-sm font-medium text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
       >
         <ArrowLeftIcon className="size-4" aria-hidden />
-        Back to AI Chats
+        {backNavigation.label}
       </Link>
 
 
@@ -76,7 +88,11 @@ export default function ChatAgentProfileView({
       <AgentUserMemoryOverview teammateId={teammateId} />
 
       <AIAgentMemory teammateId={teammateId} />
-      <AIAgentNotesSection teammateId={teammateId} agentName={teammate.name} />
+      <AIAgentNotesSection
+        teammateId={teammateId}
+        agentName={teammate.name}
+        profileFrom={profileFrom}
+      />
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Personality &amp; approach</h2>
         <ul className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">

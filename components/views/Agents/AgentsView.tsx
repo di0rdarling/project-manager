@@ -13,7 +13,7 @@ export default function AgentsView() {
         </p>
       </div>
 
-      <ChatAgentsRow />
+      <ChatAgentsRow from="agents" />
     </PageContent>
   );
 }

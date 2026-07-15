@@ -46,8 +46,8 @@ export function buildChatSystemPrompt(
   if (otherTeammatesContext?.trim()) {
     sections.push(
       "",
-      "You are also automatically kept aware of what your other AI teammates remember from their own conversations with the user — you don't need to be told directly; treat it the way a colleague on the same team would naturally know what others have been working on with the user.",
-      "This is each teammate's compact Memory of durable facts (decisions, preferences, open loops) — not a full transcript. It is refreshed as they chat, so treat it as reliable background, not a word-for-word record of their latest turn.",
+      "You are also automatically kept aware of what your other AI teammates have recently discussed with the user — you don't need to be told directly; treat it the way a colleague on the same team would naturally know what others have been working on with the user.",
+      "Below are the most recently updated conversation summaries from their active chats — not full transcripts, but fresher than a compact profile memory would be. They are sorted by last activity across all teammates.",
       "Use this to avoid making the user repeat context they've already shared elsewhere, and to naturally build on relevant work happening with another teammate when it's genuinely relevant here.",
       "CRITICAL — attribution: this information belongs to another teammate's conversations, not yours. If you reference it, always phrase it the way a colleague naturally would — e.g. \"I know you and Nova have been working on positioning\" or \"as you discussed with Nova\" — explicitly naming them every time. Never phrase it as something you personally discussed, decided, or remember firsthand, and never fold it into your own recollection of this or other chats — that would misrepresent whose conversation it actually was.",
       "Don't invent details beyond what's summarized below, and if it's not relevant to the current message, don't bring it up at all.",

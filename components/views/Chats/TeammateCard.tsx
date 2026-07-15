@@ -3,16 +3,22 @@
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
 import { Avatar } from "@/components/ui/Avatar";
 import type { ChatTeammate } from "@/lib/chats/chat-teammates";
+import type { AgentProfileFrom } from "@/lib/chats/agent-profile-navigation";
 import { TeammateProfileLink } from "./TeammateProfileLink";
 
 type TeammateCardProps = {
   teammate: ChatTeammate;
+  from?: AgentProfileFrom | null;
 };
 
-export default function TeammateCard({ teammate }: Readonly<TeammateCardProps>) {
+export default function TeammateCard({
+  teammate,
+  from,
+}: Readonly<TeammateCardProps>) {
   return (
     <TeammateProfileLink
       teammate={teammate}
+      from={from}
       className="group flex w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 transition hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700 dark:hover:bg-zinc-900"
     >
       <Avatar

@@ -1,3 +1,5 @@
+import { ChartBarIcon } from "@heroicons/react/24/outline";
+
 type AgentAtAGlanceProps = {
   chatsCount: number | null;
   openThreadsCount: number;
@@ -17,7 +19,8 @@ export default function AgentAtAGlance({
 
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+      <h2 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+        <ChartBarIcon className="size-4" aria-hidden />
         At a glance
       </h2>
       <div className="grid grid-cols-3 gap-3">

@@ -78,7 +78,7 @@ type BuildUserMemoryPromptInput = {
 };
 
 /**
- * Full rebuild from all of this teammate's chat summaries.
+ * Full rebuild from this teammate's most recently updated chat summaries.
  * Used for manual Generate / Regenerate on the agent profile.
  */
 export function buildUserMemoryPrompt({
@@ -117,7 +117,7 @@ export function buildUserMemoryPrompt({
     "",
     "### Source material",
     "",
-    "Past conversations:",
+    "Most recent conversations (by last activity):",
     formatChatSummaries(chatSummaries, generatedAt),
     "",
     `You are generating this at: ${currentDateTime}.`,

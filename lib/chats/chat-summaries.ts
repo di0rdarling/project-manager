@@ -1,5 +1,9 @@
 import { ObjectId, type Db } from "mongodb";
-import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
+import {
+  DEFAULT_CHAT_TEAMMATE_ID,
+  isChatTeammateId,
+  type ChatTeammateId,
+} from "@/lib/chats/chat-teammates";
 import { toIsoString } from "@/lib/dates";
 import { stripRichText } from "@/lib/rich-text";
 import type { StoredChat } from "@/lib/serialize/serialize-chat";
@@ -7,6 +11,7 @@ import type { StoredProject } from "@/lib/serialize/serialize-project";
 
 export type TeammateChatSummary = {
   chatId: string;
+  teammateId: ChatTeammateId;
   title: string;
   createdAt: string;
   updatedAt: string;
@@ -17,6 +22,13 @@ export type TeammateChatSummary = {
     aiSummary: string | null;
   } | null;
 };
+
+/**
+ * Max conversation summaries included when building context from chat
+ * history — cross-agent live chat, manual Overview rebuild, etc. Sorted by
+ * `updatedAt` (most recent first).
+ */
+export const RECENT_CHAT_SUMMARY_LIMIT = 5;
 
 async function summarizeChats(
   db: Db,
@@ -56,6 +68,9 @@ async function summarizeChats(
 
     return {
       chatId: chat._id.toString(),
+      teammateId: isChatTeammateId(chat.teammateId)
+        ? chat.teammateId
+        : DEFAULT_CHAT_TEAMMATE_ID,
       title: chat.title,
       createdAt: toIsoString(chat.createdAt),
       updatedAt: toIsoString(chat.updatedAt),
@@ -82,6 +97,11 @@ type GetTeammateChatSummariesOptions = {
    * conversations" context so finished threads do not clutter active work.
    */
   excludeArchived?: boolean;
+  /**
+   * Max summaries returned, most recently updated first. Chats without a
+   * stored conversation summary are skipped and do not count toward the cap.
+   */
+  limit?: number;
 };
 
 export async function getTeammateChatSummaries(
@@ -100,11 +120,47 @@ export async function getTeammateChatSummaries(
     query.archivedAt = null;
   }
 
-  const chats = await db
+  let cursor = db
     .collection<StoredChat>("chats")
     .find(query)
+    .sort({ updatedAt: -1 });
+
+  if (options?.limit) {
+    cursor = cursor.limit(Math.max(options.limit * 3, options.limit));
+  }
+
+  const chats = await cursor.toArray();
+  const summaries = await summarizeChats(db, userId, chats);
+
+  if (options?.limit) {
+    return summaries.slice(0, options.limit);
+  }
+
+  return summaries;
+}
+
+/**
+ * Recent conversation summaries from teammates other than the one in the
+ * current chat. Active (non-archived) chats only, globally sorted by
+ * `updatedAt` descending, capped at `limit`.
+ */
+export async function getOtherTeammatesRecentChatSummaries(
+  db: Db,
+  userId: ObjectId,
+  currentTeammateId: ChatTeammateId,
+  limit: number = RECENT_CHAT_SUMMARY_LIMIT,
+): Promise<TeammateChatSummary[]> {
+  const chats = await db
+    .collection<StoredChat>("chats")
+    .find({
+      userId,
+      teammateId: { $ne: currentTeammateId },
+      archivedAt: null,
+    })
     .sort({ updatedAt: -1 })
+    .limit(Math.max(limit * 3, limit))
     .toArray();
 
-  return summarizeChats(db, userId, chats);
+  const summaries = await summarizeChats(db, userId, chats);
+  return summaries.slice(0, limit);
 }

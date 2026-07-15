@@ -4,25 +4,27 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import type { ChatTeammate } from "@/lib/chats/chat-teammates";
+import {
+  getTeammateProfileHref,
+  type AgentProfileFrom,
+} from "@/lib/chats/agent-profile-navigation";
 
 type TeammateProfileLinkProps = {
   teammate: ChatTeammate;
   children: ReactNode;
   className?: string;
+  from?: AgentProfileFrom | null;
 };
-
-function getTeammateProfileHref(teammateId: ChatTeammate["id"]): string {
-  return `/chats/agents/${teammateId}`;
-}
 
 export function TeammateProfileLink({
   teammate,
   children,
   className,
+  from,
 }: TeammateProfileLinkProps) {
   return (
     <Link
-      href={getTeammateProfileHref(teammate.id)}
+      href={getTeammateProfileHref(teammate.id, from)}
       aria-label={`View ${teammate.name}'s profile`}
       className={className}
     >
@@ -35,16 +37,19 @@ type TeammateProfileAvatarLinkProps = {
   teammate: ChatTeammate;
   size?: "sm" | "md";
   className?: string;
+  from?: AgentProfileFrom | null;
 };
 
 export function TeammateProfileAvatarLink({
   teammate,
   size = "sm",
   className,
+  from,
 }: TeammateProfileAvatarLinkProps) {
   return (
     <TeammateProfileLink
       teammate={teammate}
+      from={from}
       className={`inline-flex shrink-0 rounded-full transition hover:ring-2 hover:ring-zinc-300 dark:hover:ring-zinc-700 ${className ?? ""}`}
     >
       <Avatar

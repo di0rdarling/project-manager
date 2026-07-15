@@ -15,7 +15,7 @@ const BREAKDOWN_CATEGORY_LABELS: Record<
 > = {
   systemPrompt: "System prompt",
   agentMemory: "Agent's memory",
-  sharedMemory: "Shared memory",
+  sharedMemory: "Other teammates",
   projectContext: "Project context",
   conversation: "Conversation",
 };

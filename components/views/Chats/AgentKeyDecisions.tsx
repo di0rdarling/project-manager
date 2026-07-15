@@ -1,3 +1,4 @@
+import { CheckCircleIcon } from "@heroicons/react/24/outline";
 import type { UserMemoryDecision } from "@/lib/types";
 
 type AgentKeyDecisionsProps = {
@@ -9,7 +10,10 @@ export default function AgentKeyDecisions({
 }: Readonly<AgentKeyDecisionsProps>) {
   return (
     <section className="space-y-3">
-      <h2 className="text-lg font-semibold">Key decisions</h2>
+      <h2 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+        <CheckCircleIcon className="size-4" aria-hidden />
+        Key decisions
+      </h2>
       {decisions.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 px-4 py-6 text-center dark:border-zinc-700">
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -20,7 +24,7 @@ export default function AgentKeyDecisions({
         <div className="divide-y divide-zinc-200 rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-700 dark:border-zinc-700 dark:bg-zinc-900">
           {decisions.map((decision, index) => (
             <div key={`${decision.topic}-${index}`} className="space-y-1 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
                 {decision.topic}
               </p>
               <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
