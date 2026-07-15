@@ -323,6 +323,12 @@ export async function countChatContextTokens(
     });
   }
 
+  // Gemini rejects countTokens when contents is empty (new chats with no
+  // messages yet). A placeholder user turn keeps the system-instruction count.
+  if (contents.length === 0) {
+    contents.push({ role: "user", parts: [{ text: "" }] });
+  }
+
   const result = await model.countTokens({ contents });
 
   return result.totalTokens;
