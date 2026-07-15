@@ -12,12 +12,7 @@ import {
 } from "@/lib/chats/chat-teammates";
 import AIAgentMemory from "@/components/views/Chats/AIAgentMemory";
 import AIAgentNotesSection from "@/components/views/Chats/AIAgentNotesSection";
-import AgentAtAGlance from "@/components/views/Chats/AgentAtAGlance";
-import AgentConversations from "@/components/views/Chats/AgentConversations";
-import AgentKeyDecisions from "@/components/views/Chats/AgentKeyDecisions";
-import AgentMostRecently from "@/components/views/Chats/AgentMostRecently";
-import AgentOpenThreads from "@/components/views/Chats/AgentOpenThreads";
-import AgentStableContext from "@/components/views/Chats/AgentStableContext";
+import AgentUserMemoryOverview from "@/components/views/Chats/AgentUserMemoryOverview";
 
 interface ChatAgentProfileViewProps {
   teammateId: string;
@@ -78,19 +73,7 @@ export default function ChatAgentProfileView({
         </div>
       </div>
 
-      <AgentMostRecently />
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <AgentOpenThreads />
-          <AgentKeyDecisions />
-        </div>
-        <div className="space-y-6">
-          <AgentAtAGlance />
-          <AgentStableContext />
-          <AgentConversations />
-        </div>
-      </div>
+      <AgentUserMemoryOverview teammateId={teammateId} />
 
       <AIAgentMemory teammateId={teammateId} />
       <AIAgentNotesSection teammateId={teammateId} agentName={teammate.name} />

@@ -258,3 +258,34 @@ export type AgentMemoryResponse = {
   memory: string | null;
   updatedAt: string | null;
 };
+
+export type UserMemoryThreadStatus =
+  | "blocked"
+  | "to-schedule"
+  | "up-next"
+  | "waiting"
+  | "tangent";
+
+export type UserMemoryThread = {
+  title: string;
+  detail: string;
+  project: string;
+  status: UserMemoryThreadStatus;
+  flaggedDate: string;
+};
+
+export type UserMemoryDecision = {
+  topic: string;
+  choice: string;
+  project: string;
+  when: string;
+};
+
+export type UserMemoryResponse = {
+  teammateId: ChatTeammateId;
+  mostRecently: string | null;
+  openThreads: UserMemoryThread[];
+  decisions: UserMemoryDecision[];
+  stableContext: string[];
+  updatedAt: string | null;
+};

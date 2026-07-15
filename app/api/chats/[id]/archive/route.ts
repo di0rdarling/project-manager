@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { refreshAgentMemoryFromChatSummary } from "@/lib/agents/agent-memory-refresh";
+import { refreshUserMemoryFromChatSummary } from "@/lib/agents/user-memory-refresh";
 import { requireUserId } from "@/lib/current-user";
 import { generateArchivedChatSummary } from "@/lib/gemini";
 import getClientPromise from "@/lib/mongodb";
@@ -109,8 +110,9 @@ export async function POST(_request: Request, context: RouteContext) {
     }
 
     if (condensedSummary) {
+      const currentUser = await findUserById(result.client.db(), auth.userId);
+
       try {
-        const currentUser = await findUserById(result.client.db(), auth.userId);
         await refreshAgentMemoryFromChatSummary({
           db: result.client.db(),
           userId: auth.userId,
@@ -123,6 +125,21 @@ export async function POST(_request: Request, context: RouteContext) {
         });
       } catch {
         // Agent memory refresh is best-effort on archive.
+      }
+
+      try {
+        await refreshUserMemoryFromChatSummary({
+          db: result.client.db(),
+          userId: auth.userId,
+          teammateId,
+          chatTitle: updateResult.title,
+          conversationSummary: condensedSummary,
+          projectId: updateResult.projectId,
+          userName: currentUser?.name ?? null,
+          updatedAt: now,
+        });
+      } catch {
+        // Also best-effort, independent of the agent memory refresh above.
       }
     }
 

@@ -61,6 +61,10 @@ export const agentMemoryKeys = {
   detail: (teammateId: string) => ["agent-memory", teammateId] as const,
 };
 
+export const userMemoryKeys = {
+  detail: (teammateId: string) => ["user-memory", teammateId] as const,
+};
+
 export const agentNoteKeys = {
   list: (teammateId: string) => ["agent-notes", teammateId] as const,
   detail: (teammateId: string, noteId: string) =>

@@ -266,6 +266,33 @@ export async function generateAgentMemory(prompt: string): Promise<string> {
   return generateText(prompt, getMemoryModelName());
 }
 
+/**
+ * Like generateText, but asks Gemini to constrain output to valid JSON
+ * (rather than relying purely on prompt instructions), for callers that
+ * need to parse the response into a typed structure.
+ */
+export async function generateJsonText(
+  prompt: string,
+  modelName?: string,
+): Promise<string> {
+  const model = getGeminiClient().getGenerativeModel({
+    model: modelName ?? getDefaultModelName(),
+    generationConfig: { responseMimeType: "application/json" },
+  });
+  const result = await model.generateContent(prompt);
+  const text = result.response.text().trim();
+
+  if (!text) {
+    throw new Error("Gemini returned an empty response");
+  }
+
+  return text;
+}
+
+export async function generateUserMemory(prompt: string): Promise<string> {
+  return generateJsonText(prompt, getMemoryModelName());
+}
+
 export async function generateArchivedChatSummary(
   prompt: string,
 ): Promise<string> {

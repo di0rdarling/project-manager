@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { refreshAgentMemoryFromChatSummary } from "@/lib/agents/agent-memory-refresh";
+import { refreshUserMemoryFromChatSummary } from "@/lib/agents/user-memory-refresh";
 import {
   CHAT_CONTEXT_TOKEN_LIMIT,
   getChatContextUsage,
@@ -262,6 +263,22 @@ export async function POST(request: Request, context: RouteContext) {
       } catch {
         // Memory refresh is best-effort; the reply and chat summary already
         // succeeded, so do not fail the request if this step errors.
+      }
+
+      try {
+        await refreshUserMemoryFromChatSummary({
+          db,
+          userId: auth.userId,
+          teammateId: chatResponse.teammateId,
+          chatTitle: nextTitle,
+          conversationSummary,
+          projectId: result.chat.projectId,
+          userName,
+          updatedAt: now,
+        });
+      } catch {
+        // Also best-effort, and independent of the agent memory refresh
+        // above — one failing should not prevent the other from updating.
       }
     }
 

@@ -10,6 +10,9 @@ type DeleteAISummaryModalProps = {
   error: Error | null;
   onClose: () => void;
   onConfirm: () => void;
+  title?: string;
+  confirmLabel?: string;
+  pendingLabel?: string;
 };
 
 export function DeleteAISummaryModal({
@@ -19,6 +22,9 @@ export function DeleteAISummaryModal({
   error,
   onClose,
   onConfirm,
+  title = "Delete summary",
+  confirmLabel = "Delete summary",
+  pendingLabel = "Deleting...",
 }: Readonly<DeleteAISummaryModalProps>) {
   function handleClose() {
     if (isPending) {
@@ -31,7 +37,7 @@ export function DeleteAISummaryModal({
   const formError = error instanceof Error ? error.message : null;
 
   return (
-    <Modal open={open} onClose={handleClose} title="Delete summary" size="narrow">
+    <Modal open={open} onClose={handleClose} title={title} size="narrow">
       <p className="text-sm text-zinc-600 dark:text-zinc-400">{description}</p>
 
       {formError ? (
@@ -53,7 +59,7 @@ export function DeleteAISummaryModal({
           onClick={onConfirm}
           disabled={isPending}
         >
-          {isPending ? "Deleting..." : "Delete summary"}
+          {isPending ? pendingLabel : confirmLabel}
         </Button>
       </div>
     </Modal>

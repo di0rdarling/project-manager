@@ -64,7 +64,7 @@ function formatProjectContext(
   return sections.join("\n");
 }
 
-function formatChatSummaries(
+export function formatChatSummaries(
   chatSummaries: TeammateChatSummary[],
   generatedAt: Date,
 ): string {
