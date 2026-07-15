@@ -1,4 +1,5 @@
 import GoogleTag from "@/components/analytics/GoogleTag";
+import PostHogProvider from "@/components/analytics/PostHogProvider";
 
 export default function PublicLayout({
   children,
@@ -6,9 +7,9 @@ export default function PublicLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <>
+    <PostHogProvider>
       <GoogleTag />
       {children}
-    </>
+    </PostHogProvider>
   );
 }
