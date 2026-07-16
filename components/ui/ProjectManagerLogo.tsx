@@ -23,24 +23,14 @@ export function ProjectManagerLogo({ className }: Readonly<ProjectManagerLogoPro
     >
       <title>Project Manager</title>
       <style>{`
-        .pmlogo-back { fill: #a1a1aa; }
-        .pmlogo-mid { fill: #71717a; }
-        .pmlogo-front { fill: #18181b; }
-        .pmlogo-line { stroke: white; }
-        .pmlogo-dot-o { fill: #18181b; }
+        .pmlogo-back { fill: #3f3f46; }
+        .pmlogo-mid { fill: #52525b; }
+        .pmlogo-front { fill: #fafafa; }
+        .pmlogo-line { stroke: #18181b; }
+        .pmlogo-dot-o { fill: #fafafa; }
         .pmlogo-dot-m { fill: #71717a; }
-        .pmlogo-dot-i { fill: white; }
-        .pmlogo-manager-text { fill: #52525b; }
-        @media (prefers-color-scheme: dark) {
-          .pmlogo-back { fill: #3f3f46; }
-          .pmlogo-mid { fill: #52525b; }
-          .pmlogo-front { fill: #fafafa; }
-          .pmlogo-line { stroke: #18181b; }
-          .pmlogo-dot-o { fill: #fafafa; }
-          .pmlogo-dot-m { fill: #71717a; }
-          .pmlogo-dot-i { fill: #fafafa; }
-          .pmlogo-manager-text { fill: #d4d4d8; }
-        }
+        .pmlogo-dot-i { fill: #fafafa; }
+        .pmlogo-manager-text { fill: #d4d4d8; }
       `}</style>
 
       {/* Back layer */}

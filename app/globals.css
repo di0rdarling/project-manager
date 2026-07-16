@@ -1,8 +1,10 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 @theme inline {
@@ -12,11 +14,8 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
@@ -86,14 +85,14 @@ body {
 }
 
 .tiptap-editor blockquote {
-  border-left: 3px solid #d4d4d8;
-  color: #52525b;
+  border-left: 3px solid #52525b;
+  color: #a1a1aa;
   margin: 0.75em 0;
   padding-left: 0.75rem;
 }
 
 .tiptap-editor code {
-  background: #f4f4f5;
+  background: #27272a;
   border-radius: 0.25rem;
   font-family: var(--font-mono), monospace;
   font-size: 0.875em;
@@ -101,7 +100,7 @@ body {
 }
 
 .tiptap-editor pre {
-  background: #f4f4f5;
+  background: #27272a;
   border-radius: 0.5rem;
   margin: 0.75em 0;
   overflow-x: auto;
@@ -115,7 +114,8 @@ body {
 
 .tiptap-editor mark,
 .tiptap-content mark {
-  background-color: #fef08a;
+  background-color: #854d0e;
+  color: #fef9c3;
   border-radius: 0.125rem;
   padding: 0 0.125rem;
 }
@@ -180,16 +180,9 @@ body {
 
 .tiptap-editor a,
 .tiptap-content a {
-  color: #2563eb;
+  color: #60a5fa;
   text-decoration: underline;
   text-underline-offset: 2px;
-}
-
-@media (prefers-color-scheme: dark) {
-  .tiptap-editor a,
-  .tiptap-content a {
-    color: #60a5fa;
-  }
 }
 
 .tiptap-content s {
@@ -197,14 +190,14 @@ body {
 }
 
 .tiptap-content blockquote {
-  border-left: 3px solid #d4d4d8;
-  color: #52525b;
+  border-left: 3px solid #52525b;
+  color: #a1a1aa;
   margin: 0.75em 0;
   padding-left: 0.75rem;
 }
 
 .tiptap-content code {
-  background: #f4f4f5;
+  background: #27272a;
   border-radius: 0.25rem;
   font-family: var(--font-mono), monospace;
   font-size: 0.875em;
@@ -212,7 +205,7 @@ body {
 }
 
 .tiptap-content pre {
-  background: #f4f4f5;
+  background: #27272a;
   border-radius: 0.5rem;
   margin: 0.75em 0;
   overflow-x: auto;
@@ -235,7 +228,7 @@ body {
 .tiptap-content td,
 .tiptap-editor th,
 .tiptap-editor td {
-  border: 1px solid #d4d4d8;
+  border: 1px solid #3f3f46;
   padding: 0.5rem 0.75rem;
   text-align: left;
   vertical-align: top;
@@ -243,7 +236,7 @@ body {
 
 .tiptap-content th,
 .tiptap-editor th {
-  background: #f4f4f5;
+  background: #27272a;
   font-weight: 600;
 }
 
@@ -309,14 +302,14 @@ body {
 }
 
 .markdown-content blockquote {
-  border-left: 3px solid #d4d4d8;
-  color: #52525b;
+  border-left: 3px solid #52525b;
+  color: #a1a1aa;
   margin: 0.75em 0;
   padding-left: 0.75rem;
 }
 
 .markdown-content code {
-  background: #f4f4f5;
+  background: #27272a;
   border-radius: 0.25rem;
   font-family: var(--font-mono), monospace;
   font-size: 0.875em;
@@ -324,7 +317,7 @@ body {
 }
 
 .markdown-content pre {
-  background: #f4f4f5;
+  background: #27272a;
   border-radius: 0.5rem;
   margin: 0.75em 0;
   overflow-x: auto;
@@ -354,28 +347,28 @@ body {
 
 .markdown-content th,
 .markdown-content td {
-  border: 1px solid #d4d4d8;
+  border: 1px solid #3f3f46;
   padding: 0.5rem 0.75rem;
   text-align: left;
   vertical-align: top;
 }
 
 .markdown-content th {
-  background: #f4f4f5;
+  background: #27272a;
   font-weight: 600;
 }
 
 .markdown-content-inverted blockquote {
-  border-left-color: #a1a1aa;
-  color: #d4d4d8;
+  border-left-color: #71717a;
+  color: #52525b;
 }
 
 .markdown-content-inverted code {
-  background: rgb(255 255 255 / 0.15);
+  background: rgb(0 0 0 / 0.08);
 }
 
 .markdown-content-inverted pre {
-  background: rgb(255 255 255 / 0.1);
+  background: rgb(0 0 0 / 0.06);
 }
 
 .markdown-content-inverted a {
@@ -383,92 +376,12 @@ body {
 }
 
 .markdown-content-inverted th {
-  background: rgb(255 255 255 / 0.12);
+  background: rgb(0 0 0 / 0.08);
 }
 
 .markdown-content-inverted th,
 .markdown-content-inverted td {
-  border-color: rgb(255 255 255 / 0.2);
-}
-
-@media (prefers-color-scheme: dark) {
-  .tiptap-editor blockquote,
-  .tiptap-content blockquote {
-    border-left-color: #52525b;
-    color: #a1a1aa;
-  }
-
-  .tiptap-editor code,
-  .tiptap-content code {
-    background: #27272a;
-  }
-
-  .tiptap-editor pre,
-  .tiptap-content pre {
-    background: #27272a;
-  }
-
-  .tiptap-content th,
-  .tiptap-editor th {
-    background: #27272a;
-  }
-
-  .tiptap-content th,
-  .tiptap-content td,
-  .tiptap-editor th,
-  .tiptap-editor td {
-    border-color: #3f3f46;
-  }
-
-  .tiptap-editor mark,
-  .tiptap-content mark {
-    background-color: #854d0e;
-    color: #fef9c3;
-  }
-
-  .markdown-content blockquote {
-    border-left-color: #52525b;
-    color: #a1a1aa;
-  }
-
-  .markdown-content code {
-    background: #27272a;
-  }
-
-  .markdown-content pre {
-    background: #27272a;
-  }
-
-  .markdown-content th {
-    background: #27272a;
-  }
-
-  .markdown-content th,
-  .markdown-content td {
-    border-color: #3f3f46;
-  }
-
-  .markdown-content-inverted blockquote {
-    border-left-color: #71717a;
-    color: #52525b;
-  }
-
-  .markdown-content-inverted code {
-    background: rgb(0 0 0 / 0.08);
-  }
-
-  .markdown-content-inverted pre {
-    background: rgb(0 0 0 / 0.06);
-  }
-
-  .markdown-content-inverted th {
-    background: rgb(0 0 0 / 0.08);
-  }
-
-  .markdown-content-inverted th,
-  .markdown-content-inverted td {
-    border-color: rgb(0 0 0 / 0.12);
-  }
+  border-color: rgb(0 0 0 / 0.12);
 }
 
 .note-toc-content h1,
@@ -494,7 +407,7 @@ body {
 
 .note-toc-link {
   border-left: 2px solid transparent;
-  color: #52525b;
+  color: #a1a1aa;
   display: block;
   font-size: 0.875rem;
   line-height: 1.4;
@@ -503,24 +416,12 @@ body {
   transition: color 150ms ease, border-color 150ms ease;
 }
 
-.note-toc-link:hover {
-  color: #18181b;
+.note-toc-link:hover,
+.note-toc-link-active {
+  border-left-color: #fafafa;
+  color: #fafafa;
 }
 
 .note-toc-link-active {
-  border-left-color: #18181b;
-  color: #18181b;
   font-weight: 600;
-}
-
-@media (prefers-color-scheme: dark) {
-  .note-toc-link {
-    color: #a1a1aa;
-  }
-
-  .note-toc-link:hover,
-  .note-toc-link-active {
-    border-left-color: #fafafa;
-    color: #fafafa;
-  }
 }

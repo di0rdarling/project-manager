@@ -1,28 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" role="img" aria-label="Project Manager">
   <title>Project Manager</title>
-  <style>
-    @media (prefers-color-scheme: dark) {
-      .back  { fill: #3f3f46; }
-      .mid   { fill: #52525b; }
-      .front { fill: #fafafa; }
-      .l1    { stroke: #18181b; }
-      .l2    { stroke: #18181b; }
-      .dot-o { fill: #fafafa; }
-      .dot-m { fill: #71717a; }
-      .dot-i { fill: #fafafa; }
-    }
-  </style>
   <!-- Back layer -->
-  <rect class="back"  x="10" y="10" width="16" height="13" rx="2.5" fill="#a1a1aa"/>
+  <rect x="10" y="10" width="16" height="13" rx="2.5" fill="#3f3f46"/>
   <!-- Mid layer -->
-  <rect class="mid"   x="7"  y="7"  width="16" height="13" rx="2.5" fill="#71717a"/>
+  <rect x="7" y="7" width="16" height="13" rx="2.5" fill="#52525b"/>
   <!-- Front layer -->
-  <rect class="front" x="4"  y="4"  width="16" height="13" rx="2.5" fill="#18181b"/>
+  <rect x="4" y="4" width="16" height="13" rx="2.5" fill="#fafafa"/>
   <!-- Lines -->
-  <line class="l1" x1="7.5" y1="9"  x2="17"  y2="9"  stroke="white" stroke-width="2" stroke-linecap="round"/>
-  <line class="l2" x1="7.5" y1="13" x2="14"  y2="13" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <line x1="7.5" y1="9" x2="17" y2="9" stroke="#18181b" stroke-width="2" stroke-linecap="round"/>
+  <line x1="7.5" y1="13" x2="14" y2="13" stroke="#18181b" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
   <!-- AI dot -->
-  <circle class="dot-o" cx="23" cy="23" r="5"   fill="#18181b"/>
-  <circle class="dot-m" cx="23" cy="23" r="3.2" fill="#71717a"/>
-  <circle class="dot-i" cx="23" cy="23" r="1.5" fill="white"/>
+  <circle cx="23" cy="23" r="5" fill="#fafafa"/>
+  <circle cx="23" cy="23" r="3.2" fill="#71717a"/>
+  <circle cx="23" cy="23" r="1.5" fill="#fafafa"/>
 </svg>
