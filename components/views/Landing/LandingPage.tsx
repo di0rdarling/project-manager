@@ -436,7 +436,7 @@ const MOCK_TEAMMATES = [
 
 function AIChatsDetailMockup() {
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl ring-1 ring-zinc-900/10 dark:border-zinc-700 dark:bg-zinc-900 dark:ring-white/10">
+    <div className="w-[60rem] overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl ring-1 ring-zinc-900/10 dark:border-zinc-700 dark:bg-zinc-900 dark:ring-white/10">
       <div className="flex h-[40rem]">
         {/* Sidebar */}
         <aside className="flex w-56 shrink-0 flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
@@ -752,9 +752,13 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
-            {/* Hero mockup — fixed large width, overflows right like a product screenshot */}
-            <div className="mx-auto mt-16 flex max-w-2xl sm:mt-24 lg:mt-0 lg:mr-0 lg:ml-10 lg:max-w-none lg:flex-none xl:ml-32">
-              <ProjectDetailMockup />
+            {/* Hero mockup — fixed large width. Scaled down via `zoom` to fit fully on
+                mobile/tablet screens; at lg+ it reverts to full size and intentionally
+                overflows right like a product screenshot bleeding off the edge. */}
+            <div className="mx-auto mt-16 flex max-w-2xl justify-center sm:mt-24 lg:mt-0 lg:mr-0 lg:ml-10 lg:max-w-none lg:flex-none lg:justify-start xl:ml-32">
+              <div className="[zoom:0.23] sm:[zoom:0.4] md:[zoom:0.52] lg:[zoom:1]">
+                <ProjectDetailMockup />
+              </div>
             </div>
           </div>
         </div>
@@ -824,8 +828,10 @@ export default function LandingPage() {
           </div>
           <div className="relative overflow-hidden pt-16">
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
-              <div className="mb-[-12%]">
-                <AIChatsDetailMockup />
+              <div className="mb-[-12%] flex justify-center lg:justify-start">
+                <div className="[zoom:0.28] sm:[zoom:0.45] md:[zoom:0.6] lg:[zoom:1]">
+                  <AIChatsDetailMockup />
+                </div>
               </div>
               <div aria-hidden="true" className="relative">
                 <div className="absolute -inset-x-20 bottom-0 bg-linear-to-t from-white pt-[7%] dark:from-zinc-950" />
