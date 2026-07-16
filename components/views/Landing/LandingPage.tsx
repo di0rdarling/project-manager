@@ -928,7 +928,7 @@ export default function LandingPage() {
           <BackgroundGrid />
           <GradientBlob className="absolute top-10 left-[calc(50%-4rem)] -z-10 transform-gpu blur-3xl sm:left-[calc(50%-18rem)] lg:top-[calc(50%-30rem)] lg:left-48 xl:left-[calc(50%-24rem)]" />
 
-          <div className="mx-auto max-w-7xl px-6 pt-10 pb-24 sm:pb-32 lg:flex lg:px-8 lg:py-40">
+          <div className="mx-auto max-w-7xl px-6 pt-10 pb-10 lg:flex">
             <div className="mx-auto max-w-2xl shrink-0 lg:mx-0 lg:pt-8">
               <div className="mt-2 sm:mt-32 lg:mt-16">
                 <a
