@@ -13,6 +13,7 @@ import {
 import {
   ArrowLeftIcon,
   ArrowRightOnRectangleIcon,
+  Bars3Icon,
   BookOpenIcon,
   ChatBubbleLeftRightIcon,
   ClipboardDocumentListIcon,
@@ -182,7 +183,7 @@ function ProjectDetailMockup() {
               Project Manager
             </p>
             <p className="mt-0.5 truncate text-[11px] text-zinc-500 dark:text-zinc-400">
-              Acme Onboarding Redesign
+              Onboarding Redesign
             </p>
           </div>
 
@@ -209,7 +210,7 @@ function ProjectDetailMockup() {
 
           <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
             <p className="mb-2 truncate px-1 text-[11px] text-zinc-500 dark:text-zinc-400">
-              design@acme.io
+              you@example.com
             </p>
             <div className="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
               <ArrowRightOnRectangleIcon className="size-4 shrink-0" aria-hidden />
@@ -231,7 +232,7 @@ function ProjectDetailMockup() {
             <div className="space-y-2">
               <div className="flex items-start justify-between gap-3">
                 <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                  Acme Onboarding Redesign
+                  Onboarding Redesign
                 </h2>
                 <div className="mt-0.5 shrink-0 rounded p-1.5 text-zinc-400 dark:text-zinc-500">
                   <PencilIcon className="size-4" aria-hidden />
@@ -361,6 +362,153 @@ function ProjectDetailMockup() {
   );
 }
 
+/**
+ * Purpose-built mobile rendition of the hero mockup, shown below the `sm`
+ * breakpoint instead of a shrunk clone of the desktop mockup (which becomes
+ * illegible once scaled down to phone width). Mirrors the same content in a
+ * single-column layout matching how the real app renders on mobile.
+ */
+function ProjectDetailMockupMobile() {
+  return (
+    <div className="w-[20rem] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl ring-1 ring-zinc-900/10 dark:border-zinc-700 dark:bg-zinc-900 dark:ring-white/10">
+      {/* Mobile top bar */}
+      <div className="flex items-center gap-3 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+        <Bars3Icon className="size-5 shrink-0 text-zinc-500 dark:text-zinc-400" aria-hidden />
+        <p className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white">
+          Project Manager
+        </p>
+      </div>
+
+      <div className="space-y-5 p-4">
+        {/* Back link */}
+        <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+          <ArrowLeftIcon className="size-3.5 shrink-0" aria-hidden />
+          Back to projects
+        </div>
+
+        {/* Project header */}
+        <div className="space-y-1.5">
+          <div className="flex items-start justify-between gap-2">
+            <h2 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
+              Onboarding Redesign
+            </h2>
+            <PencilIcon
+              className="mt-0.5 size-4 shrink-0 text-zinc-400 dark:text-zinc-500"
+              aria-hidden
+            />
+          </div>
+          <p className="text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+            Redesigning the core user onboarding flow to reduce drop-off and
+            improve time-to-value.
+          </p>
+        </div>
+
+        {/* AI Summary */}
+        <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3.5 dark:border-zinc-800 dark:bg-zinc-800/40">
+          <div className="mb-2 flex items-center gap-1.5">
+            <SparklesIcon
+              className="size-3.5 shrink-0 text-indigo-500 dark:text-indigo-400"
+              aria-hidden
+            />
+            <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+              AI Summary
+            </span>
+          </div>
+          <p className="text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+            Priority: simplify auth, add OAuth, and provide a guided wizard
+            with visible progress.
+          </p>
+        </div>
+
+        {/* Requirements section (condensed) */}
+        <div>
+          <div className="mb-2.5 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <ClipboardDocumentListIcon
+                className="size-4 shrink-0 text-zinc-700 dark:text-zinc-300"
+                aria-hidden
+              />
+              <span className="text-sm font-semibold text-zinc-900 dark:text-white">
+                Requirements
+              </span>
+              <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                {MOCK_REQUIREMENTS.length}
+              </span>
+            </div>
+            <PlusIcon
+              className="size-4 shrink-0 text-zinc-400 dark:text-zinc-500"
+              aria-hidden
+            />
+          </div>
+          <div className="space-y-2">
+            {MOCK_REQUIREMENTS.slice(0, 2).map((req, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-2 rounded-lg border border-zinc-200 bg-zinc-50/50 px-3 py-2.5 dark:border-zinc-800 dark:bg-zinc-800/20"
+              >
+                <span className="mt-1 size-1.5 shrink-0 rounded-full bg-zinc-400 dark:bg-zinc-500" />
+                <p className="text-xs leading-relaxed text-zinc-700 dark:text-zinc-300">
+                  {req}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Features section (condensed) */}
+        <div>
+          <div className="mb-2.5 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <PuzzlePieceIcon
+                className="size-4 shrink-0 text-zinc-700 dark:text-zinc-300"
+                aria-hidden
+              />
+              <span className="text-sm font-semibold text-zinc-900 dark:text-white">
+                Features
+              </span>
+              <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                {MOCK_FEATURES.length}
+              </span>
+            </div>
+            <PlusIcon
+              className="size-4 shrink-0 text-zinc-400 dark:text-zinc-500"
+              aria-hidden
+            />
+          </div>
+          <div className="space-y-2">
+            {MOCK_FEATURES.slice(0, 2).map((feat) => (
+              <div
+                key={feat.name}
+                className="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2.5 dark:border-zinc-800"
+              >
+                <span
+                  className={`size-1.5 shrink-0 rounded-full ${
+                    feat.status === "in-progress"
+                      ? "bg-indigo-500"
+                      : "bg-zinc-300 dark:bg-zinc-600"
+                  }`}
+                />
+                <p className="flex-1 truncate text-xs font-medium text-zinc-800 dark:text-zinc-200">
+                  {feat.name}
+                </p>
+                <span
+                  className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                    feat.status === "in-progress"
+                      ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400"
+                      : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+                  }`}
+                >
+                  {feat.status === "in-progress" ? "In Progress" : "Planned"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Secondary Mockup: AI Chats Detail ───────────────────────────────────────
 
 const MAIN_NAV = [
@@ -373,14 +521,14 @@ const MOCK_CHATS = [
   {
     id: 1,
     title: "Requirements deep-dive",
-    project: "Acme Onboarding",
+    project: "Onboarding Redesign",
     ago: "3m ago",
     active: true,
   },
   {
     id: 2,
     title: "Sprint prioritization",
-    project: "Acme Onboarding",
+    project: "Onboarding Redesign",
     ago: "Yesterday",
     active: false,
   },
@@ -394,7 +542,7 @@ const MOCK_CHATS = [
   {
     id: 4,
     title: "Onboarding copy audit",
-    project: "Acme Onboarding",
+    project: "Onboarding Redesign",
     ago: "Jul 7",
     active: false,
   },
@@ -464,7 +612,7 @@ function AIChatsDetailMockup() {
 
           <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
             <p className="mb-2 truncate px-1 text-[11px] text-zinc-500 dark:text-zinc-400">
-              design@acme.io
+              you@example.com
             </p>
             <div className="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
               <ArrowRightOnRectangleIcon className="size-4 shrink-0" aria-hidden />
@@ -560,7 +708,7 @@ function AIChatsDetailMockup() {
                 Requirements deep-dive
               </p>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Sandy · Business Analyst · Acme Onboarding Redesign
+                Sandy · Business Analyst · Onboarding Redesign
               </p>
             </div>
           </div>
@@ -618,12 +766,85 @@ function AIChatsDetailMockup() {
           <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
             <div className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800">
               <p className="flex-1 text-sm text-zinc-400 dark:text-zinc-500">
-                Ask Sandy anything about Acme Onboarding...
+                Ask Sandy anything about onboarding...
               </p>
               <div className="flex size-7 items-center justify-center rounded-lg bg-zinc-900 dark:bg-white">
                 <PaperAirplaneIcon className="size-3.5 text-white dark:text-zinc-900" aria-hidden />
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Purpose-built mobile rendition of the AI Chats mockup, shown below the `sm`
+ * breakpoint instead of a shrunk clone of the desktop mockup. Focuses on the
+ * active chat detail — the single most compelling view on a phone-sized
+ * screen — matching how the real app renders a chat on mobile.
+ */
+function AIChatsDetailMockupMobile() {
+  return (
+    <div className="w-[20rem] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl ring-1 ring-zinc-900/10 dark:border-zinc-700 dark:bg-zinc-900 dark:ring-white/10">
+      {/* Chat header */}
+      <div className="flex items-center gap-2.5 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+        <ArrowLeftIcon
+          className="size-4 shrink-0 text-zinc-500 dark:text-zinc-400"
+          aria-hidden
+        />
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-violet-600 text-[10px] font-bold text-white dark:bg-violet-500">
+          SA
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-zinc-900 dark:text-white">
+            Requirements deep-dive
+          </p>
+          <p className="truncate text-[11px] text-zinc-500 dark:text-zinc-400">
+            Sandy · Onboarding Redesign
+          </p>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="space-y-3 px-4 py-4">
+        {MOCK_MESSAGES.map((msg) => (
+          <div
+            key={msg.id}
+            className={`flex ${msg.role === "user" ? "justify-end" : "items-start gap-2"}`}
+          >
+            {msg.role === "agent" && (
+              <div
+                className={`flex size-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white ${msg.agent.color}`}
+              >
+                {msg.agent.initials}
+              </div>
+            )}
+            <div
+              className={`max-w-[80%] rounded-xl px-3 py-2 ${
+                msg.role === "user"
+                  ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                  : "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
+              }`}
+            >
+              <p className="text-xs leading-relaxed">{msg.text}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Input area */}
+      <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
+        <div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800">
+          <p className="flex-1 truncate text-xs text-zinc-400 dark:text-zinc-500">
+            Ask Sandy anything...
+          </p>
+          <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-zinc-900 dark:bg-white">
+            <PaperAirplaneIcon
+              className="size-3 text-white dark:text-zinc-900"
+              aria-hidden
+            />
           </div>
         </div>
       </div>
@@ -710,15 +931,18 @@ export default function LandingPage() {
           <div className="mx-auto max-w-7xl px-6 pt-10 pb-24 sm:pb-32 lg:flex lg:px-8 lg:py-40">
             <div className="mx-auto max-w-2xl shrink-0 lg:mx-0 lg:pt-8">
               <div className="mt-24 sm:mt-32 lg:mt-16">
-                <a href="#features" className="inline-flex space-x-6">
-                  <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm/6 font-semibold text-zinc-700 ring-1 ring-inset ring-zinc-900/10 dark:bg-white/10 dark:text-zinc-200 dark:ring-white/20">
+                <a
+                  href="#features"
+                  className="inline-flex flex-wrap items-center gap-x-3 gap-y-2"
+                >
+                  <span className="shrink-0 rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700 ring-1 ring-inset ring-zinc-900/10 sm:text-sm/6 dark:bg-white/10 dark:text-zinc-200 dark:ring-white/20">
                     New Release
                   </span>
-                  <span className="inline-flex items-center space-x-2 text-sm/6 font-medium text-gray-600 dark:text-gray-300">
+                  <span className="inline-flex items-center gap-x-1.5 text-xs font-medium text-gray-600 sm:gap-x-2 sm:text-sm/6 dark:text-gray-300">
                     <span>AI-powered project intelligence is here</span>
                     <ChevronRightIcon
                       aria-hidden="true"
-                      className="size-5 text-gray-400 dark:text-gray-500"
+                      className="size-4 shrink-0 text-gray-400 sm:size-5 dark:text-gray-500"
                     />
                   </span>
                 </a>
@@ -752,11 +976,17 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
-            {/* Hero mockup — fixed large width. Scaled down via `zoom` to fit fully on
-                mobile/tablet screens; at lg+ it reverts to full size and intentionally
-                overflows right like a product screenshot bleeding off the edge. */}
+            {/* Hero mockup. Below `sm` we show a purpose-built, full-size mobile
+                mockup instead of shrinking the desktop version (which becomes
+                illegible at phone widths). From `sm` up, the desktop mockup is
+                scaled down via `zoom` to fit, then reverts to full size at `lg`
+                and intentionally overflows right like a product screenshot
+                bleeding off the edge. */}
             <div className="mx-auto mt-16 flex max-w-2xl justify-center sm:mt-24 lg:mt-0 lg:mr-0 lg:ml-10 lg:max-w-none lg:flex-none lg:justify-start xl:ml-32">
-              <div className="[zoom:0.23] sm:[zoom:0.4] md:[zoom:0.52] lg:[zoom:1]">
+              <div className="sm:hidden">
+                <ProjectDetailMockupMobile />
+              </div>
+              <div className="hidden sm:block sm:[zoom:0.4] md:[zoom:0.52] lg:[zoom:1]">
                 <ProjectDetailMockup />
               </div>
             </div>
@@ -828,12 +1058,15 @@ export default function LandingPage() {
           </div>
           <div className="relative overflow-hidden pt-16">
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
-              <div className="mb-[-12%] flex justify-center lg:justify-start">
-                <div className="[zoom:0.28] sm:[zoom:0.45] md:[zoom:0.6] lg:[zoom:1]">
+              <div className="mb-10 flex justify-center sm:mb-[-12%] lg:justify-start">
+                <div className="sm:hidden">
+                  <AIChatsDetailMockupMobile />
+                </div>
+                <div className="hidden sm:block sm:[zoom:0.45] md:[zoom:0.6] lg:[zoom:1]">
                   <AIChatsDetailMockup />
                 </div>
               </div>
-              <div aria-hidden="true" className="relative">
+              <div aria-hidden="true" className="relative hidden sm:block">
                 <div className="absolute -inset-x-20 bottom-0 bg-linear-to-t from-white pt-[7%] dark:from-zinc-950" />
               </div>
             </div>
