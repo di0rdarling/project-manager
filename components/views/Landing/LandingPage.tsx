@@ -930,7 +930,7 @@ export default function LandingPage() {
 
           <div className="mx-auto max-w-7xl px-6 pt-10 pb-10 lg:flex">
             <div className="mx-auto max-w-2xl shrink-0 lg:mx-0 lg:pt-8">
-              <div className="mt-2 sm:mt-32 lg:mt-16">
+              <div className="mt-8 sm:mt-32 lg:mt-16">
                 <a
                   href="#features"
                   className="inline-flex flex-wrap items-center gap-x-3 gap-y-2"
@@ -947,7 +947,7 @@ export default function LandingPage() {
                   </span>
                 </a>
               </div>
-              <h1 className="mt-10 text-5xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-7xl dark:text-white">
+              <h1 className="mt-6 text-5xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-7xl dark:text-white">
                 Organise, Understand, Build.
               </h1>
               <p className="mt-8 text-lg font-medium text-pretty text-gray-500 sm:text-xl/8 dark:text-gray-400">
