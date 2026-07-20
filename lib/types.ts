@@ -32,6 +32,7 @@ type NoteBase<TId> = {
   userId: TId;
   projectId: TId;
   featureId: TId | null;
+  folderId: TId | null;
   title: string;
   content: string;
   createdAt: string;
@@ -40,6 +41,19 @@ type NoteBase<TId> = {
 
 export type Note = NoteBase<ObjectId>;
 export type NoteResponse = NoteBase<string>;
+
+type NoteFolderBase<TId> = {
+  _id: TId;
+  userId: TId;
+  projectId: TId;
+  parentFolderId: TId | null;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type NoteFolder = NoteFolderBase<ObjectId>;
+export type NoteFolderResponse = NoteFolderBase<string>;
 
 type AgentNoteBase<TId> = {
   _id: TId;

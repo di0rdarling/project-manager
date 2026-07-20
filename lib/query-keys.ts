@@ -12,6 +12,10 @@ export const noteKeys = {
     ["projects", projectId, "notes", noteId] as const,
 };
 
+export const noteFolderKeys = {
+  list: (projectId: string) => ["projects", projectId, "note-folders"] as const,
+};
+
 export const requirementKeys = {
   all: (projectId: string) =>
     ["projects", projectId, "requirements"] as const,

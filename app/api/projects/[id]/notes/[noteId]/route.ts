@@ -22,6 +22,7 @@ function serializeNote(note: StoredNote): NoteResponse {
     userId: note.userId.toString(),
     projectId: note.projectId.toString(),
     featureId: note.featureId ? note.featureId.toString() : null,
+    folderId: note.folderId ? note.folderId.toString() : null,
     title: typeof note.title === "string" ? note.title : "",
     content: note.content,
     createdAt: toIsoString(note.createdAt),
@@ -86,37 +87,108 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const body = await request.json();
-    const title = typeof body.title === "string" ? body.title.trim() : "";
-    const content =
-      typeof body.content === "string" ? body.content.trim() : "";
+    const hasTitle = Object.hasOwn(body, "title");
+    const hasContent = Object.hasOwn(body, "content");
+    const hasFolderId = Object.hasOwn(body, "folderId");
 
-    if (!title) {
-      return Response.json({ error: "Note title is required" }, { status: 400 });
-    }
-
-    if (isRichTextEmpty(content)) {
-      return Response.json({ error: "Note content is required" }, { status: 400 });
+    if (!hasTitle && !hasContent && !hasFolderId) {
+      return Response.json(
+        { error: "No note fields provided to update" },
+        { status: 400 },
+      );
     }
 
     const client = await getClientPromise();
-    const result = await client
-      .db()
-      .collection<StoredNote>("notes")
-      .findOneAndUpdate(
-        {
-          _id: new ObjectId(noteId),
-          projectId: new ObjectId(id),
+    const db = client.db();
+    const projectObjectId = new ObjectId(id);
+    const noteObjectId = new ObjectId(noteId);
+
+    const existingNote = await db.collection<StoredNote>("notes").findOne({
+      _id: noteObjectId,
+      projectId: projectObjectId,
+      userId: auth.userId,
+    });
+
+    if (!existingNote) {
+      return Response.json({ error: "Note not found" }, { status: 404 });
+    }
+
+    const updates: {
+      title?: string;
+      content?: string;
+      folderId?: ObjectId | null;
+      updatedAt: string;
+    } = {
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (hasTitle) {
+      const title = typeof body.title === "string" ? body.title.trim() : "";
+      if (!title) {
+        return Response.json({ error: "Note title is required" }, { status: 400 });
+      }
+      updates.title = title;
+    }
+
+    if (hasContent) {
+      const content =
+        typeof body.content === "string" ? body.content.trim() : "";
+      if (isRichTextEmpty(content)) {
+        return Response.json(
+          { error: "Note content is required" },
+          { status: 400 },
+        );
+      }
+      updates.content = content;
+    }
+
+    if (hasFolderId) {
+      if (existingNote.featureId) {
+        return Response.json(
+          { error: "Folders are only supported for project-level notes" },
+          { status: 400 },
+        );
+      }
+
+      const folderId =
+        body.folderId === null
+          ? null
+          : typeof body.folderId === "string" && body.folderId.trim()
+            ? body.folderId.trim()
+            : undefined;
+
+      if (folderId === undefined) {
+        return Response.json({ error: "Invalid folder id" }, { status: 400 });
+      }
+
+      if (folderId) {
+        if (!ObjectId.isValid(folderId)) {
+          return Response.json({ error: "Invalid folder id" }, { status: 400 });
+        }
+
+        const folder = await db.collection("noteFolders").findOne({
+          _id: new ObjectId(folderId),
+          projectId: projectObjectId,
           userId: auth.userId,
-        },
-        {
-          $set: {
-            title,
-            content,
-            updatedAt: new Date().toISOString(),
-          },
-        },
-        { returnDocument: "after" },
-      );
+        });
+
+        if (!folder) {
+          return Response.json({ error: "Folder not found" }, { status: 404 });
+        }
+      }
+
+      updates.folderId = folderId ? new ObjectId(folderId) : null;
+    }
+
+    const result = await db.collection<StoredNote>("notes").findOneAndUpdate(
+      {
+        _id: noteObjectId,
+        projectId: projectObjectId,
+        userId: auth.userId,
+      },
+      { $set: updates },
+      { returnDocument: "after" },
+    );
 
     if (!result) {
       return Response.json({ error: "Note not found" }, { status: 404 });

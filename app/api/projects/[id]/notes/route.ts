@@ -23,6 +23,7 @@ function serializeNote(note: StoredNote): NoteResponse {
     userId: note.userId.toString(),
     projectId: note.projectId.toString(),
     featureId: note.featureId ? note.featureId.toString() : null,
+    folderId: note.folderId ? note.folderId.toString() : null,
     title: typeof note.title === "string" ? note.title : "",
     content: note.content,
     createdAt: toIsoString(note.createdAt),
@@ -126,6 +127,10 @@ export async function POST(request: Request, context: RouteContext) {
       typeof body.featureId === "string" && body.featureId.trim()
         ? body.featureId.trim()
         : null;
+    const folderId =
+      typeof body.folderId === "string" && body.folderId.trim()
+        ? body.folderId.trim()
+        : null;
 
     if (!title) {
       return Response.json({ error: "Note title is required" }, { status: 400 });
@@ -135,24 +140,45 @@ export async function POST(request: Request, context: RouteContext) {
       return Response.json({ error: "Note content is required" }, { status: 400 });
     }
 
+    if (featureId && folderId) {
+      return Response.json(
+        { error: "Folders are only supported for project-level notes" },
+        { status: 400 },
+      );
+    }
+
     const projectObjectId = new ObjectId(id);
+    const db = result.client.db();
 
     if (featureId) {
       if (!ObjectId.isValid(featureId)) {
         return Response.json({ error: "Invalid feature id" }, { status: 400 });
       }
 
-      const feature = await result.client
-        .db()
-        .collection("features")
-        .findOne({
-          _id: new ObjectId(featureId),
-          projectId: projectObjectId,
-          userId: auth.userId,
-        });
+      const feature = await db.collection("features").findOne({
+        _id: new ObjectId(featureId),
+        projectId: projectObjectId,
+        userId: auth.userId,
+      });
 
       if (!feature) {
         return Response.json({ error: "Feature not found" }, { status: 404 });
+      }
+    }
+
+    if (folderId) {
+      if (!ObjectId.isValid(folderId)) {
+        return Response.json({ error: "Invalid folder id" }, { status: 400 });
+      }
+
+      const folder = await db.collection("noteFolders").findOne({
+        _id: new ObjectId(folderId),
+        projectId: projectObjectId,
+        userId: auth.userId,
+      });
+
+      if (!folder) {
+        return Response.json({ error: "Folder not found" }, { status: 404 });
       }
     }
 
@@ -161,14 +187,14 @@ export async function POST(request: Request, context: RouteContext) {
       userId: auth.userId,
       projectId: projectObjectId,
       featureId: featureId ? new ObjectId(featureId) : null,
+      folderId: folderId ? new ObjectId(folderId) : null,
       title,
       content,
       createdAt: now,
       updatedAt: now,
     };
 
-    const insertResult = await result.client
-      .db()
+    const insertResult = await db
       .collection<Omit<Note, "_id">>("notes")
       .insertOne(note);
 

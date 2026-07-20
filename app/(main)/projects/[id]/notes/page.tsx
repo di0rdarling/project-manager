@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import ProjectNotesView from "@/components/views/ProjectNotes/ProjectNotesView";
 
 type ProjectNotesPageProps = {
@@ -9,7 +10,9 @@ export default async function ProjectNotesPage({ params }: ProjectNotesPageProps
 
   return (
     <div className="flex flex-1 flex-col bg-zinc-50 font-sans dark:bg-black">
-      <ProjectNotesView projectId={id} />
+      <Suspense fallback={null}>
+        <ProjectNotesView projectId={id} />
+      </Suspense>
     </div>
   );
 }

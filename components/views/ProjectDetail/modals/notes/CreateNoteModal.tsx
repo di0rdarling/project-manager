@@ -12,6 +12,7 @@ type CreateNoteModalProps = {
   open: boolean;
   projectId: string;
   featureId?: string;
+  folderId?: string | null;
   onClose: () => void;
   onSuccess: () => void;
 };
@@ -20,6 +21,7 @@ export default function CreateNoteModal({
   open,
   projectId,
   featureId,
+  folderId = null,
   onClose,
   onSuccess,
 }: CreateNoteModalProps) {
@@ -56,6 +58,7 @@ export default function CreateNoteModal({
       title: title.trim(),
       content,
       featureId: featureId ?? null,
+      folderId: featureId ? null : folderId,
     });
   }
 

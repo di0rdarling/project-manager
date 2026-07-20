@@ -27,12 +27,13 @@ export async function createNote(input: {
   title: string;
   content: string;
   featureId?: string | null;
+  folderId?: string | null;
 }): Promise<NoteResponse> {
-  const { projectId, title, content, featureId } = input;
+  const { projectId, title, content, featureId, folderId } = input;
   const response = await fetch(`/api/projects/${projectId}/notes`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, content, featureId }),
+    body: JSON.stringify({ title, content, featureId, folderId }),
   });
 
   return parseResponse<NoteResponse>(response);
@@ -49,6 +50,21 @@ export async function updateNote(input: {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ title, content }),
+  });
+
+  return parseResponse<NoteResponse>(response);
+}
+
+export async function moveNote(input: {
+  projectId: string;
+  noteId: string;
+  folderId: string | null;
+}): Promise<NoteResponse> {
+  const { projectId, noteId, folderId } = input;
+  const response = await fetch(`/api/projects/${projectId}/notes/${noteId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ folderId }),
   });
 
   return parseResponse<NoteResponse>(response);
