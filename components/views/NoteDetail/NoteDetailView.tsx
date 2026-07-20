@@ -95,14 +95,12 @@ export default function NoteDetailView({
 
   const backHref = featureId
     ? `/projects/${projectId}/features/${featureId}`
-    : `/projects/${projectId}`;
+    : `/projects/${projectId}/notes`;
   const backLabel = featureId
     ? feature
       ? `Back to ${feature.title}`
       : "Back to feature"
-    : project
-      ? `Back to ${project.name}`
-      : "Back to project";
+    : "Back to notes";
 
   function handleStartEditing() {
     setMutationError(null);

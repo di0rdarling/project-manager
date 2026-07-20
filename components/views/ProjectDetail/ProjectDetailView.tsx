@@ -35,7 +35,6 @@ import FeatureItemsList from "./FeatureItemsList";
 import ChallengesSection from "./ChallengesSection";
 import DomainKnowledgeSection from "./DomainKnowledgeSection";
 import ProjectSection from "./ProjectSection";
-import NotesSection from "./NotesSection";
 import AIProjectSummary from "./AIProjectSummary";
 import PageContent from "@/components/layout/PageContent";
 import EditProjectModal from "../ProjectManager/modals/EditProjectModal";
@@ -357,11 +356,6 @@ export default function ProjectDetailView({
             />
           </ProjectSection>
 
-          <NotesSection
-            projectId={projectId}
-            enabled={canFetchSections}
-            sectionId="notes"
-          />
           <CreateRequirementModal
             open={isCreateRequirementModalOpen}
             projectId={projectId}

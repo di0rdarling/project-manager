@@ -18,9 +18,11 @@ import { ProjectManagerLogo } from "@/components/ui/ProjectManagerLogo";
 import { useProjectSectionNav } from "@/components/views/ProjectDetail/ProjectSectionNavContext";
 import { useFetchCurrentUser } from "@/hooks/queries/useFetchCurrentUser";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
+import { getProjectNotesPath } from "@/lib/notes";
 import {
-  getProjectDetailPathInfo,
+  getProjectPathInfo,
   PROJECT_DETAIL_SECTIONS,
+  PROJECT_NOTES_NAV,
 } from "@/lib/project-detail-sections";
 
 const navItems = [
@@ -46,11 +48,18 @@ export default function NavigationSidebar({
   const queryClient = useQueryClient();
   const { data: currentUser } = useFetchCurrentUser();
   const projectSectionNav = useProjectSectionNav();
-  const projectPathInfo = getProjectDetailPathInfo(pathname);
-  const isProjectDetailPage = projectPathInfo !== null;
+  const projectPathInfo = getProjectPathInfo(pathname);
+  const showProjectSidebar = projectPathInfo !== null;
+  const isProjectDetailPage = projectPathInfo?.isDetailPage ?? false;
   const { data: project } = useFetchProject(projectPathInfo?.projectId ?? "", {
-    enabled: isProjectDetailPage,
+    enabled: showProjectSidebar,
   });
+
+  useEffect(() => {
+    if (!showProjectSidebar) {
+      projectSectionNav?.resetActiveSection();
+    }
+  }, [showProjectSidebar, projectSectionNav]);
 
   useEffect(() => {
     if (!isProjectDetailPage) {
@@ -69,6 +78,18 @@ export default function NavigationSidebar({
     router.refresh();
   }
 
+  const projectId = projectPathInfo?.projectId ?? "";
+  const notesHref = getProjectNotesPath(projectId);
+  const projectHref = `/projects/${projectId}`;
+  const NotesIcon = PROJECT_NOTES_NAV.icon;
+
+  const navLinkClassName = (isActive: boolean) =>
+    `cursor-pointer flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+      isActive
+        ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50"
+        : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
+    }`;
+
   return (
     <aside
       id={id}
@@ -79,7 +100,7 @@ export default function NavigationSidebar({
     >
       <div className="border-b border-zinc-200 px-4 py-5 dark:border-zinc-800">
         <ProjectManagerLogo className="h-9 w-auto" />
-        {isProjectDetailPage && project?.name ? (
+        {showProjectSidebar && project?.name ? (
           <p className="mt-1 truncate text-xs text-zinc-500 dark:text-zinc-400">
             {project.name}
           </p>
@@ -88,9 +109,9 @@ export default function NavigationSidebar({
 
       <div className="relative min-h-0 flex-1 overflow-hidden">
         <nav
-          aria-hidden={isProjectDetailPage}
+          aria-hidden={showProjectSidebar}
           className={`absolute inset-0 flex flex-col gap-1 overflow-y-auto p-3 transition-all duration-200 ease-out ${
-            isProjectDetailPage
+            showProjectSidebar
               ? "pointer-events-none -translate-x-3 opacity-0"
               : "translate-x-0 opacity-100"
           }`}
@@ -106,11 +127,7 @@ export default function NavigationSidebar({
                 key={href}
                 href={href}
                 onClick={onNavigate}
-                className={`cursor-pointer flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
-                  isActive
-                    ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50"
-                    : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
-                }`}
+                className={navLinkClassName(isActive)}
               >
                 <Icon className="size-5 shrink-0" aria-hidden />
                 {label}
@@ -120,9 +137,9 @@ export default function NavigationSidebar({
         </nav>
 
         <nav
-          aria-hidden={!isProjectDetailPage}
+          aria-hidden={!showProjectSidebar}
           className={`absolute inset-0 flex flex-col gap-1 overflow-y-auto p-3 transition-all duration-200 ease-out ${
-            isProjectDetailPage
+            showProjectSidebar
               ? "translate-x-0 opacity-100"
               : "pointer-events-none translate-x-3 opacity-0"
           }`}
@@ -139,27 +156,48 @@ export default function NavigationSidebar({
           <div className="my-1 border-t border-zinc-200 dark:border-zinc-800" />
 
           {PROJECT_DETAIL_SECTIONS.map(({ id, title, icon: Icon }) => {
-            const isActive = projectSectionNav?.activeSectionId === id;
+            const isActive =
+              isProjectDetailPage &&
+              projectSectionNav?.activeSectionId === id;
+
+            if (isProjectDetailPage) {
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => {
+                    projectSectionNav?.navigateToSection(id);
+                    onNavigate?.();
+                  }}
+                  className={`${navLinkClassName(isActive)} text-left`}
+                >
+                  <Icon className="size-5 shrink-0" aria-hidden />
+                  {title}
+                </button>
+              );
+            }
 
             return (
-              <button
+              <Link
                 key={id}
-                type="button"
-                onClick={() => {
-                  projectSectionNav?.navigateToSection(id);
-                  onNavigate?.();
-                }}
-                className={`cursor-pointer flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition ${
-                  isActive
-                    ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50"
-                    : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
-                }`}
+                href={projectHref}
+                onClick={onNavigate}
+                className={navLinkClassName(false)}
               >
                 <Icon className="size-5 shrink-0" aria-hidden />
                 {title}
-              </button>
+              </Link>
             );
           })}
+
+          <Link
+            href={notesHref}
+            onClick={onNavigate}
+            className={navLinkClassName(projectPathInfo?.isNotesRoute ?? false)}
+          >
+            <NotesIcon className="size-5 shrink-0" aria-hidden />
+            {PROJECT_NOTES_NAV.title}
+          </Link>
         </nav>
       </div>
 

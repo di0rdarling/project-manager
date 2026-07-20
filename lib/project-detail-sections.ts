@@ -19,8 +19,7 @@ export type ProjectDetailSectionId =
   | "domain-knowledge"
   | "requirements"
   | "features"
-  | "tools"
-  | "notes";
+  | "tools";
 
 type HeroIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -47,16 +46,35 @@ export const PROJECT_DETAIL_SECTIONS: readonly ProjectDetailSection[] = [
   },
   { id: "features", title: "Features", icon: PuzzlePieceIcon },
   { id: "tools", title: "Tools", icon: WrenchScrewdriverIcon },
-  { id: "notes", title: "Notes", icon: DocumentTextIcon },
 ] as const;
 
-const PROJECT_DETAIL_PATH_PATTERN = /^\/projects\/([^/]+)$/;
+export const PROJECT_NOTES_NAV = {
+  title: "Notes",
+  icon: DocumentTextIcon,
+} as const;
 
-export function getProjectDetailPathInfo(pathname: string) {
-  const match = pathname.match(PROJECT_DETAIL_PATH_PATTERN);
+const PROJECT_PATH_PATTERN = /^\/projects\/([^/]+)(?:\/(.+))?$/;
+
+export function getProjectPathInfo(pathname: string) {
+  const match = pathname.match(PROJECT_PATH_PATTERN);
   if (!match) {
     return null;
   }
 
-  return { projectId: match[1] };
+  const projectId = match[1];
+  const rest = match[2] ?? "";
+  const isNotesRoute = rest === "notes" || rest.startsWith("notes/");
+  const isFeatureRoute = rest.startsWith("features/");
+  const showProjectSidebar = rest === "" || isNotesRoute;
+
+  if (!showProjectSidebar) {
+    return null;
+  }
+
+  return {
+    projectId,
+    isDetailPage: rest === "",
+    isNotesRoute,
+    isFeatureRoute,
+  };
 }
