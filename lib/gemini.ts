@@ -309,9 +309,10 @@ export async function generateAgentTasks(prompt: string): Promise<string> {
  */
 export async function generateAgentTaskOutput(
   prompt: string,
+  modelName?: string,
 ): Promise<FunctionCall> {
   const model = getGeminiClient().getGenerativeModel({
-    model: getMemoryModelName(),
+    model: modelName ?? getMemoryModelName(),
     tools: [{ functionDeclarations: [CREATE_AGENT_DOCUMENT_TOOL] }],
     toolConfig: CREATE_AGENT_DOCUMENT_TOOL_CONFIG,
   });

@@ -98,3 +98,16 @@ export async function createAgentDocument(
 
   return serializeAgentDocument({ ...document, _id: insertResult.insertedId });
 }
+
+export async function deleteAgentDocument(
+  db: Db,
+  userId: ObjectId,
+  teammateId: ChatTeammateId,
+  documentId: ObjectId,
+): Promise<boolean> {
+  const result = await db
+    .collection(AGENT_DOCUMENTS_COLLECTION)
+    .deleteOne({ _id: documentId, userId, teammateId });
+
+  return result.deletedCount > 0;
+}

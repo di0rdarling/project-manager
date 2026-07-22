@@ -21,6 +21,7 @@ import { useUpdateAgentTaskStatus } from "@/hooks/mutations/chats/useUpdateAgent
 import { useFetchAgentTasks } from "@/hooks/queries/useFetchAgentTasks";
 import { getAgentTaskStatus, getAgentTaskStatusBadgeClassName, getAgentTaskStatusLabel, getAgentTaskProjectBadgeClassName, getAgentTaskProjectName, canGenerateAgentTasks, canAcceptAgentTask, getAcceptedAgentTasks } from "@/lib/agents/agent-tasks";
 import { parseAgentProfileNavigationContext } from "@/lib/chats/agent-profile-navigation";
+import type { StartAgentTaskOutputInput } from "@/lib/api/agent-tasks";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type { AgentTask } from "@/lib/types";
 
@@ -151,17 +152,18 @@ export default function AgentTasks({
     });
   }
 
-  function handleStartTaskOutput(regenerate = false) {
+  function handleStartTaskOutput(input: StartAgentTaskOutputInput) {
     if (!projectId || !selectedTask) {
       return;
     }
 
-    isRegeneratingOutputRef.current = regenerate;
+    isRegeneratingOutputRef.current = input.regenerate;
     startTaskOutputMutation.mutate({
       teammateId,
       projectId,
       taskTitle: selectedTask.title,
-      regenerate,
+      regenerate: input.regenerate,
+      modelId: input.modelId,
     });
   }
 

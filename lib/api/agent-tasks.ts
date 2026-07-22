@@ -1,4 +1,5 @@
 import type { AgentTaskStatus, AgentTasksResponse } from "@/lib/types";
+import type { ChatModelId } from "@/lib/chats/chat-models";
 import { parseResponse } from "@/lib/api/response";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 
@@ -12,9 +13,15 @@ export type UpdateAgentTaskStatusRequest = AgentTasksRequest & {
   status: Exclude<AgentTaskStatus, "pending">;
 };
 
+export type StartAgentTaskOutputInput = {
+  regenerate: boolean;
+  modelId: ChatModelId;
+};
+
 export type StartAgentTaskOutputRequest = AgentTasksRequest & {
   taskTitle: string;
   regenerate?: boolean;
+  modelId?: ChatModelId;
 };
 
 function getAgentTasksUrl({ teammateId, projectId }: AgentTasksRequest): string {
@@ -73,11 +80,15 @@ export async function updateAgentTaskStatusRequest(
 export async function startAgentTaskOutputRequest(
   input: StartAgentTaskOutputRequest,
 ): Promise<AgentTasksResponse> {
-  const { taskTitle, regenerate, ...request } = input;
+  const { taskTitle, regenerate, modelId, ...request } = input;
   const response = await fetch(getAgentTaskOutputUrl(request), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ taskTitle, regenerate: regenerate ?? false }),
+    body: JSON.stringify({
+      taskTitle,
+      regenerate: regenerate ?? false,
+      modelId,
+    }),
   });
 
   return parseResponse<AgentTasksResponse>(response);

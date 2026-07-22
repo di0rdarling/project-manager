@@ -12,8 +12,10 @@ import {
   SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
+import { DeleteAISummaryModal } from "@/components/ui/DeleteAISummaryModal";
 import { Modal } from "@/components/ui/Modal";
 import { Tabs, TabsList, TabsPanel, TabsTrigger } from "@/components/ui/Tabs";
+import { ChatModelSelect } from "@/components/views/Chats/ChatModelSelect";
 import {
   getAgentDocumentDetailPath,
 } from "@/lib/agents/agent-documents";
@@ -31,7 +33,12 @@ import {
   type AgentProfileFrom,
 } from "@/lib/chats/agent-profile-navigation";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
+import {
+  DEFAULT_CHAT_MODEL_ID,
+  type ChatModelId,
+} from "@/lib/chats/chat-models";
 import type { AgentTask, AgentTaskStatus } from "@/lib/types";
+import type { StartAgentTaskOutputInput } from "@/lib/api/agent-tasks";
 
 type AgentTaskDetailModalProps = {
   open: boolean;
@@ -45,7 +52,7 @@ type AgentTaskDetailModalProps = {
   teammateId?: ChatTeammateId;
   profileFrom?: AgentProfileFrom | null;
   profileProjectId?: string | null;
-  onStartOutput?: (regenerate?: boolean) => void;
+  onStartOutput?: (input: StartAgentTaskOutputInput) => void;
   isStartingOutput?: boolean;
   isRegeneratingOutput?: boolean;
 };
@@ -351,7 +358,7 @@ function AgentTaskOutputContent({
   teammateId?: ChatTeammateId;
   profileFrom?: AgentProfileFrom | null;
   profileProjectId?: string | null;
-  onStart?: (regenerate?: boolean) => void;
+  onStart?: () => void;
   onClose?: () => void;
 }>) {
   if (!isAccepted) {
@@ -380,7 +387,7 @@ function AgentTaskOutputContent({
 
   return (
     <AgentTaskOutputStartPrompt
-      onStart={() => onStart?.(false)}
+      onStart={onStart}
       isStarting={isStarting}
     />
   );
@@ -421,7 +428,16 @@ export default function AgentTaskDetailModal({
   isRegeneratingOutput = false,
 }: Readonly<AgentTaskDetailModalProps>) {
   const [activeTab, setActiveTab] = useState("overview");
+  const [isRedoConfirmOpen, setIsRedoConfirmOpen] = useState(false);
+  const [selectedModelId, setSelectedModelId] =
+    useState<ChatModelId>(DEFAULT_CHAT_MODEL_ID);
   const previousTaskStatusRef = useRef<AgentTaskStatus | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      setIsRedoConfirmOpen(false);
+    }
+  }, [open]);
 
   useEffect(() => {
     if (!open || !task) {
@@ -430,6 +446,7 @@ export default function AgentTaskDetailModal({
     }
 
     setActiveTab("overview");
+    setSelectedModelId(DEFAULT_CHAT_MODEL_ID);
     previousTaskStatusRef.current = getAgentTaskStatus(task);
   }, [open, task?.title]);
 
@@ -470,6 +487,20 @@ export default function AgentTaskDetailModal({
     !isStartingOutput &&
     Boolean(onStartOutput);
   const acceptDisabled = isUpdating || (taskStatus !== "accepted" && !canAccept);
+  const redoDocumentTitle = task.outputDocumentTitle || "Untitled document";
+
+  function handleRequestRedo() {
+    setIsRedoConfirmOpen(true);
+  }
+
+  function handleConfirmRedo() {
+    setIsRedoConfirmOpen(false);
+    onStartOutput?.({ regenerate: true, modelId: selectedModelId });
+  }
+
+  function handleStartOutput() {
+    onStartOutput?.({ regenerate: false, modelId: selectedModelId });
+  }
 
   const blocks: DetailBlock[] = [
     {
@@ -496,42 +527,43 @@ export default function AgentTaskDetailModal({
   ];
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={task.title}
-      size="wide"
-      secondaryAction={
-        showOverviewActions && onReject
-          ? {
-              label: "Reject",
-              onClick: onReject,
-              isPending: isUpdating,
-              pendingLabel: "Saving...",
-              variant: "secondary",
-            }
-          : undefined
-      }
-      primaryAction={
-        showOverviewActions && onAccept
-          ? {
-              label: "Accept",
-              onClick: onAccept,
-              isPending: isUpdating,
-              pendingLabel: "Saving...",
-              disabled: acceptDisabled,
-            }
-          : showOutputRedoAction
+    <>
+      <Modal
+        open={open}
+        onClose={onClose}
+        title={task.title}
+        size="wide"
+        secondaryAction={
+          showOverviewActions && onReject
             ? {
-                label: "Ask teammate to redo",
-                onClick: () => onStartOutput?.(true),
-                isPending: isStartingOutput,
-                pendingLabel: "Redoing...",
+                label: "Reject",
+                onClick: onReject,
+                isPending: isUpdating,
+                pendingLabel: "Saving...",
                 variant: "secondary",
               }
             : undefined
-      }
-    >
+        }
+        primaryAction={
+          showOverviewActions && onAccept
+            ? {
+                label: "Accept",
+                onClick: onAccept,
+                isPending: isUpdating,
+                pendingLabel: "Saving...",
+                disabled: acceptDisabled,
+              }
+            : showOutputRedoAction
+              ? {
+                  label: "Ask teammate to redo",
+                  onClick: handleRequestRedo,
+                  isPending: isStartingOutput,
+                  pendingLabel: "Redoing...",
+                  variant: "secondary",
+                }
+              : undefined
+        }
+      >
       <div className="space-y-5">
         <div className="flex flex-wrap items-center gap-2">
           <span
@@ -575,6 +607,17 @@ export default function AgentTaskDetailModal({
           </TabsPanel>
 
           <TabsPanel value="output">
+            {isAccepted && !isStartingOutput ? (
+              <div className="mb-5 flex justify-end">
+                <div className="w-28 shrink-0 sm:w-36 md:w-44">
+                  <ChatModelSelect
+                    id={`agent-task-output-model-${task.title}`}
+                    value={selectedModelId}
+                    onChange={setSelectedModelId}
+                  />
+                </div>
+              </div>
+            ) : null}
             <AgentTaskOutputContent
               task={task}
               isAccepted={isAccepted}
@@ -583,7 +626,7 @@ export default function AgentTaskDetailModal({
               teammateId={teammateId}
               profileFrom={profileFrom}
               profileProjectId={profileProjectId}
-              onStart={onStartOutput}
+              onStart={onStartOutput ? handleStartOutput : undefined}
               onClose={onClose}
             />
           </TabsPanel>
@@ -594,5 +637,18 @@ export default function AgentTaskDetailModal({
         </Tabs>
       </div>
     </Modal>
+
+      <DeleteAISummaryModal
+        open={isRedoConfirmOpen}
+        title="Redo this task?"
+        description={`The current document "${redoDocumentTitle}" will be deleted. The teammate will produce a new document to replace it. Are you sure you want to continue?`}
+        confirmLabel="Ask teammate to redo"
+        pendingLabel="Starting..."
+        isPending={false}
+        error={null}
+        onClose={() => setIsRedoConfirmOpen(false)}
+        onConfirm={handleConfirmRedo}
+      />
+    </>
   );
 }

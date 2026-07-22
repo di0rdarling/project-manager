@@ -1,13 +1,16 @@
+import { ObjectId } from "mongodb";
 import { getChatTeammate } from "@/lib/chats/chat-teammates";
 import { canAccessAgentTaskOutputTabs } from "@/lib/agents/agent-tasks";
 import {
   executeCreateAgentDocumentTool,
   parseCreateAgentDocumentToolArgs,
 } from "@/lib/agents/agent-document-tool";
+import { deleteAgentDocument } from "@/lib/agents/agent-documents-store";
 import {
   getAgentTasks,
   updateAgentTaskOutput,
 } from "@/lib/agents/agent-tasks-store";
+import { normalizeChatModelId } from "@/lib/chats/chat-models";
 import {
   getProjectNameForUser,
   parseProjectId,
@@ -48,10 +51,12 @@ export async function POST(request: Request, context: RouteContext) {
     const body = (await request.json()) as {
       taskTitle?: unknown;
       regenerate?: unknown;
+      modelId?: unknown;
     };
     const taskTitle =
       typeof body.taskTitle === "string" ? body.taskTitle.trim() : "";
     const regenerate = body.regenerate === true;
+    const modelId = normalizeChatModelId(body.modelId);
 
     if (!taskTitle) {
       return Response.json({ error: "taskTitle is required" }, { status: 400 });
@@ -75,6 +80,19 @@ export async function POST(request: Request, context: RouteContext) {
       return Response.json(
         { error: "Only accepted tasks can be started" },
         { status: 409 },
+      );
+    }
+
+    if (
+      regenerate &&
+      task.outputDocumentId &&
+      ObjectId.isValid(task.outputDocumentId)
+    ) {
+      await deleteAgentDocument(
+        db,
+        auth.userId,
+        parsedTeammate.teammateId,
+        new ObjectId(task.outputDocumentId),
       );
     }
 
@@ -112,6 +130,7 @@ export async function POST(request: Request, context: RouteContext) {
         userName,
         isRegenerate: regenerate,
       }),
+      modelId,
     );
     const toolArgs = parseCreateAgentDocumentToolArgs(toolCall.args);
 
