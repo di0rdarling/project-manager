@@ -2,19 +2,16 @@ import { ChartBarIcon } from "@heroicons/react/24/outline";
 
 type AgentAtAGlanceProps = {
   chatsCount: number | null;
-  openThreadsCount: number;
-  blockedCount: number;
+  tasksCount: number;
 };
 
 export default function AgentAtAGlance({
   chatsCount,
-  openThreadsCount,
-  blockedCount,
+  tasksCount,
 }: Readonly<AgentAtAGlanceProps>) {
   const stats = [
     { id: "chats", label: "Chats", value: chatsCount },
-    { id: "open-threads", label: "Open threads", value: openThreadsCount },
-    { id: "blocked", label: "Blocked", value: blockedCount },
+    { id: "tasks", label: "Tasks", value: tasksCount },
   ];
 
   return (
@@ -23,7 +20,7 @@ export default function AgentAtAGlance({
         <ChartBarIcon className="size-4" aria-hidden />
         At a glance
       </h2>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         {stats.map((stat) => (
           <div
             key={stat.id}

@@ -8,8 +8,8 @@ import type { StoredProject } from "@/lib/serialize/serialize-project";
 
 /**
  * After a chat's conversation summary changes, fold durable facts into this
- * teammate's structured, user-facing memory (most recently / open threads /
- * decisions / stable context). Failures are swallowed so a memory miss
+ * teammate's structured, user-facing memory (most recently / decisions /
+ * stable context). Failures are swallowed so a memory miss never blocks
  * never blocks the user-visible action.
  */
 export async function refreshUserMemoryFromChatSummary(input: {

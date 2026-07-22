@@ -8,17 +8,8 @@ import { serializeUserMemoryForPrompt, type UserMemoryDraft } from "@/lib/agents
 
 const JSON_SCHEMA_BLOCK = `{
   "most_recently": string,
-  "open_threads": Thread[],
   "decisions": Decision[],
   "stable_context": string[]
-}`;
-
-const THREAD_SCHEMA_BLOCK = `{
-  "title": string,          // 5–8 words, verb-led where possible
-  "detail": string,         // 1–2 sentences. What the situation is and what (if anything) is needed from the user.
-  "project": string,        // project name or "General"
-  "status": "blocked" | "to-schedule" | "up-next" | "waiting" | "tangent",
-  "flagged_date": string    // approximate date or relative label e.g. "early Jul", "today"
 }`;
 
 const DECISION_SCHEMA_BLOCK = `{
@@ -33,22 +24,6 @@ const FIELD_INSTRUCTIONS = [
   "### Field instructions",
   "",
   "**`most_recently`** — one sentence. The single most useful thing for {{userName}} to know right now as they return to this conversation. Should name a concrete next action or pending question, not just summarise a topic. This is the first thing they read.",
-  "",
-  "---",
-  "",
-  "**`open_threads`** — array of Thread objects. Each thread is something that was started but not finished, is waiting on {{userName}}, or was mentioned and never followed up on. Include tangents — things {{userName}} brought up but didn't pursue. Do not include things that are fully resolved.",
-  "",
-  "Each Thread:",
-  "```",
-  THREAD_SCHEMA_BLOCK,
-  "```",
-  "",
-  "Status guidance:",
-  "- `blocked` — cannot move forward without a specific decision or input from the user",
-  "- `to-schedule` — needs a time or action from the user to proceed",
-  "- `up-next` — agreed next step, not yet started",
-  "- `waiting` — on hold pending external input (feedback, a tool, someone else)",
-  "- `tangent` — user mentioned this but didn't follow up; flag it so they can decide to continue or drop it",
   "",
   "---",
   "",
@@ -165,16 +140,14 @@ export function buildUserMemoryMergePrompt({
   return [
     `You are ${agentName}, the ${agentRole}.`,
     "",
-    `You are updating a structured user-facing summary after a new conversation. ${resolvedUserName} uses this to track open threads, decisions, and what needs their attention across all their projects.`,
+    `You are updating a structured user-facing summary after a new conversation. ${resolvedUserName} uses this to track decisions and what needs their attention across all their projects.`,
     "",
     "Your job is to make the minimum necessary changes to the existing summary to reflect the new conversation. Do not rewrite what has not changed.",
     "",
     "Rules:",
     "- Update `most_recently` to reflect the new conversation's most actionable takeaway",
-    "- Add new threads to `open_threads`; update the `status` of existing threads if progress was made; remove threads only if they are fully and explicitly resolved",
     "- Add new decisions to `decisions` if something was decided in this conversation",
     "- Update `stable_context` only if a constraint or fact genuinely changed",
-    "- If a thread was mentioned as a tangent and the user followed up on it in this conversation, update its status accordingly",
     "",
     "Existing summary:",
     existingMemory

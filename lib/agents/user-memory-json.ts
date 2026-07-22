@@ -1,37 +1,18 @@
 import type {
   UserMemoryDecision,
-  UserMemoryThread,
-  UserMemoryThreadStatus,
 } from "@/lib/types";
-
-const VALID_THREAD_STATUSES: readonly UserMemoryThreadStatus[] = [
-  "blocked",
-  "to-schedule",
-  "up-next",
-  "waiting",
-  "tangent",
-];
-
-function isValidThreadStatus(value: unknown): value is UserMemoryThreadStatus {
-  return (
-    typeof value === "string" &&
-    VALID_THREAD_STATUSES.includes(value as UserMemoryThreadStatus)
-  );
-}
 
 /** Max stable-context items kept, matching the prompt's own instruction. */
 const MAX_STABLE_CONTEXT_ITEMS = 4;
 
 export type UserMemoryDraft = {
   mostRecently: string | null;
-  openThreads: UserMemoryThread[];
   decisions: UserMemoryDecision[];
   stableContext: string[];
 };
 
 export const EMPTY_USER_MEMORY_DRAFT: UserMemoryDraft = {
   mostRecently: null,
-  openThreads: [],
   decisions: [],
   stableContext: [],
 };
@@ -65,21 +46,6 @@ export function parseUserMemoryJson(raw: string): UserMemoryDraft {
     throw new Error("Gemini returned a non-object user memory payload");
   }
 
-  const openThreadsRaw = record.open_threads;
-  const openThreads: UserMemoryThread[] = Array.isArray(openThreadsRaw)
-    ? openThreadsRaw
-        .map(asRecord)
-        .filter((item): item is Record<string, unknown> => item !== null)
-        .map((item) => ({
-          title: asTrimmedString(item.title),
-          detail: asTrimmedString(item.detail),
-          project: asTrimmedString(item.project) || "General",
-          status: isValidThreadStatus(item.status) ? item.status : "waiting",
-          flaggedDate: asTrimmedString(item.flagged_date),
-        }))
-        .filter((thread) => thread.title.length > 0)
-    : [];
-
   const decisionsRaw = record.decisions;
   const decisions: UserMemoryDecision[] = Array.isArray(decisionsRaw)
     ? decisionsRaw
@@ -111,7 +77,6 @@ export function parseUserMemoryJson(raw: string): UserMemoryDraft {
 
   return {
     mostRecently: mostRecently || null,
-    openThreads,
     decisions,
     stableContext,
   };
@@ -126,13 +91,6 @@ export function serializeUserMemoryForPrompt(draft: UserMemoryDraft): string {
   return JSON.stringify(
     {
       most_recently: draft.mostRecently ?? "",
-      open_threads: draft.openThreads.map((thread) => ({
-        title: thread.title,
-        detail: thread.detail,
-        project: thread.project,
-        status: thread.status,
-        flagged_date: thread.flaggedDate,
-      })),
       decisions: draft.decisions.map((decision) => ({
         topic: decision.topic,
         choice: decision.choice,

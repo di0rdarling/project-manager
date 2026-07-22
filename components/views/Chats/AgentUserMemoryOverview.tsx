@@ -16,7 +16,7 @@ import AgentAtAGlance from "@/components/views/Chats/AgentAtAGlance";
 import AgentConversations from "@/components/views/Chats/AgentConversations";
 import AgentKeyDecisions from "@/components/views/Chats/AgentKeyDecisions";
 import AgentMostRecently from "@/components/views/Chats/AgentMostRecently";
-import AgentOpenThreads from "@/components/views/Chats/AgentOpenThreads";
+import AgentTasks, { TASKS_PLACEHOLDER_COUNT } from "@/components/views/Chats/AgentTasks";
 import AgentStableContext from "@/components/views/Chats/AgentStableContext";
 import { useDeleteUserMemory } from "@/hooks/mutations/chats/useDeleteUserMemory";
 import { useGenerateUserMemory } from "@/hooks/mutations/chats/useGenerateUserMemory";
@@ -72,17 +72,12 @@ export default function AgentUserMemoryOverview({
   }
 
   const isInitialLoading = isFetching && userMemory === undefined;
-  const openThreads = userMemory?.openThreads ?? [];
   const decisions = userMemory?.decisions ?? [];
   const stableContext = userMemory?.stableContext ?? [];
   const hasAnyData =
     Boolean(userMemory?.mostRecently) ||
-    openThreads.length > 0 ||
     decisions.length > 0 ||
     stableContext.length > 0;
-  const blockedCount = openThreads.filter(
-    (thread) => thread.status === "blocked",
-  ).length;
 
   return (
     <section className="space-y-4">
@@ -131,14 +126,13 @@ export default function AgentUserMemoryOverview({
           <AgentMostRecently mostRecently={userMemory?.mostRecently ?? null} />
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="space-y-6 lg:col-span-2">
-              <AgentOpenThreads threads={openThreads} />
+              <AgentTasks />
               <AgentKeyDecisions decisions={decisions} />
             </div>
             <div className="space-y-6">
               <AgentAtAGlance
                 chatsCount={null}
-                openThreadsCount={openThreads.length}
-                blockedCount={blockedCount}
+                tasksCount={TASKS_PLACEHOLDER_COUNT}
               />
               <AgentStableContext items={stableContext} />
               <AgentConversations />
@@ -148,7 +142,7 @@ export default function AgentUserMemoryOverview({
       ) : (
         <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-900/50">
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            This fills in automatically as you chat — open threads, decisions,
+            This fills in automatically as you chat — tasks, decisions,
             and stable context will appear here. You can also generate it now
             from past conversations.
           </p>
