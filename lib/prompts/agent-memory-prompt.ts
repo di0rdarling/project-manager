@@ -25,6 +25,7 @@ type BuildAgentMemoryPromptInput = {
   agentName: string;
   agentRole: string;
   chatSummaries: TeammateChatSummary[];
+  agentNotesContext?: string | null;
   userName?: string | null;
   generatedAt?: Date;
 };
@@ -37,6 +38,7 @@ type BuildAgentMemoryMergePromptInput = {
   chatTitle: string;
   conversationSummary: string;
   projectName?: string | null;
+  agentNotesContext?: string | null;
   userName?: string | null;
   generatedAt?: Date;
 };
@@ -135,18 +137,26 @@ export function buildAgentMemoryPrompt({
   agentName,
   agentRole,
   chatSummaries,
+  agentNotesContext,
   userName,
   generatedAt = new Date(),
 }: BuildAgentMemoryPromptInput): string {
   const currentDateTime = formatDisplayDateTime(generatedAt.toISOString());
 
-  return [
+  const sections = [
     ...buildSharedMemoryInstructions(agentName, agentRole),
     `You are writing this memory at: ${currentDateTime}.`,
     "",
     buildChatUserContextPrompt(userName),
     "",
     buildAiTeammatesMemoryRosterPrompt(teammateId),
+  ];
+
+  if (agentNotesContext?.trim()) {
+    sections.push("", agentNotesContext.trim());
+  }
+
+  sections.push(
     "",
     "Synthesize one compact Memory from the conversation summaries below.",
     "Merge overlapping topics across chats. Do not write one paragraph per chat.",
@@ -157,7 +167,9 @@ export function buildAgentMemoryPrompt({
     formatChatSummaries(chatSummaries, generatedAt),
     "",
     "Return only the compact memory note. No preamble, no sign-off, no self-introduction.",
-  ].join("\n");
+  );
+
+  return sections.join("\n");
 }
 
 /**
@@ -173,6 +185,7 @@ export function buildAgentMemoryMergePrompt({
   chatTitle,
   conversationSummary,
   projectName,
+  agentNotesContext,
   userName,
   generatedAt = new Date(),
 }: BuildAgentMemoryMergePromptInput): string {
@@ -189,6 +202,13 @@ export function buildAgentMemoryMergePrompt({
     buildChatUserContextPrompt(userName),
     "",
     buildAiTeammatesMemoryRosterPrompt(teammateId),
+  ];
+
+  if (agentNotesContext?.trim()) {
+    sections.push("", agentNotesContext.trim());
+  }
+
+  sections.push(
     "",
     "Update your Memory by folding in only the durable new information from the latest conversation summary below.",
     "Your default action is to append new durable facts or make minimal edits to existing ones. Rewriting or restructuring the whole memory is the exception, not the norm.",
@@ -197,7 +217,7 @@ export function buildAgentMemoryMergePrompt({
     "Remove items that the new summary clearly supersedes. Do not grow the Memory just because there is more text available.",
     "If the new summary adds nothing durable beyond what is already remembered, return the existing Memory unchanged apart from updating the \"Most recently:\" line.",
     "",
-  ];
+  );
 
   if (trimmedExisting) {
     sections.push("Existing Memory:", trimmedExisting, "");

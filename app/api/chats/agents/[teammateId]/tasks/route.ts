@@ -4,7 +4,7 @@ import {
   isChatTeammateId,
   type ChatTeammateId,
 } from "@/lib/chats/chat-teammates";
-import { getAgentNotes } from "@/lib/agents/agent-notes-store";
+import { loadAgentNotesContext } from "@/lib/agents/agent-notes-store";
 import { parseAgentTasksJson } from "@/lib/agents/agent-tasks-json";
 import {
   clearAgentTasks,
@@ -23,7 +23,6 @@ import { toIsoString } from "@/lib/dates";
 import { generateAgentTasks } from "@/lib/gemini";
 import getClientPromise from "@/lib/mongodb";
 import { getProjectContext } from "@/lib/project-context";
-import { buildAgentNotesContext } from "@/lib/prompts/agent-notes-context-prompt";
 import { buildAgentTasksPrompt } from "@/lib/prompts/agent-tasks-prompt";
 import { findUserById } from "@/lib/users";
 import type { AgentTasksResponse } from "@/lib/types";
@@ -170,12 +169,11 @@ export async function POST(request: Request, context: RouteContext) {
     // Same standing notes and structured Overview a live chat reply from
     // this teammate would have available — kept identical here so task
     // suggestions never miss context the agent would otherwise know.
-    const [agentNotes, existingUserMemory, currentUser] = await Promise.all([
-      getAgentNotes(db, auth.userId, parsedTeammate.teammateId),
+    const [agentNotesContext, existingUserMemory, currentUser] = await Promise.all([
+      loadAgentNotesContext(db, auth.userId, parsedTeammate.teammateId),
       getUserMemory(db, auth.userId, parsedTeammate.teammateId),
       findUserById(db, auth.userId),
     ]);
-    const agentNotesContext = buildAgentNotesContext(agentNotes) ?? undefined;
     const existingOverviewContext = existingUserMemory
       ? serializeUserMemoryForPrompt(existingUserMemory)
       : undefined;

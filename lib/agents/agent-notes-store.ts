@@ -9,6 +9,7 @@ import {
   type ChatTeammateId,
 } from "@/lib/chats/chat-teammates";
 import { toIsoString } from "@/lib/dates";
+import { buildAgentNotesContext } from "@/lib/prompts/agent-notes-context-prompt";
 import { stripRichText } from "@/lib/rich-text";
 import type { AgentNote } from "@/lib/types";
 
@@ -51,6 +52,20 @@ export async function getAgentNotes(
       };
     })
     .filter((note) => note.title.length > 0 || note.content.trim().length > 0);
+}
+
+/**
+ * Loads notes authored on this teammate's profile plus any notes shared
+ * with them from other teammates' profiles, formatted for injection into
+ * agent prompts (chat, tasks, memory, etc.).
+ */
+export async function loadAgentNotesContext(
+  db: Db,
+  userId: ObjectId,
+  teammateId: ChatTeammateId,
+): Promise<string | undefined> {
+  const notes = await getAgentNotes(db, userId, teammateId);
+  return buildAgentNotesContext(notes) ?? undefined;
 }
 
 export function serializeAgentNote(note: StoredAgentNote) {

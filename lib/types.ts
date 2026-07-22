@@ -289,9 +289,21 @@ export type UserMemoryResponse = {
   updatedAt: string | null;
 };
 
+export type AgentTaskOutputFormat = "note" | "document";
+
 export type AgentTask = {
   title: string;
   detail: string;
+  /** Why the agent is suggesting this task now, grounded in project context. */
+  rationale: string;
+  /** What becomes true or improves if this task gets done. */
+  impact: string;
+  /** What happens, or continues to be a gap, if this task is skipped. */
+  riskIfSkipped: string;
+  /** Deliverable type — typically a new note; document for longer structured output. */
+  outputFormat: AgentTaskOutputFormat;
+  /** What the agent intends to put in the deliverable and what purpose it serves. */
+  outputDescription: string;
 };
 
 export type AgentTasksResponse = {

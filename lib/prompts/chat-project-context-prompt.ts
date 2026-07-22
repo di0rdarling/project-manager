@@ -15,6 +15,13 @@ type ProjectContextItem = {
   content: string;
 };
 
+type NoteContextItem = {
+  title: string;
+  content: string;
+  /** Set when the note belongs to a feature; omitted for project-level notes. */
+  featureTitle?: string | null;
+};
+
 type DomainKnowledgeContextItem = {
   name: string;
   currentUnderstanding: string;
@@ -51,7 +58,7 @@ type BuildChatProjectContextInput = {
   requirements: RequirementContextItem[];
   features: FeatureContextItem[];
   tools: ProjectContextItem[];
-  notes: ProjectContextItem[];
+  notes: NoteContextItem[];
   featureNotes?: ProjectContextItem[];
   featureChallenges?: ChallengeContextItem[];
   featureDomainKnowledge?: DomainKnowledgeContextItem[];
@@ -79,6 +86,26 @@ function formatContentItems(
     .join("\n");
 
   return `${label}:\n${formattedItems}`;
+}
+
+function formatNoteItems(items: NoteContextItem[]): string {
+  if (items.length === 0) {
+    return "Notes: None";
+  }
+
+  const formattedItems = items
+    .map((item, index) => {
+      const heading = item.title.trim() || "Untitled note";
+      const content = stripRichText(item.content);
+      const featureLine = item.featureTitle?.trim()
+        ? `\n   Feature: ${item.featureTitle.trim()}`
+        : "";
+
+      return `${index + 1}. ${heading}${featureLine}\n   ${content || "No content provided."}`;
+    })
+    .join("\n");
+
+  return `Notes:\n${formattedItems}`;
 }
 
 function formatFeatureItems(items: FeatureContextItem[]): string {
@@ -146,7 +173,7 @@ export function buildChatProjectContext({
     "",
     formatContentItems("Tools", tools),
     "",
-    formatContentItems("Notes", notes),
+    formatNoteItems(notes),
   );
 
   if (featureNotes !== undefined) {

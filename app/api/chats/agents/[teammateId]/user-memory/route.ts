@@ -10,6 +10,7 @@ import {
   upsertUserMemory,
   type StoredUserMemory,
 } from "@/lib/agents/user-memory-store";
+import { loadAgentNotesContext } from "@/lib/agents/agent-notes-store";
 import { getTeammateChatSummaries, RECENT_CHAT_SUMMARY_LIMIT } from "@/lib/chats/chat-summaries";
 import { requireUserId } from "@/lib/current-user";
 import { generateUserMemory } from "@/lib/gemini";
@@ -110,6 +111,11 @@ export async function POST(_request: Request, context: RouteContext) {
 
     const teammate = getChatTeammate(parsed.teammateId);
     const generatedAt = new Date();
+    const agentNotesContext = await loadAgentNotesContext(
+      client.db(),
+      auth.userId,
+      parsed.teammateId,
+    );
     const draft = parseUserMemoryJson(
       await generateUserMemory(
         buildUserMemoryPrompt({
@@ -117,6 +123,7 @@ export async function POST(_request: Request, context: RouteContext) {
           agentName: teammate.name,
           agentRole: teammate.role,
           chatSummaries,
+          agentNotesContext,
           userName,
           generatedAt,
         }),

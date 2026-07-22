@@ -7,6 +7,11 @@ export function projectLevelNotesFilter(projectId: ObjectId) {
   };
 }
 
+/** All notes belonging to a project — project-level and feature-scoped. */
+export function projectNotesFilter(projectId: ObjectId) {
+  return { projectId };
+}
+
 export function featureNotesFilter(projectId: ObjectId, featureId: ObjectId) {
   return {
     projectId,

@@ -48,6 +48,7 @@ type BuildUserMemoryPromptInput = {
   agentName: string;
   agentRole: string;
   chatSummaries: TeammateChatSummary[];
+  agentNotesContext?: string | null;
   userName?: string | null;
   generatedAt?: Date;
 };
@@ -61,13 +62,14 @@ export function buildUserMemoryPrompt({
   agentName,
   agentRole,
   chatSummaries,
+  agentNotesContext,
   userName,
   generatedAt = new Date(),
 }: BuildUserMemoryPromptInput): string {
   const currentDateTime = formatDisplayDateTime(generatedAt.toISOString());
   const resolvedUserName = userName?.trim() || "the user";
 
-  return [
+  const sections = [
     `You are ${agentName}, the ${agentRole}.`,
     "",
     `You are generating a structured summary of your shared work with ${resolvedUserName} — not for yourself, but for them. They will read this on your profile page to quickly remember where things stand, what still needs their attention, and what has already been decided. Write it as if you are briefing them, not as if you are writing notes for yourself.`,
@@ -75,6 +77,13 @@ export function buildUserMemoryPrompt({
     `${resolvedUserName} has ADHD and context-switches frequently across multiple projects. Prioritise clarity over completeness. A short, accurate entry is better than a thorough one that blurs into the rest.`,
     "",
     buildChatUserContextPrompt(userName),
+  ];
+
+  if (agentNotesContext?.trim()) {
+    sections.push("", agentNotesContext.trim());
+  }
+
+  sections.push(
     "",
     "---",
     "",
@@ -102,7 +111,9 @@ export function buildUserMemoryPrompt({
     "---",
     "",
     "Return only the JSON object. No preamble, no sign-off.",
-  ].join("\n");
+  );
+
+  return sections.join("\n");
 }
 
 type BuildUserMemoryMergePromptInput = {
@@ -112,6 +123,7 @@ type BuildUserMemoryMergePromptInput = {
   chatTitle: string;
   conversationSummary: string;
   projectName?: string | null;
+  agentNotesContext?: string | null;
   userName?: string | null;
   generatedAt?: Date;
 };
@@ -128,6 +140,7 @@ export function buildUserMemoryMergePrompt({
   chatTitle,
   conversationSummary,
   projectName,
+  agentNotesContext,
   userName,
   generatedAt = new Date(),
 }: BuildUserMemoryMergePromptInput): string {
@@ -137,7 +150,7 @@ export function buildUserMemoryMergePrompt({
     ? `Project: ${projectName.trim()}`
     : "Project: None linked to this chat";
 
-  return [
+  const sections = [
     `You are ${agentName}, the ${agentRole}.`,
     "",
     `You are updating a structured user-facing summary after a new conversation. ${resolvedUserName} uses this to track decisions and what needs their attention across all their projects.`,
@@ -148,6 +161,13 @@ export function buildUserMemoryMergePrompt({
     "- Update `most_recently` to reflect the new conversation's most actionable takeaway",
     "- Add new decisions to `decisions` if something was decided in this conversation",
     "- Update `stable_context` only if a constraint or fact genuinely changed",
+  ];
+
+  if (agentNotesContext?.trim()) {
+    sections.push("", agentNotesContext.trim());
+  }
+
+  sections.push(
     "",
     "Existing summary:",
     existingMemory
@@ -163,5 +183,7 @@ export function buildUserMemoryMergePrompt({
     `Generated at: ${currentDateTime}`,
     "",
     "Return only the updated JSON object. No preamble, no explanation, no markdown fencing.",
-  ].join("\n");
+  );
+
+  return sections.join("\n");
 }

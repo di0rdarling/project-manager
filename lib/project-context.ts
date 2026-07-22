@@ -17,7 +17,7 @@ import {
 } from "@/lib/requirements";
 import type { StoredProject } from "@/lib/serialize/serialize-project";
 import type { CoreUser, DomainKnowledge, Feature, Note, PainPoint, Requirement, Tool, Challenge } from "@/lib/types";
-import { featureNotesFilter, projectLevelNotesFilter } from "@/lib/notes";
+import { projectNotesFilter } from "@/lib/notes";
 import {
   featureChallengesFilter,
   projectLevelChallengesFilter,
@@ -58,6 +58,7 @@ type StoredChallenge = Omit<
 type StoredNote = Omit<Note, "_id" | "projectId" | "createdAt" | "updatedAt"> & {
   _id: Note["_id"];
   projectId: Note["projectId"];
+  featureId?: Note["featureId"];
   createdAt: string | Date;
   updatedAt: string | Date;
 };
@@ -201,7 +202,7 @@ export async function getProjectContext(
       .toArray(),
     db
       .collection<StoredNote>("notes")
-      .find(projectLevelNotesFilter(projectId))
+      .find(projectNotesFilter(projectId))
       .sort({ createdAt: -1 })
       .toArray(),
   ]);
@@ -213,10 +214,16 @@ export async function getProjectContext(
     ]),
   );
 
+  const featureTitles = new Map(
+    features.map((feature) => [
+      feature._id.toString(),
+      feature.title.trim() || "Untitled feature",
+    ]),
+  );
+
   const [
     focusedRequirement,
     focusedFeature,
-    focusedFeatureNotes,
     focusedFeatureChallenges,
     focusedFeatureDomainKnowledge,
   ] = await Promise.all([
@@ -232,13 +239,6 @@ export async function getProjectContext(
             projectId,
           })
         : Promise.resolve(null),
-      focus?.featureId
-        ? db
-            .collection<StoredNote>("notes")
-            .find(featureNotesFilter(projectId, focus.featureId))
-            .sort({ createdAt: -1 })
-            .toArray()
-        : Promise.resolve([]),
       focus?.featureId
         ? db
             .collection<StoredChallenge>("challenges")
@@ -299,13 +299,10 @@ export async function getProjectContext(
     notes: notes.map((note) => ({
       title: note.title,
       content: note.content,
+      featureTitle: note.featureId
+        ? (featureTitles.get(note.featureId.toString()) ?? "Untitled feature")
+        : null,
     })),
-    featureNotes: focus?.featureId
-      ? focusedFeatureNotes.map((note) => ({
-          title: note.title,
-          content: note.content,
-        }))
-      : undefined,
     featureChallenges: focus?.featureId
       ? focusedFeatureChallenges.map((challenge) => ({
           title: challenge.title,

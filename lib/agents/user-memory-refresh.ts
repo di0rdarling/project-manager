@@ -1,5 +1,6 @@
 import { ObjectId, type Db } from "mongodb";
 import { getChatTeammate, type ChatTeammateId } from "@/lib/chats/chat-teammates";
+import { loadAgentNotesContext } from "@/lib/agents/agent-notes-store";
 import { parseUserMemoryJson } from "@/lib/agents/user-memory-json";
 import { getUserMemory, upsertUserMemory } from "@/lib/agents/user-memory-store";
 import { generateUserMemory } from "@/lib/gemini";
@@ -24,6 +25,11 @@ export async function refreshUserMemoryFromChatSummary(input: {
 }): Promise<void> {
   const teammate = getChatTeammate(input.teammateId);
   const existing = await getUserMemory(input.db, input.userId, input.teammateId);
+  const agentNotesContext = await loadAgentNotesContext(
+    input.db,
+    input.userId,
+    input.teammateId,
+  );
 
   let projectName: string | null = null;
   if (input.projectId) {
@@ -45,6 +51,7 @@ export async function refreshUserMemoryFromChatSummary(input: {
         chatTitle: input.chatTitle,
         conversationSummary: input.conversationSummary,
         projectName,
+        agentNotesContext,
         userName: input.userName,
       }),
     ),

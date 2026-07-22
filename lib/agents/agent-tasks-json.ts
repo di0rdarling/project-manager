@@ -1,6 +1,31 @@
-import type { AgentTask } from "@/lib/types";
+import type { AgentTask, AgentTaskOutputFormat } from "@/lib/types";
 
 export const AGENT_TASK_COUNT = 3;
+
+/**
+ * Minimum character counts for the persuasive/explanatory fields. Guards
+ * against the model collapsing back to one-liners: rationale needs enough
+ * room to build a real case (evidence + tie to project goal + preempted
+ * objection), while impact/risk need enough room to be concrete rather than
+ * generic. Tasks that don't clear these are dropped, which fails generation
+ * and surfaces as a retryable error rather than silently shipping sparse
+ * output.
+ */
+const MIN_RATIONALE_LENGTH = 200;
+const MIN_IMPACT_LENGTH = 80;
+const MIN_RISK_IF_SKIPPED_LENGTH = 80;
+
+const VALID_OUTPUT_FORMATS: readonly AgentTaskOutputFormat[] = [
+  "note",
+  "document",
+];
+
+function parseOutputFormat(value: unknown): AgentTaskOutputFormat {
+  return typeof value === "string" &&
+    VALID_OUTPUT_FORMATS.includes(value as AgentTaskOutputFormat)
+    ? (value as AgentTaskOutputFormat)
+    : "note";
+}
 
 export type AgentTasksDraft = {
   tasks: AgentTask[];
@@ -42,8 +67,21 @@ export function parseAgentTasksJson(raw: string): AgentTasksDraft {
         .map((item) => ({
           title: asTrimmedString(item.title),
           detail: asTrimmedString(item.detail),
+          rationale: asTrimmedString(item.rationale),
+          impact: asTrimmedString(item.impact),
+          riskIfSkipped: asTrimmedString(item.risk_if_skipped),
+          outputFormat: parseOutputFormat(item.output_format),
+          outputDescription: asTrimmedString(item.output_description),
         }))
-        .filter((task) => task.title.length > 0 && task.detail.length > 0)
+        .filter(
+          (task) =>
+            task.title.length > 0 &&
+            task.detail.length > 0 &&
+            task.rationale.length >= MIN_RATIONALE_LENGTH &&
+            task.impact.length >= MIN_IMPACT_LENGTH &&
+            task.riskIfSkipped.length >= MIN_RISK_IF_SKIPPED_LENGTH &&
+            task.outputDescription.length > 0,
+        )
     : [];
 
   if (tasks.length !== AGENT_TASK_COUNT) {

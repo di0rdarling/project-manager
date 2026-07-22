@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
+import { ChevronRightIcon, ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
 import { DeleteAISummaryModal } from "@/components/ui/DeleteAISummaryModal";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
@@ -12,10 +12,12 @@ import {
   regenerateItemAction,
 } from "@/components/ui/ItemActionsMenu";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
+import AgentTaskDetailModal from "@/components/views/Chats/AgentTaskDetailModal";
 import { useDeleteAgentTasks } from "@/hooks/mutations/chats/useDeleteAgentTasks";
 import { useGenerateAgentTasks } from "@/hooks/mutations/chats/useGenerateAgentTasks";
 import { useFetchAgentTasks } from "@/hooks/queries/useFetchAgentTasks";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
+import type { AgentTask } from "@/lib/types";
 
 type AgentTasksProps = {
   teammateId: ChatTeammateId;
@@ -27,6 +29,7 @@ export default function AgentTasks({
   projectId,
 }: Readonly<AgentTasksProps>) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<AgentTask | null>(null);
   const isRegeneratingRef = useRef(false);
 
   const {
@@ -145,22 +148,29 @@ export default function AgentTasks({
             ) : null}
             <ul className="divide-y divide-zinc-200 rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-700 dark:border-zinc-700 dark:bg-zinc-900">
               {tasks.map((task) => (
-                <li
-                  key={task.title}
-                  className="flex items-start gap-3 px-4 py-3"
-                >
-                  <ClipboardDocumentCheckIcon
-                    className="mt-0.5 size-4 shrink-0 text-zinc-400 dark:text-zinc-500"
-                    aria-hidden
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
-                      {task.title}
-                    </p>
-                    <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-                      {task.detail}
-                    </p>
-                  </div>
+                <li key={task.title}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTask(task)}
+                    className="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
+                  >
+                    <ClipboardDocumentCheckIcon
+                      className="mt-0.5 size-4 shrink-0 text-zinc-400 dark:text-zinc-500"
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
+                        {task.title}
+                      </p>
+                      <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+                        {task.detail}
+                      </p>
+                    </div>
+                    <ChevronRightIcon
+                      className="mt-0.5 size-4 shrink-0 text-zinc-400 dark:text-zinc-500"
+                      aria-hidden
+                    />
+                  </button>
                 </li>
               ))}
             </ul>
@@ -207,6 +217,12 @@ export default function AgentTasks({
 
           deleteTasksMutation.mutate({ teammateId, projectId });
         }}
+      />
+
+      <AgentTaskDetailModal
+        open={selectedTask !== null}
+        task={selectedTask}
+        onClose={() => setSelectedTask(null)}
       />
     </>
   );
