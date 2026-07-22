@@ -288,3 +288,15 @@ export type UserMemoryResponse = {
   stableContext: string[];
   updatedAt: string | null;
 };
+
+export type AgentTask = {
+  title: string;
+  detail: string;
+};
+
+export type AgentTasksResponse = {
+  teammateId: ChatTeammateId;
+  projectId: string;
+  tasks: AgentTask[];
+  updatedAt: string | null;
+};

@@ -293,6 +293,10 @@ export async function generateUserMemory(prompt: string): Promise<string> {
   return generateJsonText(prompt, getMemoryModelName());
 }
 
+export async function generateAgentTasks(prompt: string): Promise<string> {
+  return generateJsonText(prompt, getMemoryModelName());
+}
+
 export async function generateArchivedChatSummary(
   prompt: string,
 ): Promise<string> {

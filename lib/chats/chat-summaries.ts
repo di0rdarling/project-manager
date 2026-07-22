@@ -102,6 +102,8 @@ type GetTeammateChatSummariesOptions = {
    * stored conversation summary are skipped and do not count toward the cap.
    */
   limit?: number;
+  /** When set, only chats linked to this project are included. */
+  projectId?: ObjectId;
 };
 
 export async function getTeammateChatSummaries(
@@ -118,6 +120,10 @@ export async function getTeammateChatSummaries(
 
   if (options?.excludeArchived) {
     query.archivedAt = null;
+  }
+
+  if (options?.projectId) {
+    query.projectId = options.projectId;
   }
 
   let cursor = db

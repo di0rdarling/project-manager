@@ -82,7 +82,10 @@ export default function ChatAgentProfileView({
         </div>
       </div>
 
-      <AgentUserMemoryOverview teammateId={teammateId} />
+      <AgentUserMemoryOverview
+        teammateId={teammateId}
+        projectId={navigationContext.projectId}
+      />
 
       <AIAgentMemory teammateId={teammateId} />
       <AIAgentNotesSection

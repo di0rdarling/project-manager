@@ -16,23 +16,27 @@ import AgentAtAGlance from "@/components/views/Chats/AgentAtAGlance";
 import AgentConversations from "@/components/views/Chats/AgentConversations";
 import AgentKeyDecisions from "@/components/views/Chats/AgentKeyDecisions";
 import AgentMostRecently from "@/components/views/Chats/AgentMostRecently";
-import AgentTasks, { TASKS_PLACEHOLDER_COUNT } from "@/components/views/Chats/AgentTasks";
+import AgentTasks from "@/components/views/Chats/AgentTasks";
 import AgentStableContext from "@/components/views/Chats/AgentStableContext";
 import { useDeleteUserMemory } from "@/hooks/mutations/chats/useDeleteUserMemory";
 import { useGenerateUserMemory } from "@/hooks/mutations/chats/useGenerateUserMemory";
+import { useFetchAgentTasks } from "@/hooks/queries/useFetchAgentTasks";
 import { useFetchUserMemory } from "@/hooks/queries/useFetchUserMemory";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 
 interface AgentUserMemoryOverviewProps {
   teammateId: ChatTeammateId;
+  projectId?: string | null;
 }
 
 export default function AgentUserMemoryOverview({
   teammateId,
+  projectId,
 }: Readonly<AgentUserMemoryOverviewProps>) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const isRegeneratingRef = useRef(false);
   const { data: userMemory, isFetching } = useFetchUserMemory(teammateId);
+  const { data: agentTasks } = useFetchAgentTasks(teammateId, projectId);
 
   const {
     mutate: generateMemory,
@@ -78,6 +82,7 @@ export default function AgentUserMemoryOverview({
     Boolean(userMemory?.mostRecently) ||
     decisions.length > 0 ||
     stableContext.length > 0;
+  const tasksCount = agentTasks?.tasks.length ?? 0;
 
   return (
     <section className="space-y-4">
@@ -126,42 +131,42 @@ export default function AgentUserMemoryOverview({
           <AgentMostRecently mostRecently={userMemory?.mostRecently ?? null} />
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="space-y-6 lg:col-span-2">
-              <AgentTasks />
+              <AgentTasks teammateId={teammateId} projectId={projectId} />
               <AgentKeyDecisions decisions={decisions} />
             </div>
             <div className="space-y-6">
-              <AgentAtAGlance
-                chatsCount={null}
-                tasksCount={TASKS_PLACEHOLDER_COUNT}
-              />
+              <AgentAtAGlance chatsCount={null} tasksCount={tasksCount} />
               <AgentStableContext items={stableContext} />
               <AgentConversations />
             </div>
           </div>
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-900/50">
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            This fills in automatically as you chat — tasks, decisions,
-            and stable context will appear here. You can also generate it now
-            from past conversations.
-          </p>
-          {isGenerateError ? (
-            <div className="mt-4 text-left">
-              <ErrorMessage
-                error={generateError}
-                fallbackMessage="Failed to generate overview"
-              />
-            </div>
-          ) : null}
-          <Button
-            type="button"
-            onClick={() => handleGenerate(false)}
-            disabled={isGenerating}
-            className="mt-4"
-          >
-            Generate overview
-          </Button>
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-900/50">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              This fills in automatically as you chat — decisions and stable
+              context will appear here. You can also generate it now from past
+              conversations.
+            </p>
+            {isGenerateError ? (
+              <div className="mt-4 text-left">
+                <ErrorMessage
+                  error={generateError}
+                  fallbackMessage="Failed to generate overview"
+                />
+              </div>
+            ) : null}
+            <Button
+              type="button"
+              onClick={() => handleGenerate(false)}
+              disabled={isGenerating}
+              className="mt-4"
+            >
+              Generate overview
+            </Button>
+          </div>
+          <AgentTasks teammateId={teammateId} projectId={projectId} />
         </div>
       )}
 
