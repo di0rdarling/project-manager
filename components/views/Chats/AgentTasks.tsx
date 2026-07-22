@@ -17,7 +17,7 @@ import { useDeleteAgentTasks } from "@/hooks/mutations/chats/useDeleteAgentTasks
 import { useGenerateAgentTasks } from "@/hooks/mutations/chats/useGenerateAgentTasks";
 import { useUpdateAgentTaskStatus } from "@/hooks/mutations/chats/useUpdateAgentTaskStatus";
 import { useFetchAgentTasks } from "@/hooks/queries/useFetchAgentTasks";
-import { getAgentTaskStatus, getAgentTaskStatusBadgeClassName, getAgentTaskStatusLabel, canGenerateAgentTasks, canAcceptAgentTask, getAcceptedAgentTasks } from "@/lib/agents/agent-tasks";
+import { getAgentTaskStatus, getAgentTaskStatusBadgeClassName, getAgentTaskStatusLabel, getAgentTaskProjectBadgeClassName, getAgentTaskProjectName, canGenerateAgentTasks, canAcceptAgentTask, getAcceptedAgentTasks } from "@/lib/agents/agent-tasks";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type { AgentTask } from "@/lib/types";
 
@@ -122,6 +122,7 @@ export default function AgentTasks({
   }
 
   const tasks = agentTasks?.tasks ?? [];
+  const projectName = agentTasks?.projectName ?? null;
   const hasTasks = tasks.length > 0;
   const acceptedTaskCount = getAcceptedAgentTasks(tasks).length;
   const canGenerateMoreTasks = canGenerateAgentTasks(tasks);
@@ -200,6 +201,7 @@ export default function AgentTasks({
               {tasks.map((task) => {
                 const taskStatus = getAgentTaskStatus(task);
                 const isRejected = taskStatus === "rejected";
+                const taskProjectName = getAgentTaskProjectName(task, projectName);
 
                 return (
                   <li key={task.title}>
@@ -236,6 +238,13 @@ export default function AgentTasks({
                           >
                             {getAgentTaskStatusLabel(taskStatus)}
                           </span>
+                          {taskProjectName ? (
+                            <span
+                              className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentTaskProjectBadgeClassName()}`}
+                            >
+                              {taskProjectName}
+                            </span>
+                          ) : null}
                         </div>
                         <p
                           className={`mt-1 text-sm leading-relaxed ${
@@ -321,6 +330,7 @@ export default function AgentTasks({
         canAccept={
           selectedTask ? canAcceptAgentTask(tasks, selectedTask.title) : false
         }
+        projectName={projectName}
       />
     </>
   );

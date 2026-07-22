@@ -51,9 +51,16 @@ function asTrimmedString(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function projectNamesMatch(expected: string, actual: string): boolean {
+  return (
+    expected.trim().toLocaleLowerCase() === actual.trim().toLocaleLowerCase()
+  );
+}
+
 export function parseAgentTasksJson(
   raw: string,
   expectedCount: number = AGENT_TASK_COUNT,
+  expectedProjectName?: string,
 ): AgentTasksDraft {
   const parsed = JSON.parse(stripJsonFencing(raw));
   const record = asRecord(parsed);
@@ -75,6 +82,7 @@ export function parseAgentTasksJson(
           riskIfSkipped: asTrimmedString(item.risk_if_skipped),
           outputFormat: parseOutputFormat(item.output_format),
           outputDescription: asTrimmedString(item.output_description),
+          projectName: asTrimmedString(item.project_name),
         }))
         .filter(
           (task) =>
@@ -83,7 +91,10 @@ export function parseAgentTasksJson(
             task.rationale.length >= MIN_RATIONALE_LENGTH &&
             task.impact.length >= MIN_IMPACT_LENGTH &&
             task.riskIfSkipped.length >= MIN_RISK_IF_SKIPPED_LENGTH &&
-            task.outputDescription.length > 0,
+            task.outputDescription.length > 0 &&
+            (!expectedProjectName ||
+              (task.projectName.length > 0 &&
+                projectNamesMatch(expectedProjectName, task.projectName))),
         )
     : [];
 

@@ -11,6 +11,8 @@ import {
   getAgentTaskStatus,
   getAgentTaskStatusBadgeClassName,
   getAgentTaskStatusLabel,
+  getAgentTaskProjectBadgeClassName,
+  getAgentTaskProjectName,
 } from "@/lib/agents/agent-tasks";
 import type { AgentTask, AgentTaskOutputFormat } from "@/lib/types";
 
@@ -22,6 +24,7 @@ type AgentTaskDetailModalProps = {
   onReject?: () => void;
   isUpdating?: boolean;
   canAccept?: boolean;
+  projectName?: string | null;
 };
 
 type DetailBlock = {
@@ -45,12 +48,14 @@ export default function AgentTaskDetailModal({
   onReject,
   isUpdating = false,
   canAccept = true,
+  projectName = null,
 }: Readonly<AgentTaskDetailModalProps>) {
   if (!open || !task) {
     return null;
   }
 
   const taskStatus = getAgentTaskStatus(task);
+  const taskProjectName = getAgentTaskProjectName(task, projectName);
   const showActions = Boolean(onAccept || onReject);
   const acceptDisabled = isUpdating || (taskStatus !== "accepted" && !canAccept);
 
@@ -117,6 +122,13 @@ export default function AgentTaskDetailModal({
           >
             {getAgentTaskStatusLabel(taskStatus)}
           </span>
+          {taskProjectName ? (
+            <span
+              className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentTaskProjectBadgeClassName()}`}
+            >
+              {taskProjectName}
+            </span>
+          ) : null}
           {taskStatus !== "pending" ? (
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
               You can change your decision below. Rejected tasks are replaced

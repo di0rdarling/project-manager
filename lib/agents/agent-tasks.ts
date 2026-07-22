@@ -72,6 +72,30 @@ export function canAcceptAgentTask(
   return getAcceptedAgentTasks(tasks).length < AGENT_TASK_COUNT;
 }
 
+export function getAgentTaskProjectBadgeClassName(): string {
+  return "bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-200";
+}
+
+export function getAgentTaskProjectName(
+  task: AgentTask,
+  fallbackProjectName?: string | null,
+): string | null {
+  const projectName = task.projectName?.trim() || fallbackProjectName?.trim();
+  return projectName || null;
+}
+
+export function normalizeAgentTasksProjectName(
+  tasks: AgentTask[],
+  projectName: string,
+): AgentTask[] {
+  const trimmedProjectName = projectName.trim();
+
+  return tasks.map((task) => ({
+    ...task,
+    projectName: trimmedProjectName,
+  }));
+}
+
 export function mergeGeneratedAgentTasks(
   existingTasks: AgentTask[],
   generatedTasks: AgentTask[],

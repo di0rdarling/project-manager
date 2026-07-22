@@ -27,7 +27,8 @@ const TASK_SCHEMA_BLOCK = `{
   "impact": string,            // 2–4 sentences: what concretely becomes true or improves for the project if this gets done, and how that moves the project closer to its stated goal
   "risk_if_skipped": string,   // 2–4 sentences: what specifically stays broken, risky, or blocked if this is skipped, and how that puts the project's overarching goal — and your ability to help the user reach it — at risk
   "output_format": "note" | "document",  // default "note"; use "document" only for a longer structured deliverable (e.g. a full requirements draft, architecture write-up)
-  "output_description": string // 2–3 sentences: what you will put in this note or document and what purpose it will serve for the project — this is what makes each task's deliverable distinct
+  "output_description": string, // 2–3 sentences: what you will put in this note or document and what purpose it will serve for the project — this is what makes each task's deliverable distinct
+  "project_name": string       // must exactly match the project name from the context above — the project this task is for
 }`;
 
 type BuildAgentTasksPromptInput = {
@@ -187,6 +188,7 @@ export function buildAgentTasksPrompt({
     "- `impact` and `risk_if_skipped` must be concrete and specific to this project, not generic upsides/downsides that could apply to any task. `risk_if_skipped` should be honest about the real cost of skipping this — including that you, as the teammate responsible for this area, will be less able to help the user reach the project's goal if this gap is never closed.",
     "- Every task produces a tangible deliverable. Default `output_format` to `\"note\"` — a focused note the user can read and act on. Use `\"document\"` only when the deliverable is clearly longer-form and structured (e.g. a full requirements draft, an architecture overview).",
     "- `output_description` is what differentiates each task: spell out exactly what sections or content you would write, and what purpose that deliverable serves for the project (e.g. \"A note listing the three highest-risk assumptions in the current requirements, so the user can validate them before building\"). Do not repeat the task title — describe the artifact itself.",
+    `- Every task must include \`project_name\` set exactly to \"${projectName}\" — the project this task is for. Do not leave it blank and do not substitute a different project name.`,
     "- Write \"detail\", \"rationale\", \"impact\", \"risk_if_skipped\", and \"output_description\" in your own voice, first person, exactly as you would describe them in a live conversation — never in the third person and never introducing yourself.",
     "",
     "Return only the JSON object.",

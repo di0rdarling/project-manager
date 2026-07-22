@@ -322,11 +322,14 @@ export type AgentTask = {
   outputDescription: string;
   /** User decision on whether the agent should run this task autonomously. */
   status?: AgentTaskStatus;
+  /** Project this task was suggested for. */
+  projectName?: string;
 };
 
 export type AgentTasksResponse = {
   teammateId: ChatTeammateId;
   projectId: string;
+  projectName: string | null;
   tasks: AgentTask[];
   updatedAt: string | null;
 };

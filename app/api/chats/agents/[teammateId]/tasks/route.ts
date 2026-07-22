@@ -1,4 +1,4 @@
-import { ObjectId } from "mongodb";
+import { ObjectId, type Db } from "mongodb";
 import {
   getChatTeammate,
   isChatTeammateId,
@@ -12,6 +12,7 @@ import {
   getAcceptedAgentTasks,
   getAgentTaskGenerationSlots,
   mergeGeneratedAgentTasks,
+  normalizeAgentTasksProjectName,
   parseAgentTaskStatus,
 } from "@/lib/agents/agent-tasks";
 import { AGENT_TASK_COUNT } from "@/lib/agents/agent-tasks-json";
@@ -45,13 +46,34 @@ function serializeAgentTasks(
   teammateId: ChatTeammateId,
   projectId: string,
   record: StoredAgentTasks | null,
+  projectName: string | null = null,
 ): AgentTasksResponse {
+  const resolvedProjectName = projectName?.trim() || null;
+  const tasks = (record?.tasks ?? []).map((task) => ({
+    ...task,
+    projectName: task.projectName?.trim() || resolvedProjectName || undefined,
+  }));
+
   return {
     teammateId,
     projectId,
-    tasks: record?.tasks ?? [],
+    projectName: resolvedProjectName,
+    tasks,
     updatedAt: record ? toIsoString(record.updatedAt) : null,
   };
+}
+
+async function getProjectNameForUser(
+  db: Db,
+  userId: ObjectId,
+  projectId: ObjectId,
+): Promise<string | null> {
+  const project = await db.collection("projects").findOne({
+    _id: projectId,
+    userId,
+  });
+
+  return typeof project?.name === "string" ? project.name : null;
 }
 
 function parseTeammateId(teammateId: string) {
@@ -106,8 +128,14 @@ export async function GET(request: Request, context: RouteContext) {
     }
 
     const client = await getClientPromise();
+    const db = client.db();
+    const projectName = await getProjectNameForUser(
+      db,
+      auth.userId,
+      parsedProject.projectId,
+    );
     const record = await getAgentTasks(
-      client.db(),
+      db,
       auth.userId,
       parsedTeammate.teammateId,
       parsedProject.projectId,
@@ -118,6 +146,7 @@ export async function GET(request: Request, context: RouteContext) {
         parsedTeammate.teammateId,
         parsedProject.projectIdString,
         record,
+        projectName,
       ),
     );
   } catch {
@@ -230,9 +259,13 @@ export async function POST(request: Request, context: RouteContext) {
         }),
       ),
       taskCount,
+      project.name,
     );
     const now = generatedAt.toISOString();
-    const mergedTasks = mergeGeneratedAgentTasks(existingTasks, draft.tasks);
+    const mergedTasks = mergeGeneratedAgentTasks(
+      existingTasks,
+      normalizeAgentTasksProjectName(draft.tasks, project.name),
+    );
     const stored = await upsertAgentTasks(
       db,
       auth.userId,
@@ -247,6 +280,7 @@ export async function POST(request: Request, context: RouteContext) {
         parsedTeammate.teammateId,
         parsedProject.projectIdString,
         stored,
+        project.name,
       ),
     );
   } catch (error) {
@@ -285,8 +319,14 @@ export async function DELETE(request: Request, context: RouteContext) {
     }
 
     const client = await getClientPromise();
+    const db = client.db();
+    const projectName = await getProjectNameForUser(
+      db,
+      auth.userId,
+      parsedProject.projectId,
+    );
     const stored = await clearAgentTasks(
-      client.db(),
+      db,
       auth.userId,
       parsedTeammate.teammateId,
       parsedProject.projectId,
@@ -297,6 +337,7 @@ export async function DELETE(request: Request, context: RouteContext) {
         parsedTeammate.teammateId,
         parsedProject.projectIdString,
         stored,
+        projectName,
       ),
     );
   } catch {
@@ -382,11 +423,18 @@ export async function PATCH(request: Request, context: RouteContext) {
       return Response.json({ error: "Tasks not found" }, { status: 404 });
     }
 
+    const projectName = await getProjectNameForUser(
+      db,
+      auth.userId,
+      parsedProject.projectId,
+    );
+
     return Response.json(
       serializeAgentTasks(
         parsedTeammate.teammateId,
         parsedProject.projectIdString,
         stored,
+        projectName,
       ),
     );
   } catch {
