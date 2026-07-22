@@ -307,6 +307,14 @@ export type AgentTaskOutputFormat = "note" | "document";
 
 export type AgentTaskStatus = "pending" | "accepted" | "rejected";
 
+/**
+ * Lifecycle of the agent actually carrying out an accepted task.
+ * "not_started" is the default (including for tasks with no outputStatus
+ * stored at all); "completed" means the deliverable fields below are
+ * populated and ready for the user to review.
+ */
+export type AgentTaskOutputStatus = "not_started" | "completed";
+
 export type AgentTask = {
   title: string;
   detail: string;
@@ -324,6 +332,14 @@ export type AgentTask = {
   status?: AgentTaskStatus;
   /** Project this task was suggested for. */
   projectName?: string;
+  /** Whether the agent has produced output for this (accepted) task yet. */
+  outputStatus?: AgentTaskOutputStatus;
+  /** The actual note/document content the agent produced. */
+  outputContent?: string;
+  /** How the agent tackled the task — their approach and reasoning. */
+  outputApproach?: string;
+  /** What is now true/unblocked in the project because this work is done. */
+  outputCompletionSummary?: string;
 };
 
 export type AgentTasksResponse = {

@@ -15,6 +15,7 @@ import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import AgentTaskDetailModal from "@/components/views/Chats/AgentTaskDetailModal";
 import { useDeleteAgentTasks } from "@/hooks/mutations/chats/useDeleteAgentTasks";
 import { useGenerateAgentTasks } from "@/hooks/mutations/chats/useGenerateAgentTasks";
+import { useStartAgentTaskOutput } from "@/hooks/mutations/chats/useStartAgentTaskOutput";
 import { useUpdateAgentTaskStatus } from "@/hooks/mutations/chats/useUpdateAgentTaskStatus";
 import { useFetchAgentTasks } from "@/hooks/queries/useFetchAgentTasks";
 import { getAgentTaskStatus, getAgentTaskStatusBadgeClassName, getAgentTaskStatusLabel, getAgentTaskProjectBadgeClassName, getAgentTaskProjectName, canGenerateAgentTasks, canAcceptAgentTask, getAcceptedAgentTasks } from "@/lib/agents/agent-tasks";
@@ -94,6 +95,25 @@ export default function AgentTasks({
     },
   });
 
+  const startTaskOutputMutation = useStartAgentTaskOutput({
+    onSuccess: (response, input) => {
+      const updatedTask = response.tasks.find(
+        (task) => task.title === input.taskTitle,
+      );
+
+      if (updatedTask) {
+        setSelectedTask(updatedTask);
+      }
+
+      toast.success("Teammate finished the task.");
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to start task.",
+      );
+    },
+  });
+
   function handleTaskStatusChange(
     status: "accepted" | "rejected",
   ) {
@@ -106,6 +126,18 @@ export default function AgentTasks({
       projectId,
       taskTitle: selectedTask.title,
       status,
+    });
+  }
+
+  function handleStartTaskOutput() {
+    if (!projectId || !selectedTask) {
+      return;
+    }
+
+    startTaskOutputMutation.mutate({
+      teammateId,
+      projectId,
+      taskTitle: selectedTask.title,
     });
   }
 
@@ -325,7 +357,10 @@ export default function AgentTasks({
         open={selectedTask !== null}
         task={selectedTask}
         onClose={() => {
-          if (updateTaskStatusMutation.isPending) {
+          if (
+            updateTaskStatusMutation.isPending ||
+            startTaskOutputMutation.isPending
+          ) {
             return;
           }
 
@@ -338,6 +373,8 @@ export default function AgentTasks({
           selectedTask ? canAcceptAgentTask(tasks, selectedTask.title) : false
         }
         projectName={projectName}
+        onStartOutput={handleStartTaskOutput}
+        isStartingOutput={startTaskOutputMutation.isPending}
       />
     </>
   );

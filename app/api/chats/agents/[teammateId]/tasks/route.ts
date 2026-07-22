@@ -1,9 +1,4 @@
-import { ObjectId, type Db } from "mongodb";
-import {
-  getChatTeammate,
-  isChatTeammateId,
-  type ChatTeammateId,
-} from "@/lib/chats/chat-teammates";
+import { getChatTeammate } from "@/lib/chats/chat-teammates";
 import { loadAgentNotesContext } from "@/lib/agents/agent-notes-store";
 import { parseAgentTasksJson } from "@/lib/agents/agent-tasks-json";
 import {
@@ -21,8 +16,13 @@ import {
   getAgentTasks,
   updateAgentTaskStatus,
   upsertAgentTasks,
-  type StoredAgentTasks,
 } from "@/lib/agents/agent-tasks-store";
+import {
+  getProjectNameForUser,
+  parseProjectId,
+  parseTeammateId,
+  serializeAgentTasks,
+} from "@/lib/agents/agent-tasks-route-helpers";
 import { serializeUserMemoryForPrompt } from "@/lib/agents/user-memory-json";
 import { getUserMemory } from "@/lib/agents/user-memory-store";
 import {
@@ -30,82 +30,15 @@ import {
   RECENT_CHAT_SUMMARY_LIMIT,
 } from "@/lib/chats/chat-summaries";
 import { requireUserId } from "@/lib/current-user";
-import { toIsoString } from "@/lib/dates";
 import { generateAgentTasks } from "@/lib/gemini";
 import getClientPromise from "@/lib/mongodb";
 import { getProjectContext } from "@/lib/project-context";
 import { buildAgentTasksPrompt } from "@/lib/prompts/agent-tasks-prompt";
 import { findUserById } from "@/lib/users";
-import type { AgentTasksResponse } from "@/lib/types";
 
 type RouteContext = {
   params: Promise<{ teammateId: string }>;
 };
-
-function serializeAgentTasks(
-  teammateId: ChatTeammateId,
-  projectId: string,
-  record: StoredAgentTasks | null,
-  projectName: string | null = null,
-): AgentTasksResponse {
-  const resolvedProjectName = projectName?.trim() || null;
-  const tasks = (record?.tasks ?? []).map((task) => ({
-    ...task,
-    projectName: task.projectName?.trim() || resolvedProjectName || undefined,
-  }));
-
-  return {
-    teammateId,
-    projectId,
-    projectName: resolvedProjectName,
-    tasks,
-    updatedAt: record ? toIsoString(record.updatedAt) : null,
-  };
-}
-
-async function getProjectNameForUser(
-  db: Db,
-  userId: ObjectId,
-  projectId: ObjectId,
-): Promise<string | null> {
-  const project = await db.collection("projects").findOne({
-    _id: projectId,
-    userId,
-  });
-
-  return typeof project?.name === "string" ? project.name : null;
-}
-
-function parseTeammateId(teammateId: string) {
-  if (!isChatTeammateId(teammateId)) {
-    return {
-      error: Response.json({ error: "Invalid teammate id" }, { status: 400 }),
-    };
-  }
-
-  return { teammateId };
-}
-
-function parseProjectId(searchParams: URLSearchParams) {
-  const projectId = searchParams.get("projectId")?.trim();
-
-  if (!projectId) {
-    return {
-      error: Response.json(
-        { error: "projectId query parameter is required" },
-        { status: 400 },
-      ),
-    };
-  }
-
-  if (!ObjectId.isValid(projectId)) {
-    return {
-      error: Response.json({ error: "Invalid project id" }, { status: 400 }),
-    };
-  }
-
-  return { projectId: new ObjectId(projectId), projectIdString: projectId };
-}
 
 export async function GET(request: Request, context: RouteContext) {
   try {

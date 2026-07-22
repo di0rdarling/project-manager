@@ -9,10 +9,12 @@ import {
   LightBulbIcon,
   SparklesIcon,
 } from "@heroicons/react/24/outline";
+import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Tabs, TabsList, TabsPanel, TabsTrigger } from "@/components/ui/Tabs";
 import {
   canAccessAgentTaskOutputTabs,
+  getAgentTaskOutputStatus,
   getAgentTaskStatus,
   getAgentTaskStatusBadgeClassName,
   getAgentTaskStatusLabel,
@@ -30,6 +32,8 @@ type AgentTaskDetailModalProps = {
   isUpdating?: boolean;
   canAccept?: boolean;
   projectName?: string | null;
+  onStartOutput?: () => void;
+  isStartingOutput?: boolean;
 };
 
 type DetailBlock = {
@@ -103,38 +107,71 @@ function AgentTaskOverviewContent({
   );
 }
 
-function AgentTaskOutputPlaceholder({
+function AgentTaskOutputNotAccepted() {
+  return (
+    <div className="rounded-2xl border border-dashed border-zinc-300 px-4 py-10 text-center dark:border-zinc-700">
+      <SparklesIcon
+        className="mx-auto size-8 text-zinc-400 dark:text-zinc-500"
+        aria-hidden
+      />
+      <p className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-100">
+        Output will appear after you accept this task
+      </p>
+      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+        Once accepted, this teammate will work autonomously and share what
+        they produced, their reasoning, and how it completes the task.
+      </p>
+    </div>
+  );
+}
+
+function AgentTaskOutputStartPrompt({
+  onStart,
+  isStarting,
+}: Readonly<{
+  onStart?: () => void;
+  isStarting: boolean;
+}>) {
+  return (
+    <div className="rounded-2xl border border-dashed border-zinc-300 px-4 py-10 text-center dark:border-zinc-700">
+      <SparklesIcon
+        className="mx-auto size-8 text-zinc-400 dark:text-zinc-500"
+        aria-hidden
+      />
+      <p className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-100">
+        Ready for this teammate to start
+      </p>
+      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+        Ask them to begin working on this task. Once they&apos;re done,
+        you&apos;ll see the deliverable, their approach, and how it completes
+        the task here.
+      </p>
+      {onStart ? (
+        <Button
+          type="button"
+          onClick={onStart}
+          disabled={isStarting}
+          className="mt-4"
+        >
+          {isStarting ? "Starting..." : "Ask teammate to start"}
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+function AgentTaskOutputWorking({
   task,
   outputFormatLabel,
-  isAccepted,
 }: Readonly<{
   task: AgentTask;
   outputFormatLabel: string;
-  isAccepted: boolean;
 }>) {
-  if (!isAccepted) {
-    return (
-      <div className="rounded-2xl border border-dashed border-zinc-300 px-4 py-10 text-center dark:border-zinc-700">
-        <SparklesIcon
-          className="mx-auto size-8 text-zinc-400 dark:text-zinc-500"
-          aria-hidden
-        />
-        <p className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-100">
-          Output will appear after you accept this task
-        </p>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Once accepted, this teammate will work autonomously and share what
-          they produced, their reasoning, and how it completes the task.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-5">
       <div className="rounded-2xl border border-dashed border-zinc-300 px-4 py-8 text-center dark:border-zinc-700">
         <SparklesIcon
-          className="mx-auto size-8 text-zinc-400 dark:text-zinc-500"
+          className="mx-auto size-8 animate-pulse text-zinc-400 dark:text-zinc-500"
           aria-hidden
         />
         <p className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-100">
@@ -195,6 +232,94 @@ function AgentTaskOutputPlaceholder({
   );
 }
 
+function AgentTaskOutputCompleted({
+  task,
+  outputFormatLabel,
+}: Readonly<{
+  task: AgentTask;
+  outputFormatLabel: string;
+}>) {
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          <DocumentTextIcon
+            className="size-4 shrink-0 text-blue-500 dark:text-blue-400"
+            aria-hidden
+          />
+          Deliverable
+        </p>
+        <span className="mt-2 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-500/15 dark:text-blue-300">
+          {outputFormatLabel}
+        </span>
+        <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
+          {task.outputContent}
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          <LightBulbIcon
+            className="size-4 shrink-0 text-amber-500 dark:text-amber-400"
+            aria-hidden
+          />
+          Approach &amp; reasoning
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
+          {task.outputApproach}
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          <CheckCircleIcon
+            className="size-4 shrink-0 text-emerald-500 dark:text-emerald-400"
+            aria-hidden
+          />
+          How this completes the task
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
+          {task.outputCompletionSummary}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function AgentTaskOutputContent({
+  task,
+  outputFormatLabel,
+  isAccepted,
+  isStarting,
+  onStart,
+}: Readonly<{
+  task: AgentTask;
+  outputFormatLabel: string;
+  isAccepted: boolean;
+  isStarting: boolean;
+  onStart?: () => void;
+}>) {
+  if (!isAccepted) {
+    return <AgentTaskOutputNotAccepted />;
+  }
+
+  const outputStatus = getAgentTaskOutputStatus(task);
+
+  if (outputStatus === "completed") {
+    return (
+      <AgentTaskOutputCompleted task={task} outputFormatLabel={outputFormatLabel} />
+    );
+  }
+
+  if (isStarting) {
+    return (
+      <AgentTaskOutputWorking task={task} outputFormatLabel={outputFormatLabel} />
+    );
+  }
+
+  return <AgentTaskOutputStartPrompt onStart={onStart} isStarting={isStarting} />;
+}
+
 function AgentTaskReviewPlaceholder() {
   return (
     <div className="rounded-2xl border border-dashed border-zinc-300 px-4 py-10 text-center dark:border-zinc-700">
@@ -222,6 +347,8 @@ export default function AgentTaskDetailModal({
   isUpdating = false,
   canAccept = true,
   projectName = null,
+  onStartOutput,
+  isStartingOutput = false,
 }: Readonly<AgentTaskDetailModalProps>) {
   const [activeTab, setActiveTab] = useState("overview");
   const previousTaskStatusRef = useRef<AgentTaskStatus | null>(null);
@@ -370,10 +497,12 @@ export default function AgentTaskDetailModal({
           </TabsPanel>
 
           <TabsPanel value="output">
-            <AgentTaskOutputPlaceholder
+            <AgentTaskOutputContent
               task={task}
               outputFormatLabel={outputFormatLabel}
               isAccepted={isAccepted}
+              isStarting={isStartingOutput}
+              onStart={onStartOutput}
             />
           </TabsPanel>
 

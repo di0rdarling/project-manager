@@ -1,5 +1,5 @@
 import { AGENT_TASK_COUNT } from "@/lib/agents/agent-tasks-json";
-import type { AgentTask, AgentTaskStatus } from "@/lib/types";
+import type { AgentTask, AgentTaskOutputStatus, AgentTaskStatus } from "@/lib/types";
 
 export const AGENT_TASK_STATUS_OPTIONS = [
   { value: "pending", label: "Pending" },
@@ -98,6 +98,16 @@ export function normalizeAgentTasksProjectName(
 
 export function canAccessAgentTaskOutputTabs(task: AgentTask): boolean {
   return getAgentTaskStatus(task) === "accepted";
+}
+
+export function getAgentTaskOutputStatus(
+  task: AgentTask,
+): AgentTaskOutputStatus {
+  return task.outputStatus ?? "not_started";
+}
+
+export function hasAgentTaskOutput(task: AgentTask): boolean {
+  return getAgentTaskOutputStatus(task) === "completed";
 }
 
 export function mergeGeneratedAgentTasks(

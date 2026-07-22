@@ -12,9 +12,21 @@ export type UpdateAgentTaskStatusRequest = AgentTasksRequest & {
   status: Exclude<AgentTaskStatus, "pending">;
 };
 
+export type StartAgentTaskOutputRequest = AgentTasksRequest & {
+  taskTitle: string;
+};
+
 function getAgentTasksUrl({ teammateId, projectId }: AgentTasksRequest): string {
   const params = new URLSearchParams({ projectId });
   return `/api/chats/agents/${teammateId}/tasks?${params.toString()}`;
+}
+
+function getAgentTaskOutputUrl({
+  teammateId,
+  projectId,
+}: AgentTasksRequest): string {
+  const params = new URLSearchParams({ projectId });
+  return `/api/chats/agents/${teammateId}/tasks/output?${params.toString()}`;
 }
 
 export async function fetchAgentTasks(
@@ -52,6 +64,19 @@ export async function updateAgentTaskStatusRequest(
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ taskTitle, status }),
+  });
+
+  return parseResponse<AgentTasksResponse>(response);
+}
+
+export async function startAgentTaskOutputRequest(
+  input: StartAgentTaskOutputRequest,
+): Promise<AgentTasksResponse> {
+  const { taskTitle, ...request } = input;
+  const response = await fetch(getAgentTaskOutputUrl(request), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ taskTitle }),
   });
 
   return parseResponse<AgentTasksResponse>(response);
