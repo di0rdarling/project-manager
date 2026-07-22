@@ -174,6 +174,7 @@ export default function ChatsView({ projectId }: Readonly<ChatsViewProps>) {
           router.push(getChatDetailHref(chatId, projectId))
         }
         projectId={projectId}
+        defaultTeammateId={selectedTeammateId}
       />
     </PageContent>
   );

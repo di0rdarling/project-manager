@@ -70,6 +70,28 @@ type AgentNoteBase<TId> = {
 export type AgentNote = AgentNoteBase<ObjectId>;
 export type AgentNoteResponse = AgentNoteBase<string>;
 
+export type AgentDocumentStatus =
+  | "ready_for_review"
+  | "in_review"
+  | "accepted";
+
+type AgentDocumentBase<TId> = {
+  _id: TId;
+  userId: TId;
+  teammateId: ChatTeammateId;
+  projectId: TId;
+  /** Denormalized for list display; populated by the API when available. */
+  projectName?: string;
+  title: string;
+  content: string;
+  status: AgentDocumentStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AgentDocument = AgentDocumentBase<ObjectId>;
+export type AgentDocumentResponse = AgentDocumentBase<string>;
+
 type PainPointBase<TId> = {
   _id: TId;
   userId: TId;
@@ -283,6 +305,8 @@ export type UserMemoryResponse = {
 
 export type AgentTaskOutputFormat = "note" | "document";
 
+export type AgentTaskStatus = "pending" | "accepted" | "rejected";
+
 export type AgentTask = {
   title: string;
   detail: string;
@@ -296,6 +320,8 @@ export type AgentTask = {
   outputFormat: AgentTaskOutputFormat;
   /** What the agent intends to put in the deliverable and what purpose it serves. */
   outputDescription: string;
+  /** User decision on whether the agent should run this task autonomously. */
+  status?: AgentTaskStatus;
 };
 
 export type AgentTasksResponse = {

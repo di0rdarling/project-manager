@@ -14,6 +14,7 @@ import {
 } from "@/lib/chats/chat-teammates";
 import type { TeammateChatSummary } from "@/lib/chats/chat-summaries";
 import { AGENT_TASK_COUNT } from "@/lib/agents/agent-tasks-json";
+import type { AgentTask } from "@/lib/types";
 
 const JSON_SCHEMA_BLOCK = `{
   "tasks": Task[]
@@ -50,6 +51,8 @@ type BuildAgentTasksPromptInput = {
   existingOverviewContext?: string | null;
   userName?: string | null;
   generatedAt?: Date;
+  taskCount?: number;
+  acceptedTasks?: Array<Pick<AgentTask, "title" | "detail">>;
 };
 
 /**
@@ -72,6 +75,8 @@ export function buildAgentTasksPrompt({
   existingOverviewContext,
   userName,
   generatedAt = new Date(),
+  taskCount = AGENT_TASK_COUNT,
+  acceptedTasks = [],
 }: BuildAgentTasksPromptInput): string {
   const currentDateTime = formatDisplayDateTime(generatedAt.toISOString());
   const resolvedUserName = userName?.trim() || "the user";
@@ -114,6 +119,19 @@ export function buildAgentTasksPrompt({
     "",
     "Do not suggest tasks in areas the user has explicitly deprioritised, paused, or not yet started unless the context shows a critical blocker that will stall their current focus if left unaddressed. When in doubt, stay close to where the energy and attention already are — and within your lane.",
   ];
+
+  if (acceptedTasks.length > 0) {
+    sections.push(
+      "",
+      "### Already accepted tasks",
+      "",
+      `${resolvedUserName} has already accepted the following tasks. These are locked in — do not suggest overlapping, duplicate, or superseding work. Your new suggestions must fill the remaining open slots only:`,
+      ...acceptedTasks.map(
+        (task, index) =>
+          `${index + 1}. ${task.title}\n   ${task.detail}`,
+      ),
+    );
+  }
 
   if (agentNotesContext?.trim()) {
     sections.push("", agentNotesContext.trim());
@@ -159,7 +177,7 @@ export function buildAgentTasksPrompt({
     TASK_SCHEMA_BLOCK,
     "```",
     "",
-    `- Return exactly ${AGENT_TASK_COUNT} tasks in the \`tasks\` array — no more, no fewer.`,
+    `- Return exactly ${taskCount} tasks in the \`tasks\` array — no more, no fewer.`,
     "- Each task must be something you (this AI teammate) could realistically execute autonomously: research, drafting, analysis, structured updates to project thinking, etc.",
     `- Ground every task in the project context above, but only the parts of it that fall within your role as ${agentRole}. Each task should either close a specific gap in what the user is currently focused on, or be the next high-impact action that moves the project toward its stated goal — ideally both — always scoped to what ${agentName} the ${agentRole} would actually do, not whatever looks most impactful for the project in general.`,
     "- Do not suggest tasks that require the user to do the work, generic advice with no deliverable, or tasks outside your role and personality. Before including a task, explicitly check it against the roster of other teammates above: if it reads like something Sandy, Arlo, Theo, Nova, Jordan, or Reid would own instead, drop it and find a different one — even if it was the most impactful thing you noticed in the project context.",

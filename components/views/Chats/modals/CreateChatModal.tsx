@@ -23,6 +23,7 @@ type CreateChatModalProps = {
   onClose: () => void;
   onSuccess: (chatId: string) => void;
   projectId: string;
+  defaultTeammateId?: ChatTeammateId | "";
 };
 
 export default function CreateChatModal({
@@ -30,6 +31,7 @@ export default function CreateChatModal({
   onClose,
   onSuccess,
   projectId,
+  defaultTeammateId = "",
 }: CreateChatModalProps) {
   const [selectedRequirementId, setSelectedRequirementId] = useState("");
   const [selectedFeatureId, setSelectedFeatureId] = useState("");
@@ -64,7 +66,8 @@ export default function CreateChatModal({
 
     setSelectedRequirementId("");
     setSelectedFeatureId("");
-  }, [open, projectId]);
+    setSelectedTeammateId(defaultTeammateId || DEFAULT_CHAT_TEAMMATE_ID);
+  }, [open, projectId, defaultTeammateId]);
 
   const createChatMutation = useCreateChat({
     onSuccess: (chat) => {

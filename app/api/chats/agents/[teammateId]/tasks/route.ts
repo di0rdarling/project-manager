@@ -7,8 +7,18 @@ import {
 import { loadAgentNotesContext } from "@/lib/agents/agent-notes-store";
 import { parseAgentTasksJson } from "@/lib/agents/agent-tasks-json";
 import {
+  canAcceptAgentTask,
+  canGenerateAgentTasks,
+  getAcceptedAgentTasks,
+  getAgentTaskGenerationSlots,
+  mergeGeneratedAgentTasks,
+  parseAgentTaskStatus,
+} from "@/lib/agents/agent-tasks";
+import { AGENT_TASK_COUNT } from "@/lib/agents/agent-tasks-json";
+import {
   clearAgentTasks,
   getAgentTasks,
+  updateAgentTaskStatus,
   upsertAgentTasks,
   type StoredAgentTasks,
 } from "@/lib/agents/agent-tasks-store";
@@ -156,6 +166,27 @@ export async function POST(request: Request, context: RouteContext) {
       return Response.json({ error: "Project not found" }, { status: 404 });
     }
 
+    const existingRecord = await getAgentTasks(
+      db,
+      auth.userId,
+      parsedTeammate.teammateId,
+      parsedProject.projectId,
+    );
+    const existingTasks = existingRecord?.tasks ?? [];
+
+    if (!canGenerateAgentTasks(existingTasks)) {
+      return Response.json(
+        {
+          error:
+            "All task slots are filled with accepted tasks. Clear tasks or wait for accepted work to complete before generating more.",
+        },
+        { status: 409 },
+      );
+    }
+
+    const acceptedTasks = getAcceptedAgentTasks(existingTasks);
+    const taskCount = getAgentTaskGenerationSlots(existingTasks);
+
     const chatSummaries = await getTeammateChatSummaries(
       db,
       auth.userId,
@@ -194,16 +225,20 @@ export async function POST(request: Request, context: RouteContext) {
           existingOverviewContext,
           userName,
           generatedAt,
+          taskCount,
+          acceptedTasks,
         }),
       ),
+      taskCount,
     );
     const now = generatedAt.toISOString();
+    const mergedTasks = mergeGeneratedAgentTasks(existingTasks, draft.tasks);
     const stored = await upsertAgentTasks(
       db,
       auth.userId,
       parsedTeammate.teammateId,
       parsedProject.projectId,
-      draft,
+      { tasks: mergedTasks },
       now,
     );
 
@@ -266,5 +301,98 @@ export async function DELETE(request: Request, context: RouteContext) {
     );
   } catch {
     return Response.json({ error: "Failed to clear tasks" }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request, context: RouteContext) {
+  try {
+    const auth = await requireUserId();
+    if ("error" in auth) {
+      return auth.error;
+    }
+
+    const { teammateId: rawTeammateId } = await context.params;
+    const parsedTeammate = parseTeammateId(rawTeammateId);
+
+    if ("error" in parsedTeammate) {
+      return parsedTeammate.error;
+    }
+
+    const parsedProject = parseProjectId(new URL(request.url).searchParams);
+
+    if ("error" in parsedProject) {
+      return parsedProject.error;
+    }
+
+    const body = (await request.json()) as {
+      taskTitle?: unknown;
+      status?: unknown;
+    };
+    const taskTitle =
+      typeof body.taskTitle === "string" ? body.taskTitle.trim() : "";
+
+    if (!taskTitle) {
+      return Response.json({ error: "taskTitle is required" }, { status: 400 });
+    }
+
+    const status = parseAgentTaskStatus(body.status);
+
+    if (!status || status === "pending") {
+      return Response.json(
+        { error: "status must be accepted or rejected" },
+        { status: 400 },
+      );
+    }
+
+    const client = await getClientPromise();
+    const db = client.db();
+    const existingRecord = await getAgentTasks(
+      db,
+      auth.userId,
+      parsedTeammate.teammateId,
+      parsedProject.projectId,
+    );
+
+    if (!existingRecord) {
+      return Response.json({ error: "Tasks not found" }, { status: 404 });
+    }
+
+    if (
+      status === "accepted" &&
+      !canAcceptAgentTask(existingRecord.tasks, taskTitle)
+    ) {
+      return Response.json(
+        {
+          error: `You can only accept up to ${AGENT_TASK_COUNT} tasks at a time.`,
+        },
+        { status: 409 },
+      );
+    }
+
+    const stored = await updateAgentTaskStatus(
+      db,
+      auth.userId,
+      parsedTeammate.teammateId,
+      parsedProject.projectId,
+      taskTitle,
+      status,
+    );
+
+    if (!stored) {
+      return Response.json({ error: "Tasks not found" }, { status: 404 });
+    }
+
+    return Response.json(
+      serializeAgentTasks(
+        parsedTeammate.teammateId,
+        parsedProject.projectIdString,
+        stored,
+      ),
+    );
+  } catch {
+    return Response.json(
+      { error: "Failed to update task status" },
+      { status: 500 },
+    );
   }
 }

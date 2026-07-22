@@ -9,8 +9,8 @@ import { LoadingMessage } from "@/components/ui/LoadingMessage";
 interface AgentSectionProps {
   title: string;
   description?: string;
-  addButtonLabel: string;
-  onAddClick: () => void;
+  addButtonLabel?: string;
+  onAddClick?: () => void;
   isPending: boolean;
   isError: boolean;
   error: Error | null;
@@ -41,6 +41,10 @@ export default function AgentSection({
   const contentId = `${title.toLowerCase().replace(/\s+/g, "-")}-section-content`;
 
   function handleAddClick() {
+    if (!onAddClick) {
+      return;
+    }
+
     if (!isExpanded) {
       setIsExpanded(true);
     }
@@ -69,14 +73,16 @@ export default function AgentSection({
               {title}
             </button>
           </h2>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleAddClick}
-            className="shrink-0"
-          >
-            {addButtonLabel}
-          </Button>
+          {addButtonLabel && onAddClick ? (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleAddClick}
+              className="shrink-0"
+            >
+              {addButtonLabel}
+            </Button>
+          ) : null}
         </div>
         {description ? (
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -96,9 +102,11 @@ export default function AgentSection({
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
                 {emptyMessage}
               </p>
-              <Button type="button" onClick={handleAddClick} className="mt-4">
-                {addButtonLabel}
-              </Button>
+              {addButtonLabel && onAddClick ? (
+                <Button type="button" onClick={handleAddClick} className="mt-4">
+                  {addButtonLabel}
+                </Button>
+              ) : null}
             </div>
           ) : (
             children

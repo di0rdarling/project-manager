@@ -51,7 +51,10 @@ function asTrimmedString(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-export function parseAgentTasksJson(raw: string): AgentTasksDraft {
+export function parseAgentTasksJson(
+  raw: string,
+  expectedCount: number = AGENT_TASK_COUNT,
+): AgentTasksDraft {
   const parsed = JSON.parse(stripJsonFencing(raw));
   const record = asRecord(parsed);
 
@@ -84,9 +87,9 @@ export function parseAgentTasksJson(raw: string): AgentTasksDraft {
         )
     : [];
 
-  if (tasks.length !== AGENT_TASK_COUNT) {
+  if (tasks.length !== expectedCount) {
     throw new Error(
-      `Expected ${AGENT_TASK_COUNT} tasks, received ${tasks.length}`,
+      `Expected ${expectedCount} tasks, received ${tasks.length}`,
     );
   }
 

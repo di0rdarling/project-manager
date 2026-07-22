@@ -15,7 +15,9 @@ import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import AgentTaskDetailModal from "@/components/views/Chats/AgentTaskDetailModal";
 import { useDeleteAgentTasks } from "@/hooks/mutations/chats/useDeleteAgentTasks";
 import { useGenerateAgentTasks } from "@/hooks/mutations/chats/useGenerateAgentTasks";
+import { useUpdateAgentTaskStatus } from "@/hooks/mutations/chats/useUpdateAgentTaskStatus";
 import { useFetchAgentTasks } from "@/hooks/queries/useFetchAgentTasks";
+import { getAgentTaskStatus, getAgentTaskStatusBadgeClassName, getAgentTaskStatusLabel, canGenerateAgentTasks, canAcceptAgentTask, getAcceptedAgentTasks } from "@/lib/agents/agent-tasks";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type { AgentTask } from "@/lib/types";
 
@@ -46,12 +48,19 @@ export default function AgentTasks({
     error: generateError,
     reset: resetGenerate,
   } = useGenerateAgentTasks({
-    onSuccess: () => {
-      toast.success(
-        isRegeneratingRef.current
-          ? "Tasks regenerated successfully."
-          : "Tasks generated successfully.",
-      );
+    onSuccess: (response) => {
+      const acceptedCount = getAcceptedAgentTasks(response.tasks).length;
+
+      if (isRegeneratingRef.current) {
+        toast.success(
+          acceptedCount > 0
+            ? "New tasks generated. Accepted tasks were kept."
+            : "Tasks regenerated successfully.",
+        );
+        return;
+      }
+
+      toast.success("Tasks generated successfully.");
     },
   });
 
@@ -61,6 +70,37 @@ export default function AgentTasks({
       setIsDeleteModalOpen(false);
     },
   });
+
+  const updateTaskStatusMutation = useUpdateAgentTaskStatus({
+    onSuccess: (_tasks, input) => {
+      setSelectedTask(null);
+      toast.success(
+        input.status === "accepted"
+          ? "Task accepted."
+          : "Task rejected.",
+      );
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update task.",
+      );
+    },
+  });
+
+  function handleTaskStatusChange(
+    status: "accepted" | "rejected",
+  ) {
+    if (!projectId || !selectedTask) {
+      return;
+    }
+
+    updateTaskStatusMutation.mutate({
+      teammateId,
+      projectId,
+      taskTitle: selectedTask.title,
+      status,
+    });
+  }
 
   function handleGenerate(isRegenerate: boolean) {
     if (!projectId) {
@@ -83,6 +123,8 @@ export default function AgentTasks({
 
   const tasks = agentTasks?.tasks ?? [];
   const hasTasks = tasks.length > 0;
+  const acceptedTaskCount = getAcceptedAgentTasks(tasks).length;
+  const canGenerateMoreTasks = canGenerateAgentTasks(tasks);
   const isInitialLoading = Boolean(projectId) && isFetching && !agentTasks;
 
   if (!projectId) {
@@ -114,9 +156,9 @@ export default function AgentTasks({
             <ItemActionsMenu
               actions={[
                 regenerateItemAction(
-                  "Regenerate tasks",
+                  acceptedTaskCount > 0 ? "Generate more tasks" : "Regenerate tasks",
                   () => handleGenerate(true),
-                  isGenerating,
+                  isGenerating || !canGenerateMoreTasks,
                 ),
                 deleteItemAction(
                   "Clear tasks",
@@ -133,7 +175,9 @@ export default function AgentTasks({
         ) : isGenerating ? (
           <LoadingMessage>
             {isRegeneratingRef.current
-              ? "Regenerating tasks..."
+              ? acceptedTaskCount > 0
+                ? "Generating more tasks..."
+                : "Regenerating tasks..."
               : "Generating tasks..."}
           </LoadingMessage>
         ) : isError ? (
@@ -143,36 +187,78 @@ export default function AgentTasks({
             {isGenerateError ? (
               <ErrorMessage
                 error={generateError}
-                fallbackMessage="Failed to regenerate tasks"
+                fallbackMessage="Failed to generate tasks"
               />
             ) : null}
+            {!canGenerateMoreTasks ? (
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                All three task slots are filled with accepted tasks. Clear tasks
+                to start a new set.
+              </p>
+            ) : null}
             <ul className="divide-y divide-zinc-200 rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-700 dark:border-zinc-700 dark:bg-zinc-900">
-              {tasks.map((task) => (
-                <li key={task.title}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTask(task)}
-                    className="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
-                  >
-                    <ClipboardDocumentCheckIcon
-                      className="mt-0.5 size-4 shrink-0 text-zinc-400 dark:text-zinc-500"
-                      aria-hidden
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
-                        {task.title}
-                      </p>
-                      <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-                        {task.detail}
-                      </p>
-                    </div>
-                    <ChevronRightIcon
-                      className="mt-0.5 size-4 shrink-0 text-zinc-400 dark:text-zinc-500"
-                      aria-hidden
-                    />
-                  </button>
-                </li>
-              ))}
+              {tasks.map((task) => {
+                const taskStatus = getAgentTaskStatus(task);
+                const isRejected = taskStatus === "rejected";
+
+                return (
+                  <li key={task.title}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTask(task)}
+                      className={`flex w-full items-start gap-3 px-4 py-3 text-left transition ${
+                        isRejected
+                          ? "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30"
+                          : "hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
+                      }`}
+                    >
+                      <ClipboardDocumentCheckIcon
+                        className={`mt-0.5 size-4 shrink-0 ${
+                          isRejected
+                            ? "text-zinc-300 dark:text-zinc-600"
+                            : "text-zinc-400 dark:text-zinc-500"
+                        }`}
+                        aria-hidden
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p
+                            className={`text-sm font-medium ${
+                              isRejected
+                                ? "text-zinc-400 dark:text-zinc-500"
+                                : "text-zinc-800 dark:text-zinc-100"
+                            }`}
+                          >
+                            {task.title}
+                          </p>
+                          <span
+                            className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentTaskStatusBadgeClassName(taskStatus)}`}
+                          >
+                            {getAgentTaskStatusLabel(taskStatus)}
+                          </span>
+                        </div>
+                        <p
+                          className={`mt-1 text-sm leading-relaxed ${
+                            isRejected
+                              ? "text-zinc-400 dark:text-zinc-500"
+                              : "text-zinc-600 dark:text-zinc-300"
+                          }`}
+                        >
+                          {task.detail}
+                        </p>
+                      </div>
+                      <ChevronRightIcon
+                        className={`mt-0.5 size-4 shrink-0 ${
+                          isRejected
+                            ? "text-zinc-300 dark:text-zinc-600"
+                            : "text-zinc-400 dark:text-zinc-500"
+                        }`}
+                        aria-hidden
+                      />
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </>
         ) : (
@@ -222,7 +308,19 @@ export default function AgentTasks({
       <AgentTaskDetailModal
         open={selectedTask !== null}
         task={selectedTask}
-        onClose={() => setSelectedTask(null)}
+        onClose={() => {
+          if (updateTaskStatusMutation.isPending) {
+            return;
+          }
+
+          setSelectedTask(null);
+        }}
+        onAccept={() => handleTaskStatusChange("accepted")}
+        onReject={() => handleTaskStatusChange("rejected")}
+        isUpdating={updateTaskStatusMutation.isPending}
+        canAccept={
+          selectedTask ? canAcceptAgentTask(tasks, selectedTask.title) : false
+        }
       />
     </>
   );

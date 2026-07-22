@@ -7,12 +7,21 @@ import {
   LightBulbIcon,
 } from "@heroicons/react/24/outline";
 import { Modal } from "@/components/ui/Modal";
+import {
+  getAgentTaskStatus,
+  getAgentTaskStatusBadgeClassName,
+  getAgentTaskStatusLabel,
+} from "@/lib/agents/agent-tasks";
 import type { AgentTask, AgentTaskOutputFormat } from "@/lib/types";
 
 type AgentTaskDetailModalProps = {
   open: boolean;
   task: AgentTask | null;
   onClose: () => void;
+  onAccept?: () => void;
+  onReject?: () => void;
+  isUpdating?: boolean;
+  canAccept?: boolean;
 };
 
 type DetailBlock = {
@@ -32,10 +41,18 @@ export default function AgentTaskDetailModal({
   open,
   task,
   onClose,
+  onAccept,
+  onReject,
+  isUpdating = false,
+  canAccept = true,
 }: Readonly<AgentTaskDetailModalProps>) {
   if (!open || !task) {
     return null;
   }
+
+  const taskStatus = getAgentTaskStatus(task);
+  const showActions = Boolean(onAccept || onReject);
+  const acceptDisabled = isUpdating || (taskStatus !== "accepted" && !canAccept);
 
   const blocks: DetailBlock[] = [
     {
@@ -65,8 +82,49 @@ export default function AgentTaskDetailModal({
     OUTPUT_FORMAT_LABELS[task.outputFormat] ?? OUTPUT_FORMAT_LABELS.note;
 
   return (
-    <Modal open={open} onClose={onClose} title={task.title} size="wide">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={task.title}
+      size="wide"
+      secondaryAction={
+        showActions && onReject
+          ? {
+              label: "Reject",
+              onClick: onReject,
+              isPending: isUpdating,
+              pendingLabel: "Saving...",
+              variant: "secondary",
+            }
+          : undefined
+      }
+      primaryAction={
+        showActions && onAccept
+          ? {
+              label: "Accept",
+              onClick: onAccept,
+              isPending: isUpdating,
+              pendingLabel: "Saving...",
+              disabled: acceptDisabled,
+            }
+          : undefined
+      }
+    >
       <div className="space-y-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentTaskStatusBadgeClassName(taskStatus)}`}
+          >
+            {getAgentTaskStatusLabel(taskStatus)}
+          </span>
+          {taskStatus !== "pending" ? (
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              You can change your decision below. Rejected tasks are replaced
+              when you generate more.
+            </p>
+          ) : null}
+        </div>
+
         <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
           {task.detail}
         </p>

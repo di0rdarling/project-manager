@@ -15,6 +15,7 @@ import {
   getAgentProfileBackNavigation,
   parseAgentProfileNavigationContext,
 } from "@/lib/chats/agent-profile-navigation";
+import AIAgentDocumentsSection from "@/components/views/Chats/AIAgentDocumentsSection";
 import AIAgentNotesSection from "@/components/views/Chats/AIAgentNotesSection";
 import AgentUserMemoryOverview from "@/components/views/Chats/AgentUserMemoryOverview";
 
@@ -92,6 +93,12 @@ export default function ChatAgentProfileView({
         profileFrom={navigationContext.from}
         profileProjectId={navigationContext.projectId}
       />
+
+      <AIAgentDocumentsSection
+        teammateId={teammateId}
+        agentName={teammate.name}
+      />
+
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Personality &amp; approach</h2>
         <ul className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">

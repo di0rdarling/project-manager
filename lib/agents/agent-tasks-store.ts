@@ -2,7 +2,7 @@ import type { Db, ObjectId } from "mongodb";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type { AgentTasksDraft } from "@/lib/agents/agent-tasks-json";
 import { EMPTY_AGENT_TASKS_DRAFT } from "@/lib/agents/agent-tasks-json";
-import type { AgentTask } from "@/lib/types";
+import type { AgentTask, AgentTaskStatus } from "@/lib/types";
 
 export const AGENT_TASKS_COLLECTION = "agent_tasks";
 
@@ -65,6 +65,41 @@ export async function clearAgentTasks(
     teammateId,
     projectId,
     EMPTY_AGENT_TASKS_DRAFT,
+    updatedAt,
+  );
+}
+
+export async function updateAgentTaskStatus(
+  db: Db,
+  userId: ObjectId,
+  teammateId: ChatTeammateId,
+  projectId: ObjectId,
+  taskTitle: string,
+  status: AgentTaskStatus,
+  updatedAt: string = new Date().toISOString(),
+): Promise<StoredAgentTasks | null> {
+  const record = await getAgentTasks(db, userId, teammateId, projectId);
+
+  if (!record) {
+    return null;
+  }
+
+  const taskIndex = record.tasks.findIndex((task) => task.title === taskTitle);
+
+  if (taskIndex === -1) {
+    return null;
+  }
+
+  const tasks = record.tasks.map((task, index) =>
+    index === taskIndex ? { ...task, status } : task,
+  );
+
+  return upsertAgentTasks(
+    db,
+    userId,
+    teammateId,
+    projectId,
+    { tasks },
     updatedAt,
   );
 }
