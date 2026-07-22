@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
-import { featureNotesFilter, projectLevelNotesFilter } from "@/lib/notes";
+import { featureNotesFilter, noteFolderMatchesScope, projectLevelNotesFilter } from "@/lib/notes";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import type { Note, NoteResponse } from "@/lib/types";
 
@@ -140,13 +140,6 @@ export async function POST(request: Request, context: RouteContext) {
       return Response.json({ error: "Note content is required" }, { status: 400 });
     }
 
-    if (featureId && folderId) {
-      return Response.json(
-        { error: "Folders are only supported for project-level notes" },
-        { status: 400 },
-      );
-    }
-
     const projectObjectId = new ObjectId(id);
     const db = result.client.db();
 
@@ -179,6 +172,18 @@ export async function POST(request: Request, context: RouteContext) {
 
       if (!folder) {
         return Response.json({ error: "Folder not found" }, { status: 404 });
+      }
+
+      if (
+        !noteFolderMatchesScope(
+          folder.featureId ? folder.featureId.toString() : null,
+          featureId,
+        )
+      ) {
+        return Response.json(
+          { error: "Folder does not belong to this note scope" },
+          { status: 400 },
+        );
       }
     }
 

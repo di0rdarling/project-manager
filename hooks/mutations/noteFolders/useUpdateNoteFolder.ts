@@ -25,7 +25,7 @@ export function useUpdateNoteFolder(options?: UseUpdateNoteFolderOptions) {
     ...restOptions,
     onSuccess: (folder, variables, onMutateResult, context) => {
       queryClient.setQueryData<NoteFolderResponse[]>(
-        noteFolderKeys.list(variables.projectId),
+        noteFolderKeys.list(variables.projectId, folder.featureId),
         (current) =>
           current?.map((existing) =>
             existing._id === folder._id ? folder : existing,

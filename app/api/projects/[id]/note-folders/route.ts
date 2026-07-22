@@ -2,6 +2,11 @@ import { ObjectId } from "mongodb";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
+import {
+  featureNoteFoldersFilter,
+  noteFolderMatchesScope,
+  projectLevelNoteFoldersFilter,
+} from "@/lib/notes";
 import type { NoteFolder, NoteFolderResponse } from "@/lib/types";
 
 type RouteContext = {
@@ -23,6 +28,7 @@ function serializeNoteFolder(folder: StoredNoteFolder): NoteFolderResponse {
     _id: folder._id.toString(),
     userId: folder.userId.toString(),
     projectId: folder.projectId.toString(),
+    featureId: folder.featureId ? folder.featureId.toString() : null,
     parentFolderId: folder.parentFolderId
       ? folder.parentFolderId.toString()
       : null,
@@ -52,7 +58,7 @@ async function getProjectOr404(projectId: string, userId: ObjectId) {
   return { client };
 }
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   try {
     const auth = await requireUserId();
     if ("error" in auth) {
@@ -66,11 +72,35 @@ export async function GET(_request: Request, context: RouteContext) {
       return result.error;
     }
 
+    const featureId = new URL(request.url).searchParams.get("featureId");
+    const projectObjectId = new ObjectId(id);
+
+    if (featureId) {
+      if (!ObjectId.isValid(featureId)) {
+        return Response.json({ error: "Invalid feature id" }, { status: 400 });
+      }
+
+      const feature = await result.client
+        .db()
+        .collection("features")
+        .findOne({
+          _id: new ObjectId(featureId),
+          projectId: projectObjectId,
+          userId: auth.userId,
+        });
+
+      if (!feature) {
+        return Response.json({ error: "Feature not found" }, { status: 404 });
+      }
+    }
+
     const folders = await result.client
       .db()
       .collection<StoredNoteFolder>("noteFolders")
       .find({
-        projectId: new ObjectId(id),
+        ...(featureId
+          ? featureNoteFoldersFilter(projectObjectId, new ObjectId(featureId))
+          : projectLevelNoteFoldersFilter(projectObjectId)),
         userId: auth.userId,
       })
       .sort({ name: 1 })
@@ -98,6 +128,10 @@ export async function POST(request: Request, context: RouteContext) {
 
     const body = await request.json();
     const name = typeof body.name === "string" ? body.name.trim() : "";
+    const featureId =
+      typeof body.featureId === "string" && body.featureId.trim()
+        ? body.featureId.trim()
+        : null;
     const parentFolderId =
       typeof body.parentFolderId === "string" && body.parentFolderId.trim()
         ? body.parentFolderId.trim()
@@ -109,6 +143,22 @@ export async function POST(request: Request, context: RouteContext) {
 
     const projectObjectId = new ObjectId(id);
     const db = result.client.db();
+
+    if (featureId) {
+      if (!ObjectId.isValid(featureId)) {
+        return Response.json({ error: "Invalid feature id" }, { status: 400 });
+      }
+
+      const feature = await db.collection("features").findOne({
+        _id: new ObjectId(featureId),
+        projectId: projectObjectId,
+        userId: auth.userId,
+      });
+
+      if (!feature) {
+        return Response.json({ error: "Feature not found" }, { status: 404 });
+      }
+    }
 
     if (parentFolderId) {
       if (!ObjectId.isValid(parentFolderId)) {
@@ -124,12 +174,25 @@ export async function POST(request: Request, context: RouteContext) {
       if (!parentFolder) {
         return Response.json({ error: "Parent folder not found" }, { status: 404 });
       }
+
+      if (
+        !noteFolderMatchesScope(
+          parentFolder.featureId ? parentFolder.featureId.toString() : null,
+          featureId,
+        )
+      ) {
+        return Response.json(
+          { error: "Parent folder does not belong to this note scope" },
+          { status: 400 },
+        );
+      }
     }
 
     const now = new Date().toISOString();
     const folder: Omit<NoteFolder, "_id"> = {
       userId: auth.userId,
       projectId: projectObjectId,
+      featureId: featureId ? new ObjectId(featureId) : null,
       parentFolderId: parentFolderId ? new ObjectId(parentFolderId) : null,
       name,
       createdAt: now,

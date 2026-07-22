@@ -58,7 +58,7 @@ export default function CreateNoteModal({
       title: title.trim(),
       content,
       featureId: featureId ?? null,
-      folderId: featureId ? null : folderId,
+      folderId,
     });
   }
 

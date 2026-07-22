@@ -13,7 +13,10 @@ export const noteKeys = {
 };
 
 export const noteFolderKeys = {
-  list: (projectId: string) => ["projects", projectId, "note-folders"] as const,
+  list: (projectId: string, featureId?: string | null) =>
+    featureId
+      ? (["projects", projectId, "features", featureId, "note-folders"] as const)
+      : (["projects", projectId, "note-folders"] as const),
 };
 
 export const requirementKeys = {

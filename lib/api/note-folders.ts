@@ -3,21 +3,27 @@ import { parseResponse } from "@/lib/api/response";
 
 export async function fetchNoteFolders(
   projectId: string,
+  featureId?: string | null,
 ): Promise<NoteFolderResponse[]> {
-  const response = await fetch(`/api/projects/${projectId}/note-folders`);
+  const query =
+    featureId !== undefined && featureId !== null
+      ? `?featureId=${encodeURIComponent(featureId)}`
+      : "";
+  const response = await fetch(`/api/projects/${projectId}/note-folders${query}`);
   return parseResponse<NoteFolderResponse[]>(response);
 }
 
 export async function createNoteFolder(input: {
   projectId: string;
   name: string;
+  featureId?: string | null;
   parentFolderId?: string | null;
 }): Promise<NoteFolderResponse> {
-  const { projectId, name, parentFolderId } = input;
+  const { projectId, name, featureId, parentFolderId } = input;
   const response = await fetch(`/api/projects/${projectId}/note-folders`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, parentFolderId }),
+    body: JSON.stringify({ name, featureId, parentFolderId }),
   });
 
   return parseResponse<NoteFolderResponse>(response);

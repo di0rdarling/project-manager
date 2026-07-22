@@ -13,7 +13,7 @@ import { useUpdateNote } from "@/hooks/mutations/notes/useUpdateNote";
 import { useFetchFeature } from "@/hooks/queries/useFetchFeature";
 import { useFetchNote } from "@/hooks/queries/useFetchNote";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
-import { getProjectNotesPath } from "@/lib/notes";
+import { getFeatureNotesPath, getProjectNotesPath } from "@/lib/notes";
 
 const NOTE_FORM_ID = "project-note-form";
 
@@ -95,12 +95,12 @@ export default function NoteDetailView({
   const error = noteError ?? projectError ?? featureError;
 
   const backHref = featureId
-    ? `/projects/${projectId}/features/${featureId}`
+    ? getFeatureNotesPath(projectId, featureId)
     : getProjectNotesPath(projectId);
   const backLabel = featureId
     ? feature
-      ? `Back to ${feature.title}`
-      : "Back to feature"
+      ? `Back to ${feature.title} notes`
+      : "Back to feature notes"
     : "Back to notes";
 
   function handleStartEditing() {

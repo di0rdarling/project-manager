@@ -9,6 +9,7 @@ import { useCreateNoteFolder } from "@/hooks/mutations/noteFolders/useCreateNote
 type CreateFolderModalProps = {
   open: boolean;
   projectId: string;
+  featureId?: string;
   parentFolderId?: string | null;
   onClose: () => void;
   onSuccess: () => void;
@@ -17,6 +18,7 @@ type CreateFolderModalProps = {
 export default function CreateFolderModal({
   open,
   projectId,
+  featureId,
   parentFolderId = null,
   onClose,
   onSuccess,
@@ -45,6 +47,7 @@ export default function CreateFolderModal({
     createFolderMutation.mutate({
       projectId,
       name: name.trim(),
+      featureId: featureId ?? null,
       parentFolderId,
     });
   }

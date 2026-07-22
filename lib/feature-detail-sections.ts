@@ -10,8 +10,7 @@ export type FeatureDetailSectionId =
   | "overview"
   | "description"
   | "current-challenges"
-  | "domain-knowledge"
-  | "notes";
+  | "domain-knowledge";
 
 type HeroIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -30,8 +29,12 @@ export const FEATURE_DETAIL_SECTIONS: readonly FeatureDetailSection[] = [
     icon: ShieldExclamationIcon,
   },
   { id: "domain-knowledge", title: "Domain Knowledge", icon: BookOpenIcon },
-  { id: "notes", title: "Notes", icon: DocumentTextIcon },
 ] as const;
+
+export const FEATURE_NOTES_NAV = {
+  title: "Notes",
+  icon: DocumentTextIcon,
+} as const;
 
 const FEATURE_PATH_PATTERN =
   /^\/projects\/([^/]+)\/features\/([^/]+)(?:\/(.+))?$/;
@@ -45,14 +48,18 @@ export function getFeaturePathInfo(pathname: string) {
   const projectId = match[1];
   const featureId = match[2];
   const rest = match[3] ?? "";
+  const isNotesRoute = rest === "notes" || rest.startsWith("notes/");
+  const isDetailPage = rest === "";
+  const showFeatureSidebar = isDetailPage || isNotesRoute;
 
-  if (rest !== "") {
+  if (!showFeatureSidebar) {
     return null;
   }
 
   return {
     projectId,
     featureId,
-    isDetailPage: true,
+    isDetailPage,
+    isNotesRoute,
   };
 }

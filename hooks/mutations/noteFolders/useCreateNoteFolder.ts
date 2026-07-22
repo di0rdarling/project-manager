@@ -25,7 +25,7 @@ export function useCreateNoteFolder(options?: UseCreateNoteFolderOptions) {
     ...restOptions,
     onSuccess: (folder, variables, onMutateResult, context) => {
       queryClient.setQueryData<NoteFolderResponse[]>(
-        noteFolderKeys.list(variables.projectId),
+        noteFolderKeys.list(variables.projectId, variables.featureId),
         (current) => (current ? [...current, folder] : [folder]),
       );
       onSuccess?.(folder, variables, onMutateResult, context);

@@ -41,6 +41,7 @@ export default function DeleteFolderModal({
     deleteFolderMutation.mutate({
       projectId,
       folderId: folder._id,
+      featureId: folder.featureId,
     });
   }
 

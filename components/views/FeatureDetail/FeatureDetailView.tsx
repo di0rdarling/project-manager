@@ -6,7 +6,6 @@ import { ContextTag } from "@/components/ui/ContextTag";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import PageContent from "@/components/layout/PageContent";
-import NotesSection from "@/components/views/ProjectDetail/NotesSection";
 import ChallengesSection from "@/components/views/ProjectDetail/ChallengesSection";
 import DomainKnowledgeSection from "@/components/views/ProjectDetail/DomainKnowledgeSection";
 import AIFeatureSummary from "@/components/views/FeatureDetail/AIFeatureSummary";
@@ -110,13 +109,6 @@ export default function FeatureDetailView({
             featureId={featureId}
             sectionId="domain-knowledge"
             emptyMessage="No domain knowledge yet. Capture terms, concepts, and open questions specific to this feature."
-          />
-
-          <NotesSection
-            projectId={projectId}
-            featureId={featureId}
-            sectionId="notes"
-            emptyMessage="No notes yet. Add notes about this feature to capture ideas, decisions, or open questions."
           />
         </>
       )}

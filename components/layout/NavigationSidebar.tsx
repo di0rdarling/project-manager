@@ -21,9 +21,13 @@ import { useFetchFeature } from "@/hooks/queries/useFetchFeature";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
 import {
   FEATURE_DETAIL_SECTIONS,
+  FEATURE_NOTES_NAV,
   getFeaturePathInfo,
 } from "@/lib/feature-detail-sections";
-import { getProjectNotesPath } from "@/lib/notes";
+import {
+  getFeatureNotesPath,
+  getProjectNotesPath,
+} from "@/lib/notes";
 import {
   getProjectPathInfo,
   PROJECT_DETAIL_SECTIONS,
@@ -60,6 +64,7 @@ export default function NavigationSidebar({
   const showContextSidebar = showProjectSidebar || showFeatureSidebar;
   const isProjectDetailPage = projectPathInfo?.isDetailPage ?? false;
   const isFeatureDetailPage = featurePathInfo?.isDetailPage ?? false;
+  const isFeatureNotesRoute = featurePathInfo?.isNotesRoute ?? false;
   const isSectionNavPage = isProjectDetailPage || isFeatureDetailPage;
   const { data: project } = useFetchProject(
     projectPathInfo?.projectId ?? featurePathInfo?.projectId ?? "",
@@ -106,7 +111,14 @@ export default function NavigationSidebar({
     projectPathInfo?.projectId ?? featurePathInfo?.projectId ?? "";
   const notesHref = getProjectNotesPath(projectId);
   const projectHref = `/projects/${projectId}`;
+  const featureHref = featurePathInfo
+    ? `/projects/${projectId}/features/${featurePathInfo.featureId}`
+    : projectHref;
+  const featureNotesHref = featurePathInfo
+    ? getFeatureNotesPath(projectId, featurePathInfo.featureId)
+    : notesHref;
   const NotesIcon = PROJECT_NOTES_NAV.icon;
+  const FeatureNotesIcon = FEATURE_NOTES_NAV.icon;
 
   const navLinkClassName = (isActive: boolean) =>
     `cursor-pointer flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
@@ -254,21 +266,44 @@ export default function NavigationSidebar({
               isFeatureDetailPage &&
               projectSectionNav?.activeSectionId === id;
 
+            if (isFeatureDetailPage) {
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => {
+                    projectSectionNav?.navigateToSection(id);
+                    onNavigate?.();
+                  }}
+                  className={`${navLinkClassName(isActive)} text-left`}
+                >
+                  <Icon className="size-5 shrink-0" aria-hidden />
+                  {title}
+                </button>
+              );
+            }
+
             return (
-              <button
+              <Link
                 key={id}
-                type="button"
-                onClick={() => {
-                  projectSectionNav?.navigateToSection(id);
-                  onNavigate?.();
-                }}
-                className={`${navLinkClassName(isActive)} text-left`}
+                href={featureHref}
+                onClick={onNavigate}
+                className={navLinkClassName(false)}
               >
                 <Icon className="size-5 shrink-0" aria-hidden />
                 {title}
-              </button>
+              </Link>
             );
           })}
+
+          <Link
+            href={featureNotesHref}
+            onClick={onNavigate}
+            className={navLinkClassName(isFeatureNotesRoute)}
+          >
+            <FeatureNotesIcon className="size-5 shrink-0" aria-hidden />
+            {FEATURE_NOTES_NAV.title}
+          </Link>
         </nav>
       </div>
 

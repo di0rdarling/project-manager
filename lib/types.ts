@@ -46,6 +46,7 @@ type NoteFolderBase<TId> = {
   _id: TId;
   userId: TId;
   projectId: TId;
+  featureId: TId | null;
   parentFolderId: TId | null;
   name: string;
   createdAt: string;

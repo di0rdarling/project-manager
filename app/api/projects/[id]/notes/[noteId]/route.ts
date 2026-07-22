@@ -3,6 +3,7 @@ import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
 import { isRichTextEmpty } from "@/lib/rich-text";
+import { noteFolderMatchesScope } from "@/lib/notes";
 import type { Note, NoteResponse } from "@/lib/types";
 
 type RouteContext = {
@@ -143,12 +144,9 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     if (hasFolderId) {
-      if (existingNote.featureId) {
-        return Response.json(
-          { error: "Folders are only supported for project-level notes" },
-          { status: 400 },
-        );
-      }
+      const noteFeatureId = existingNote.featureId
+        ? existingNote.featureId.toString()
+        : null;
 
       const folderId =
         body.folderId === null
@@ -174,6 +172,18 @@ export async function PATCH(request: Request, context: RouteContext) {
 
         if (!folder) {
           return Response.json({ error: "Folder not found" }, { status: 404 });
+        }
+
+        if (
+          !noteFolderMatchesScope(
+            folder.featureId ? folder.featureId.toString() : null,
+            noteFeatureId,
+          )
+        ) {
+          return Response.json(
+            { error: "Folder does not belong to this note scope" },
+            { status: 400 },
+          );
         }
       }
 

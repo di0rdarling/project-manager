@@ -8,15 +8,19 @@ import type { NoteFolderResponse } from "@/lib/types";
 type UseFetchNoteFoldersOptions = Omit<
   UseQueryOptions<NoteFolderResponse[], Error>,
   "queryKey" | "queryFn"
->;
+> & {
+  featureId?: string | null;
+};
 
 export function useFetchNoteFolders(
   projectId: string,
   options?: UseFetchNoteFoldersOptions,
 ) {
+  const { featureId, ...queryOptions } = options ?? {};
+
   return useQuery({
-    queryKey: noteFolderKeys.list(projectId),
-    queryFn: () => fetchNoteFolders(projectId),
-    ...options,
+    queryKey: noteFolderKeys.list(projectId, featureId),
+    queryFn: () => fetchNoteFolders(projectId, featureId),
+    ...queryOptions,
   });
 }

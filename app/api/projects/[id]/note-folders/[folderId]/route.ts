@@ -3,6 +3,7 @@ import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
 import { getDescendantFolderIds } from "@/lib/note-folders";
+import { noteFolderMatchesScope } from "@/lib/notes";
 import type { NoteFolder, NoteFolderResponse } from "@/lib/types";
 
 type RouteContext = {
@@ -24,6 +25,7 @@ function serializeNoteFolder(folder: StoredNoteFolder): NoteFolderResponse {
     _id: folder._id.toString(),
     userId: folder.userId.toString(),
     projectId: folder.projectId.toString(),
+    featureId: folder.featureId ? folder.featureId.toString() : null,
     parentFolderId: folder.parentFolderId
       ? folder.parentFolderId.toString()
       : null,
@@ -94,6 +96,10 @@ export async function PATCH(request: Request, context: RouteContext) {
       return Response.json({ error: "Folder not found" }, { status: 404 });
     }
 
+    const folderFeatureId = existingFolder.featureId
+      ? existingFolder.featureId.toString()
+      : null;
+
     if (hasParentFolderId) {
       const parentFolderId =
         body.parentFolderId === null
@@ -136,11 +142,28 @@ export async function PATCH(request: Request, context: RouteContext) {
           return Response.json({ error: "Parent folder not found" }, { status: 404 });
         }
 
+        if (
+          !noteFolderMatchesScope(
+            parentFolder.featureId ? parentFolder.featureId.toString() : null,
+            folderFeatureId,
+          )
+        ) {
+          return Response.json(
+            { error: "Parent folder does not belong to this note scope" },
+            { status: 400 },
+          );
+        }
+
         const allFolders = await db
           .collection<StoredNoteFolder>("noteFolders")
           .find({
             projectId: projectObjectId,
             userId: auth.userId,
+            ...(folderFeatureId
+              ? { featureId: new ObjectId(folderFeatureId) }
+              : {
+                  $or: [{ featureId: null }, { featureId: { $exists: false } }],
+                }),
           })
           .toArray();
 
