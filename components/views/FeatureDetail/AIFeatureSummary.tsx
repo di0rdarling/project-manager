@@ -74,6 +74,7 @@ export default function AIFeatureSummary({
     <>
       <AISummarySection
         summary={feature?.aiSummary ?? null}
+        sectionId="overview"
         isFetching={isFetching}
         isGenerating={isGenerating}
         isGenerateError={isGenerateError}

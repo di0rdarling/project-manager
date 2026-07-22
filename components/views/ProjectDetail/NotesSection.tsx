@@ -13,6 +13,7 @@ type NotesSectionProps = {
   featureId?: string;
   enabled?: boolean;
   emptyMessage?: string;
+  sectionId?: string;
 };
 
 export default function NotesSection({
@@ -20,6 +21,7 @@ export default function NotesSection({
   featureId,
   enabled = true,
   emptyMessage = "No notes yet. Add your first one to get started.",
+  sectionId,
 }: Readonly<NotesSectionProps>) {
   const [isCreateNoteModalOpen, setIsCreateNoteModalOpen] = useState(false);
 
@@ -37,6 +39,7 @@ export default function NotesSection({
     <>
       <ProjectSection
         title="Notes"
+        sectionId={sectionId}
         addButtonLabel="Add Note"
         onAddClick={() => setIsCreateNoteModalOpen(true)}
         isPending={isPending}

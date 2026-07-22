@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRef } from "react";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { ContextTag } from "@/components/ui/ContextTag";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
@@ -14,6 +15,7 @@ import AIFeatureSummary from "@/components/views/FeatureDetail/AIFeatureSummary"
 import { useFetchFeature } from "@/hooks/queries/useFetchFeature";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
 import { useFetchRequirements } from "@/hooks/queries/useFetchRequirements";
+import { useRegisterProjectSection } from "@/hooks/useRegisterProjectSection";
 import { formatDisplayDate } from "@/lib/dates";
 
 interface FeatureDetailViewProps {
@@ -52,6 +54,9 @@ export default function FeatureDetailView({
         feature.requirementIds.includes(requirement._id),
       )
     : [];
+
+  const descriptionSectionRef = useRef<HTMLElement>(null);
+  useRegisterProjectSection("description", descriptionSectionRef);
 
   return (
     <PageContent>
@@ -96,7 +101,11 @@ export default function FeatureDetailView({
 
           <AIFeatureSummary projectId={projectId} featureId={featureId} />
 
-          <section className="space-y-3">
+          <section
+            ref={descriptionSectionRef}
+            id="description"
+            className="scroll-mt-6 space-y-3"
+          >
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
               Description
             </h2>
@@ -111,18 +120,21 @@ export default function FeatureDetailView({
           <ChallengesSection
             projectId={projectId}
             featureId={featureId}
+            sectionId="current-challenges"
             emptyMessage="No challenges recorded yet. Add any issues or blockers specific to this feature."
           />
 
           <DomainKnowledgeSection
             projectId={projectId}
             featureId={featureId}
+            sectionId="domain-knowledge"
             emptyMessage="No domain knowledge yet. Capture terms, concepts, and open questions specific to this feature."
           />
 
           <NotesSection
             projectId={projectId}
             featureId={featureId}
+            sectionId="notes"
             emptyMessage="No notes yet. Add notes about this feature to capture ideas, decisions, or open questions."
           />
         </>

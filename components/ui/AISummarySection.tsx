@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/ItemActionsMenu";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useRegisterProjectSection } from "@/hooks/useRegisterProjectSection";
-import type { ProjectDetailSectionId } from "@/lib/project-detail-sections";
 
 export type AISummaryMessages = {
   emptyDescription: string;
@@ -24,7 +23,7 @@ export type AISummaryMessages = {
 type AISummarySectionProps = {
   summary: string | null;
   title?: string;
-  sectionId?: ProjectDetailSectionId;
+  sectionId?: string;
   isFetching: boolean;
   isGenerating: boolean;
   isGenerateError: boolean;

@@ -2,10 +2,9 @@
 
 import { useEffect, useRef, type RefObject } from "react";
 import { useProjectSectionNav } from "@/components/views/ProjectDetail/ProjectSectionNavContext";
-import type { ProjectDetailSectionId } from "@/lib/project-detail-sections";
 
 export function useRegisterProjectSection(
-  sectionId: ProjectDetailSectionId | undefined,
+  sectionId: string | undefined,
   sectionRef: RefObject<HTMLElement | null>,
   onExpand?: () => void,
 ) {

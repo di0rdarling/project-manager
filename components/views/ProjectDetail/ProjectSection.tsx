@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useRegisterProjectSection } from "@/hooks/useRegisterProjectSection";
-import type { ProjectDetailSectionId } from "@/lib/project-detail-sections";
 
 interface ProjectSectionProps {
   title: string;
@@ -20,7 +19,7 @@ interface ProjectSectionProps {
   isEmpty: boolean;
   emptyMessage: string;
   defaultExpanded?: boolean;
-  sectionId?: ProjectDetailSectionId;
+  sectionId?: string;
   children: ReactNode;
 }
 

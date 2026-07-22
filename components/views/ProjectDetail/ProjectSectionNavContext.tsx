@@ -9,7 +9,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { ProjectDetailSectionId } from "@/lib/project-detail-sections";
 import { scrollToElement } from "@/lib/scroll-to-element";
 
 type SectionRegistration = {
@@ -18,14 +17,14 @@ type SectionRegistration = {
 };
 
 type ProjectSectionNavContextValue = {
-  activeSectionId: ProjectDetailSectionId | null;
-  navigateToSection: (sectionId: ProjectDetailSectionId) => void;
+  activeSectionId: string | null;
+  navigateToSection: (sectionId: string) => void;
   resetActiveSection: () => void;
   registerSection: (
-    sectionId: ProjectDetailSectionId,
+    sectionId: string,
     registration: SectionRegistration,
   ) => void;
-  unregisterSection: (sectionId: ProjectDetailSectionId) => void;
+  unregisterSection: (sectionId: string) => void;
 };
 
 const ProjectSectionNavContext =
@@ -34,31 +33,21 @@ const ProjectSectionNavContext =
 export function ProjectSectionNavProvider({
   children,
 }: Readonly<{ children: ReactNode }>) {
-  const sectionsRef = useRef(
-    new Map<ProjectDetailSectionId, SectionRegistration>(),
-  );
-  const [activeSectionId, setActiveSectionId] =
-    useState<ProjectDetailSectionId | null>(null);
+  const sectionsRef = useRef(new Map<string, SectionRegistration>());
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
 
   const registerSection = useCallback(
-    (
-      sectionId: ProjectDetailSectionId,
-      registration: SectionRegistration,
-    ) => {
+    (sectionId: string, registration: SectionRegistration) => {
       sectionsRef.current.set(sectionId, registration);
     },
     [],
   );
 
-  const unregisterSection = useCallback(
-    (sectionId: ProjectDetailSectionId) => {
-      sectionsRef.current.delete(sectionId);
-    },
-    [],
-  );
+  const unregisterSection = useCallback((sectionId: string) => {
+    sectionsRef.current.delete(sectionId);
+  }, []);
 
-  const navigateToSection = useCallback(
-    (sectionId: ProjectDetailSectionId) => {
+  const navigateToSection = useCallback((sectionId: string) => {
       const section = sectionsRef.current.get(sectionId);
       if (!section) {
         return;

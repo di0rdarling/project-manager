@@ -17,7 +17,12 @@ import { Button } from "@/components/ui/Button";
 import { ProjectManagerLogo } from "@/components/ui/ProjectManagerLogo";
 import { useProjectSectionNav } from "@/components/views/ProjectDetail/ProjectSectionNavContext";
 import { useFetchCurrentUser } from "@/hooks/queries/useFetchCurrentUser";
+import { useFetchFeature } from "@/hooks/queries/useFetchFeature";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
+import {
+  FEATURE_DETAIL_SECTIONS,
+  getFeaturePathInfo,
+} from "@/lib/feature-detail-sections";
 import { getProjectNotesPath } from "@/lib/notes";
 import {
   getProjectPathInfo,
@@ -49,27 +54,46 @@ export default function NavigationSidebar({
   const { data: currentUser } = useFetchCurrentUser();
   const projectSectionNav = useProjectSectionNav();
   const projectPathInfo = getProjectPathInfo(pathname);
+  const featurePathInfo = getFeaturePathInfo(pathname);
   const showProjectSidebar = projectPathInfo !== null;
+  const showFeatureSidebar = featurePathInfo !== null;
+  const showContextSidebar = showProjectSidebar || showFeatureSidebar;
   const isProjectDetailPage = projectPathInfo?.isDetailPage ?? false;
-  const { data: project } = useFetchProject(projectPathInfo?.projectId ?? "", {
-    enabled: showProjectSidebar,
-  });
+  const isFeatureDetailPage = featurePathInfo?.isDetailPage ?? false;
+  const isSectionNavPage = isProjectDetailPage || isFeatureDetailPage;
+  const { data: project } = useFetchProject(
+    projectPathInfo?.projectId ?? featurePathInfo?.projectId ?? "",
+    {
+      enabled: showContextSidebar,
+    },
+  );
+  const { data: feature } = useFetchFeature(
+    featurePathInfo?.projectId ?? "",
+    featurePathInfo?.featureId ?? "",
+    {
+      enabled: showFeatureSidebar,
+    },
+  );
 
   useEffect(() => {
-    if (!showProjectSidebar) {
+    if (!showContextSidebar) {
       projectSectionNav?.resetActiveSection();
     }
-  }, [showProjectSidebar, projectSectionNav]);
+  }, [showContextSidebar, projectSectionNav]);
 
   useEffect(() => {
-    if (!isProjectDetailPage) {
+    if (!isSectionNavPage) {
       projectSectionNav?.resetActiveSection();
     }
-  }, [isProjectDetailPage, projectSectionNav]);
+  }, [isSectionNavPage, projectSectionNav]);
 
   useEffect(() => {
     projectSectionNav?.resetActiveSection();
-  }, [projectPathInfo?.projectId, projectSectionNav]);
+  }, [
+    projectPathInfo?.projectId,
+    featurePathInfo?.featureId,
+    projectSectionNav,
+  ]);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -78,7 +102,8 @@ export default function NavigationSidebar({
     router.refresh();
   }
 
-  const projectId = projectPathInfo?.projectId ?? "";
+  const projectId =
+    projectPathInfo?.projectId ?? featurePathInfo?.projectId ?? "";
   const notesHref = getProjectNotesPath(projectId);
   const projectHref = `/projects/${projectId}`;
   const NotesIcon = PROJECT_NOTES_NAV.icon;
@@ -100,18 +125,23 @@ export default function NavigationSidebar({
     >
       <div className="border-b border-zinc-200 px-4 py-5 dark:border-zinc-800">
         <ProjectManagerLogo className="h-9 w-auto" />
-        {showProjectSidebar && project?.name ? (
+        {showContextSidebar && project?.name ? (
           <p className="mt-1 truncate text-xs text-zinc-500 dark:text-zinc-400">
             {project.name}
+          </p>
+        ) : null}
+        {showFeatureSidebar && feature?.title ? (
+          <p className="mt-0.5 truncate text-xs font-medium text-zinc-700 dark:text-zinc-300">
+            {feature.title}
           </p>
         ) : null}
       </div>
 
       <div className="relative min-h-0 flex-1 overflow-hidden">
         <nav
-          aria-hidden={showProjectSidebar}
+          aria-hidden={showContextSidebar}
           className={`absolute inset-0 flex flex-col gap-1 overflow-y-auto p-3 transition-all duration-200 ease-out ${
-            showProjectSidebar
+            showContextSidebar
               ? "pointer-events-none -translate-x-3 opacity-0"
               : "translate-x-0 opacity-100"
           }`}
@@ -198,6 +228,47 @@ export default function NavigationSidebar({
             <NotesIcon className="size-5 shrink-0" aria-hidden />
             {PROJECT_NOTES_NAV.title}
           </Link>
+        </nav>
+
+        <nav
+          aria-hidden={!showFeatureSidebar}
+          className={`absolute inset-0 flex flex-col gap-1 overflow-y-auto p-3 transition-all duration-200 ease-out ${
+            showFeatureSidebar
+              ? "translate-x-0 opacity-100"
+              : "pointer-events-none translate-x-3 opacity-0"
+          }`}
+        >
+          <Link
+            href={projectHref}
+            onClick={onNavigate}
+            className="cursor-pointer mb-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
+          >
+            <ArrowLeftIcon className="size-5 shrink-0" aria-hidden />
+            {project ? `Back to ${project.name}` : "Back to project"}
+          </Link>
+
+          <div className="my-1 border-t border-zinc-200 dark:border-zinc-800" />
+
+          {FEATURE_DETAIL_SECTIONS.map(({ id, title, icon: Icon }) => {
+            const isActive =
+              isFeatureDetailPage &&
+              projectSectionNav?.activeSectionId === id;
+
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => {
+                  projectSectionNav?.navigateToSection(id);
+                  onNavigate?.();
+                }}
+                className={`${navLinkClassName(isActive)} text-left`}
+              >
+                <Icon className="size-5 shrink-0" aria-hidden />
+                {title}
+              </button>
+            );
+          })}
         </nav>
       </div>
 
