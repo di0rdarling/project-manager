@@ -59,21 +59,116 @@ function parseMarkdownTableCells(row: string): string[] {
     .map((cell) => cell.trim());
 }
 
-function buildHtmlTable(rows: string[]): string {
+function buildHtmlTable(rows: string[], options?: { wrap?: boolean }): string {
   const headerCells = parseMarkdownTableCells(rows[0]);
   const bodyRows = rows.slice(2).map(parseMarkdownTableCells);
+  const columnCount = Math.max(
+    headerCells.length,
+    ...bodyRows.map((cells) => cells.length),
+    1,
+  );
 
-  const headerHtml = headerCells
+  const padCells = (cells: string[]) => {
+    const padded = cells.slice(0, columnCount);
+    while (padded.length < columnCount) {
+      padded.push("");
+    }
+    return padded;
+  };
+
+  const headerHtml = padCells(headerCells)
     .map((cell) => `<th>${escapeHtml(cell)}</th>`)
     .join("");
   const bodyHtml = bodyRows
     .map(
       (cells) =>
-        `<tr>${cells.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`,
+        `<tr>${padCells(cells)
+          .map((cell) => `<td>${escapeHtml(cell)}</td>`)
+          .join("")}</tr>`,
     )
     .join("");
 
-  return `<div class="markdown-table-wrapper"><table><thead><tr>${headerHtml}</tr></thead><tbody>${bodyHtml}</tbody></table></div>`;
+  const table = `<table><thead><tr>${headerHtml}</tr></thead><tbody>${bodyHtml}</tbody></table>`;
+
+  if (options?.wrap === false) {
+    return table;
+  }
+
+  return `<div class="markdown-table-wrapper">${table}</div>`;
+}
+
+export function containsMarkdownTable(text: string): boolean {
+  const lines = normalizeMarkdownTables(text).split("\n");
+
+  for (let index = 0; index < lines.length - 1; index += 1) {
+    if (
+      isMarkdownTableRow(lines[index]) &&
+      isMarkdownTableSeparator(lines[index + 1])
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Convert plain text that includes GFM pipe tables into HTML TipTap can insert.
+ * Returns null when no markdown table is present.
+ */
+export function convertMarkdownPlainTextWithTablesToHtml(
+  text: string,
+): string | null {
+  if (!containsMarkdownTable(text)) {
+    return null;
+  }
+
+  const lines = normalizeMarkdownTables(text).split("\n");
+  const parts: string[] = [];
+  let index = 0;
+
+  while (index < lines.length) {
+    const line = lines[index];
+
+    if (isMarkdownTableRow(line)) {
+      const tableLines: string[] = [];
+
+      while (index < lines.length && isMarkdownTableRow(lines[index])) {
+        tableLines.push(lines[index].trim());
+        index += 1;
+      }
+
+      if (
+        tableLines.length >= 2 &&
+        isMarkdownTableSeparator(tableLines[1])
+      ) {
+        parts.push(buildHtmlTable(tableLines, { wrap: false }));
+        continue;
+      }
+
+      tableLines.forEach((tableLine) => {
+        parts.push(`<p>${escapeHtml(tableLine)}</p>`);
+      });
+      continue;
+    }
+
+    if (line.trim() === "") {
+      index += 1;
+      continue;
+    }
+
+    parts.push(`<p>${escapeHtml(line)}</p>`);
+    index += 1;
+  }
+
+  return parts.join("") || null;
+}
+
+export function unwrapMarkdownTableWrappers(html: string): string {
+  return html.replace(
+    /<div class="markdown-table-wrapper">([\s\S]*?)<\/div>/gi,
+    "$1",
+  );
 }
 
 export function normalizeMarkdownTables(markdown: string): string {

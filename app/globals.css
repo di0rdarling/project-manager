@@ -220,6 +220,7 @@ body {
 .tiptap-content table,
 .tiptap-editor table {
   border-collapse: collapse;
+  margin: 0.75em 0;
   min-width: 100%;
   width: max-content;
 }
@@ -229,6 +230,7 @@ body {
 .tiptap-editor th,
 .tiptap-editor td {
   border: 1px solid #3f3f46;
+  min-width: 6rem;
   padding: 0.5rem 0.75rem;
   text-align: left;
   vertical-align: top;
@@ -238,6 +240,11 @@ body {
 .tiptap-editor th {
   background: #27272a;
   font-weight: 600;
+}
+
+.tiptap-editor td.selectedCell,
+.tiptap-editor th.selectedCell {
+  background: color-mix(in srgb, #3b82f6 18%, transparent);
 }
 
 .markdown-content {
