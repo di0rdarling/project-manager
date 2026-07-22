@@ -72,8 +72,15 @@ export default function AgentTasks({
   });
 
   const updateTaskStatusMutation = useUpdateAgentTaskStatus({
-    onSuccess: (_tasks, input) => {
-      setSelectedTask(null);
+    onSuccess: (response, input) => {
+      const updatedTask = response.tasks.find(
+        (task) => task.title === input.taskTitle,
+      );
+
+      if (updatedTask) {
+        setSelectedTask(updatedTask);
+      }
+
       toast.success(
         input.status === "accepted"
           ? "Task accepted."

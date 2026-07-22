@@ -96,6 +96,10 @@ export function normalizeAgentTasksProjectName(
   }));
 }
 
+export function canAccessAgentTaskOutputTabs(task: AgentTask): boolean {
+  return getAgentTaskStatus(task) === "accepted";
+}
+
 export function mergeGeneratedAgentTasks(
   existingTasks: AgentTask[],
   generatedTasks: AgentTask[],
