@@ -2,7 +2,6 @@ import type { Db, ObjectId } from "mongodb";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type { AgentTasksDraft } from "@/lib/agents/agent-tasks-json";
 import { EMPTY_AGENT_TASKS_DRAFT } from "@/lib/agents/agent-tasks-json";
-import type { AgentTaskOutputDraft } from "@/lib/agents/agent-task-output-json";
 import type { AgentTask, AgentTaskStatus } from "@/lib/types";
 
 export const AGENT_TASKS_COLLECTION = "agent_tasks";
@@ -105,13 +104,20 @@ export async function updateAgentTaskStatus(
   );
 }
 
+export type AgentTaskOutputResult = {
+  documentId: string;
+  documentTitle: string;
+  approach: string;
+  completionSummary: string;
+};
+
 export async function updateAgentTaskOutput(
   db: Db,
   userId: ObjectId,
   teammateId: ChatTeammateId,
   projectId: ObjectId,
   taskTitle: string,
-  output: AgentTaskOutputDraft,
+  output: AgentTaskOutputResult,
   updatedAt: string = new Date().toISOString(),
 ): Promise<StoredAgentTasks | null> {
   const record = await getAgentTasks(db, userId, teammateId, projectId);
@@ -131,7 +137,8 @@ export async function updateAgentTaskOutput(
       ? {
           ...task,
           outputStatus: "completed" as const,
-          outputContent: output.content,
+          outputDocumentId: output.documentId,
+          outputDocumentTitle: output.documentTitle,
           outputApproach: output.approach,
           outputCompletionSummary: output.completionSummary,
         }

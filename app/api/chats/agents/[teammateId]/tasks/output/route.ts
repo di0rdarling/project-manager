@@ -1,6 +1,9 @@
 import { getChatTeammate } from "@/lib/chats/chat-teammates";
 import { canAccessAgentTaskOutputTabs } from "@/lib/agents/agent-tasks";
-import { parseAgentTaskOutputJson } from "@/lib/agents/agent-task-output-json";
+import {
+  executeCreateAgentDocumentTool,
+  parseCreateAgentDocumentToolArgs,
+} from "@/lib/agents/agent-document-tool";
 import {
   getAgentTasks,
   updateAgentTaskOutput,
@@ -42,9 +45,13 @@ export async function POST(request: Request, context: RouteContext) {
       return parsedProject.error;
     }
 
-    const body = (await request.json()) as { taskTitle?: unknown };
+    const body = (await request.json()) as {
+      taskTitle?: unknown;
+      regenerate?: unknown;
+    };
     const taskTitle =
       typeof body.taskTitle === "string" ? body.taskTitle.trim() : "";
+    const regenerate = body.regenerate === true;
 
     if (!taskTitle) {
       return Response.json({ error: "taskTitle is required" }, { status: 400 });
@@ -94,19 +101,28 @@ export async function POST(request: Request, context: RouteContext) {
     const userName = currentUser?.name ?? null;
     const teammate = getChatTeammate(parsedTeammate.teammateId);
 
-    const draft = parseAgentTaskOutputJson(
-      await generateAgentTaskOutput(
-        buildAgentTaskOutputPrompt({
-          teammateId: parsedTeammate.teammateId,
-          agentName: teammate.name,
-          agentRole: teammate.role,
-          projectName: project.name,
-          projectContext,
-          task,
-          userName,
-        }),
-      ),
+    const toolCall = await generateAgentTaskOutput(
+      buildAgentTaskOutputPrompt({
+        teammateId: parsedTeammate.teammateId,
+        agentName: teammate.name,
+        agentRole: teammate.role,
+        projectName: project.name,
+        projectContext,
+        task,
+        userName,
+        isRegenerate: regenerate,
+      }),
     );
+    const toolArgs = parseCreateAgentDocumentToolArgs(toolCall.args);
+
+    const document = await executeCreateAgentDocumentTool({
+      db,
+      userId: auth.userId,
+      teammateId: parsedTeammate.teammateId,
+      projectId: parsedProject.projectId,
+      projectName: project.name,
+      args: toolArgs,
+    });
 
     const stored = await updateAgentTaskOutput(
       db,
@@ -114,7 +130,12 @@ export async function POST(request: Request, context: RouteContext) {
       parsedTeammate.teammateId,
       parsedProject.projectId,
       taskTitle,
-      draft,
+      {
+        documentId: document._id,
+        documentTitle: document.title,
+        approach: toolArgs.approach,
+        completionSummary: toolArgs.completionSummary,
+      },
     );
 
     if (!stored) {

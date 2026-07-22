@@ -1,4 +1,5 @@
 import type { AgentDocumentStatus } from "@/lib/types";
+import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 
 export const AGENT_DOCUMENT_STATUS_OPTIONS = [
   { value: "ready_for_review", label: "Ready for review" },
@@ -40,4 +41,11 @@ export function getAgentDocumentStatusBadgeClassName(
     case "accepted":
       return "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200";
   }
+}
+
+export function getAgentDocumentDetailPath(
+  teammateId: ChatTeammateId,
+  documentId: string,
+): string {
+  return `/chats/agents/${teammateId}/documents/${documentId}`;
 }

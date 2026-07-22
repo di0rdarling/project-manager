@@ -1,4 +1,4 @@
-import type { AgentTask, AgentTaskOutputFormat } from "@/lib/types";
+import type { AgentTask } from "@/lib/types";
 
 export const AGENT_TASK_COUNT = 3;
 
@@ -14,18 +14,6 @@ export const AGENT_TASK_COUNT = 3;
 const MIN_RATIONALE_LENGTH = 200;
 const MIN_IMPACT_LENGTH = 80;
 const MIN_RISK_IF_SKIPPED_LENGTH = 80;
-
-const VALID_OUTPUT_FORMATS: readonly AgentTaskOutputFormat[] = [
-  "note",
-  "document",
-];
-
-function parseOutputFormat(value: unknown): AgentTaskOutputFormat {
-  return typeof value === "string" &&
-    VALID_OUTPUT_FORMATS.includes(value as AgentTaskOutputFormat)
-    ? (value as AgentTaskOutputFormat)
-    : "note";
-}
 
 export type AgentTasksDraft = {
   tasks: AgentTask[];
@@ -80,7 +68,6 @@ export function parseAgentTasksJson(
           rationale: asTrimmedString(item.rationale),
           impact: asTrimmedString(item.impact),
           riskIfSkipped: asTrimmedString(item.risk_if_skipped),
-          outputFormat: parseOutputFormat(item.output_format),
           outputDescription: asTrimmedString(item.output_description),
           projectName: asTrimmedString(item.project_name),
         }))

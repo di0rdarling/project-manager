@@ -1,23 +1,38 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { ListItemDate } from "@/components/ui/ListItemDate";
 import {
   DataTable,
   type DataTableColumn,
 } from "@/components/ui/tables/DataTable";
 import {
+  getAgentDocumentDetailPath,
   getAgentDocumentStatusBadgeClassName,
   getAgentDocumentStatusLabel,
 } from "@/lib/agents/agent-documents";
+import {
+  appendAgentProfileFrom,
+  type AgentProfileFrom,
+} from "@/lib/chats/agent-profile-navigation";
+import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type { AgentDocumentResponse } from "@/lib/types";
 
 interface AIAgentDocumentsListProps {
+  teammateId: ChatTeammateId;
   documents: AgentDocumentResponse[];
+  profileFrom?: AgentProfileFrom | null;
+  profileProjectId?: string | null;
 }
 
 export default function AIAgentDocumentsList({
+  teammateId,
   documents,
+  profileFrom,
+  profileProjectId,
 }: Readonly<AIAgentDocumentsListProps>) {
+  const router = useRouter();
+
   const columns: DataTableColumn<AgentDocumentResponse>[] = [
     {
       key: "title",
@@ -64,6 +79,15 @@ export default function AIAgentDocumentsList({
       columns={columns}
       getRowKey={(document) => document._id}
       getRowLabel={(document) => document.title || "document"}
+      onRowClick={(document) =>
+        router.push(
+          appendAgentProfileFrom(
+            getAgentDocumentDetailPath(teammateId, document._id),
+            profileFrom ?? null,
+            profileProjectId,
+          ),
+        )
+      }
       defaultSort={{ columnKey: "createdAt", direction: "desc" }}
       aria-label="Documents"
     />

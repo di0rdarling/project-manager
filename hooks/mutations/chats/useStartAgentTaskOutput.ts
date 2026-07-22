@@ -9,7 +9,7 @@ import {
   startAgentTaskOutputRequest,
   type StartAgentTaskOutputRequest,
 } from "@/lib/api/agent-tasks";
-import { agentTasksKeys } from "@/lib/query-keys";
+import { agentDocumentKeys, agentTasksKeys } from "@/lib/query-keys";
 import type { AgentTasksResponse } from "@/lib/types";
 
 type UseStartAgentTaskOutputOptions = Omit<
@@ -31,6 +31,9 @@ export function useStartAgentTaskOutput(
         agentTasksKeys.detail(input.teammateId, input.projectId),
         tasks,
       );
+      queryClient.invalidateQueries({
+        queryKey: agentDocumentKeys.list(input.teammateId),
+      });
       onSuccess?.(tasks, input, onMutateResult, context);
     },
   });

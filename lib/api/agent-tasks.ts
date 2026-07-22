@@ -14,6 +14,7 @@ export type UpdateAgentTaskStatusRequest = AgentTasksRequest & {
 
 export type StartAgentTaskOutputRequest = AgentTasksRequest & {
   taskTitle: string;
+  regenerate?: boolean;
 };
 
 function getAgentTasksUrl({ teammateId, projectId }: AgentTasksRequest): string {
@@ -72,11 +73,11 @@ export async function updateAgentTaskStatusRequest(
 export async function startAgentTaskOutputRequest(
   input: StartAgentTaskOutputRequest,
 ): Promise<AgentTasksResponse> {
-  const { taskTitle, ...request } = input;
+  const { taskTitle, regenerate, ...request } = input;
   const response = await fetch(getAgentTaskOutputUrl(request), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ taskTitle }),
+    body: JSON.stringify({ taskTitle, regenerate: regenerate ?? false }),
   });
 
   return parseResponse<AgentTasksResponse>(response);

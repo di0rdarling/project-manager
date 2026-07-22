@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowTrendingUpIcon,
   CheckCircleIcon,
+  ChevronRightIcon,
   DocumentTextIcon,
   ExclamationTriangleIcon,
   LightBulbIcon,
@@ -13,6 +15,9 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Tabs, TabsList, TabsPanel, TabsTrigger } from "@/components/ui/Tabs";
 import {
+  getAgentDocumentDetailPath,
+} from "@/lib/agents/agent-documents";
+import {
   canAccessAgentTaskOutputTabs,
   getAgentTaskOutputStatus,
   getAgentTaskStatus,
@@ -21,7 +26,12 @@ import {
   getAgentTaskProjectBadgeClassName,
   getAgentTaskProjectName,
 } from "@/lib/agents/agent-tasks";
-import type { AgentTask, AgentTaskOutputFormat, AgentTaskStatus } from "@/lib/types";
+import {
+  appendAgentProfileFrom,
+  type AgentProfileFrom,
+} from "@/lib/chats/agent-profile-navigation";
+import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
+import type { AgentTask, AgentTaskStatus } from "@/lib/types";
 
 type AgentTaskDetailModalProps = {
   open: boolean;
@@ -32,8 +42,12 @@ type AgentTaskDetailModalProps = {
   isUpdating?: boolean;
   canAccept?: boolean;
   projectName?: string | null;
-  onStartOutput?: () => void;
+  teammateId?: ChatTeammateId;
+  profileFrom?: AgentProfileFrom | null;
+  profileProjectId?: string | null;
+  onStartOutput?: (regenerate?: boolean) => void;
   isStartingOutput?: boolean;
+  isRegeneratingOutput?: boolean;
 };
 
 type DetailBlock = {
@@ -44,19 +58,12 @@ type DetailBlock = {
   iconClassName: string;
 };
 
-const OUTPUT_FORMAT_LABELS: Record<AgentTaskOutputFormat, string> = {
-  note: "New note",
-  document: "New document",
-};
-
 function AgentTaskOverviewContent({
   task,
   blocks,
-  outputFormatLabel,
 }: Readonly<{
   task: AgentTask;
   blocks: DetailBlock[];
-  outputFormatLabel: string;
 }>) {
   return (
     <div className="space-y-5">
@@ -73,9 +80,6 @@ function AgentTaskOverviewContent({
             />
             What I&apos;ll produce
           </p>
-          <span className="mt-2 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-500/15 dark:text-blue-300">
-            {outputFormatLabel}
-          </span>
           <p className="mt-2 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
             {task.outputDescription}
           </p>
@@ -162,10 +166,10 @@ function AgentTaskOutputStartPrompt({
 
 function AgentTaskOutputWorking({
   task,
-  outputFormatLabel,
+  isRegenerating = false,
 }: Readonly<{
   task: AgentTask;
-  outputFormatLabel: string;
+  isRegenerating?: boolean;
 }>) {
   return (
     <div className="space-y-5">
@@ -175,7 +179,9 @@ function AgentTaskOutputWorking({
           aria-hidden
         />
         <p className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-100">
-          Teammate is working on this task
+          {isRegenerating
+            ? "Teammate is redoing this task"
+            : "Teammate is working on this task"}
         </p>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
           When complete, this tab will show the deliverable, the
@@ -192,11 +198,8 @@ function AgentTaskOutputWorking({
             />
             Deliverable
           </p>
-          <span className="mt-2 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-500/15 dark:text-blue-300">
-            {outputFormatLabel}
-          </span>
           <p className="mt-2 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-            {task.outputDescription || "The note or document the teammate produces will appear here."}
+            {task.outputDescription || "The document the teammate produces will appear here."}
           </p>
         </div>
 
@@ -234,11 +237,27 @@ function AgentTaskOutputWorking({
 
 function AgentTaskOutputCompleted({
   task,
-  outputFormatLabel,
+  teammateId,
+  profileFrom,
+  profileProjectId,
+  onClose,
 }: Readonly<{
   task: AgentTask;
-  outputFormatLabel: string;
+  teammateId?: ChatTeammateId;
+  profileFrom?: AgentProfileFrom | null;
+  profileProjectId?: string | null;
+  onClose?: () => void;
 }>) {
+  const documentHref =
+    task.outputDocumentId && teammateId
+      ? appendAgentProfileFrom(
+          getAgentDocumentDetailPath(teammateId, task.outputDocumentId),
+          profileFrom ?? null,
+          profileProjectId,
+        )
+      : null;
+  const documentTitle = task.outputDocumentTitle || "Untitled document";
+
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
@@ -249,12 +268,40 @@ function AgentTaskOutputCompleted({
           />
           Deliverable
         </p>
-        <span className="mt-2 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-500/15 dark:text-blue-300">
-          {outputFormatLabel}
-        </span>
-        <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
-          {task.outputContent}
+        {documentHref ? (
+          <Link
+            href={documentHref}
+            onClick={onClose}
+            className="mt-3 flex items-center gap-2 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+          >
+            <CheckCircleIcon
+              className="size-4 shrink-0 text-emerald-500 dark:text-emerald-400"
+              aria-hidden
+            />
+            {documentTitle}
+          </Link>
+        ) : (
+          <p className="mt-3 flex items-center gap-2 text-sm font-medium text-zinc-800 dark:text-zinc-100">
+            <CheckCircleIcon
+              className="size-4 shrink-0 text-emerald-500 dark:text-emerald-400"
+              aria-hidden
+            />
+            {documentTitle}
+          </p>
+        )}
+        <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+          Saved to this teammate&apos;s Documents, ready for your review.
         </p>
+        {documentHref ? (
+          <Link
+            href={documentHref}
+            onClick={onClose}
+            className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+          >
+            View document
+            <ChevronRightIcon className="size-3.5" aria-hidden />
+          </Link>
+        ) : null}
       </div>
 
       <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
@@ -288,36 +335,55 @@ function AgentTaskOutputCompleted({
 
 function AgentTaskOutputContent({
   task,
-  outputFormatLabel,
   isAccepted,
   isStarting,
+  isRegenerating,
+  teammateId,
+  profileFrom,
+  profileProjectId,
   onStart,
+  onClose,
 }: Readonly<{
   task: AgentTask;
-  outputFormatLabel: string;
   isAccepted: boolean;
   isStarting: boolean;
-  onStart?: () => void;
+  isRegenerating: boolean;
+  teammateId?: ChatTeammateId;
+  profileFrom?: AgentProfileFrom | null;
+  profileProjectId?: string | null;
+  onStart?: (regenerate?: boolean) => void;
+  onClose?: () => void;
 }>) {
   if (!isAccepted) {
     return <AgentTaskOutputNotAccepted />;
+  }
+
+  if (isStarting) {
+    return (
+      <AgentTaskOutputWorking task={task} isRegenerating={isRegenerating} />
+    );
   }
 
   const outputStatus = getAgentTaskOutputStatus(task);
 
   if (outputStatus === "completed") {
     return (
-      <AgentTaskOutputCompleted task={task} outputFormatLabel={outputFormatLabel} />
+      <AgentTaskOutputCompleted
+        task={task}
+        teammateId={teammateId}
+        profileFrom={profileFrom}
+        profileProjectId={profileProjectId}
+        onClose={onClose}
+      />
     );
   }
 
-  if (isStarting) {
-    return (
-      <AgentTaskOutputWorking task={task} outputFormatLabel={outputFormatLabel} />
-    );
-  }
-
-  return <AgentTaskOutputStartPrompt onStart={onStart} isStarting={isStarting} />;
+  return (
+    <AgentTaskOutputStartPrompt
+      onStart={() => onStart?.(false)}
+      isStarting={isStarting}
+    />
+  );
 }
 
 function AgentTaskReviewPlaceholder() {
@@ -347,8 +413,12 @@ export default function AgentTaskDetailModal({
   isUpdating = false,
   canAccept = true,
   projectName = null,
+  teammateId,
+  profileFrom = null,
+  profileProjectId = null,
   onStartOutput,
   isStartingOutput = false,
+  isRegeneratingOutput = false,
 }: Readonly<AgentTaskDetailModalProps>) {
   const [activeTab, setActiveTab] = useState("overview");
   const previousTaskStatusRef = useRef<AgentTaskStatus | null>(null);
@@ -389,9 +459,16 @@ export default function AgentTaskDetailModal({
   const taskStatus = getAgentTaskStatus(task);
   const taskProjectName = getAgentTaskProjectName(task, projectName);
   const isAccepted = taskStatus === "accepted";
+  const outputStatus = getAgentTaskOutputStatus(task);
   const outputTabsEnabled = canAccessAgentTaskOutputTabs(task);
-  const showActions =
+  const showOverviewActions =
     activeTab === "overview" && Boolean(onAccept || onReject);
+  const showOutputRedoAction =
+    activeTab === "output" &&
+    isAccepted &&
+    outputStatus === "completed" &&
+    !isStartingOutput &&
+    Boolean(onStartOutput);
   const acceptDisabled = isUpdating || (taskStatus !== "accepted" && !canAccept);
 
   const blocks: DetailBlock[] = [
@@ -418,9 +495,6 @@ export default function AgentTaskDetailModal({
     },
   ];
 
-  const outputFormatLabel =
-    OUTPUT_FORMAT_LABELS[task.outputFormat] ?? OUTPUT_FORMAT_LABELS.note;
-
   return (
     <Modal
       open={open}
@@ -428,7 +502,7 @@ export default function AgentTaskDetailModal({
       title={task.title}
       size="wide"
       secondaryAction={
-        showActions && onReject
+        showOverviewActions && onReject
           ? {
               label: "Reject",
               onClick: onReject,
@@ -439,7 +513,7 @@ export default function AgentTaskDetailModal({
           : undefined
       }
       primaryAction={
-        showActions && onAccept
+        showOverviewActions && onAccept
           ? {
               label: "Accept",
               onClick: onAccept,
@@ -447,7 +521,15 @@ export default function AgentTaskDetailModal({
               pendingLabel: "Saving...",
               disabled: acceptDisabled,
             }
-          : undefined
+          : showOutputRedoAction
+            ? {
+                label: "Ask teammate to redo",
+                onClick: () => onStartOutput?.(true),
+                isPending: isStartingOutput,
+                pendingLabel: "Redoing...",
+                variant: "secondary",
+              }
+            : undefined
       }
     >
       <div className="space-y-5">
@@ -489,20 +571,20 @@ export default function AgentTaskDetailModal({
           </TabsList>
 
           <TabsPanel value="overview">
-            <AgentTaskOverviewContent
-              task={task}
-              blocks={blocks}
-              outputFormatLabel={outputFormatLabel}
-            />
+            <AgentTaskOverviewContent task={task} blocks={blocks} />
           </TabsPanel>
 
           <TabsPanel value="output">
             <AgentTaskOutputContent
               task={task}
-              outputFormatLabel={outputFormatLabel}
               isAccepted={isAccepted}
               isStarting={isStartingOutput}
+              isRegenerating={isRegeneratingOutput}
+              teammateId={teammateId}
+              profileFrom={profileFrom}
+              profileProjectId={profileProjectId}
               onStart={onStartOutput}
+              onClose={onClose}
             />
           </TabsPanel>
 

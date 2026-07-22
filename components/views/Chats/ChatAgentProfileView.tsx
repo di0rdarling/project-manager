@@ -97,6 +97,8 @@ export default function ChatAgentProfileView({
       <AIAgentDocumentsSection
         teammateId={teammateId}
         agentName={teammate.name}
+        profileFrom={navigationContext.from}
+        profileProjectId={navigationContext.projectId}
       />
 
       <section className="space-y-4">

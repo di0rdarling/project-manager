@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { ChevronRightIcon, ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
@@ -19,6 +20,7 @@ import { useStartAgentTaskOutput } from "@/hooks/mutations/chats/useStartAgentTa
 import { useUpdateAgentTaskStatus } from "@/hooks/mutations/chats/useUpdateAgentTaskStatus";
 import { useFetchAgentTasks } from "@/hooks/queries/useFetchAgentTasks";
 import { getAgentTaskStatus, getAgentTaskStatusBadgeClassName, getAgentTaskStatusLabel, getAgentTaskProjectBadgeClassName, getAgentTaskProjectName, canGenerateAgentTasks, canAcceptAgentTask, getAcceptedAgentTasks } from "@/lib/agents/agent-tasks";
+import { parseAgentProfileNavigationContext } from "@/lib/chats/agent-profile-navigation";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type { AgentTask } from "@/lib/types";
 
@@ -31,9 +33,12 @@ export default function AgentTasks({
   teammateId,
   projectId,
 }: Readonly<AgentTasksProps>) {
+  const searchParams = useSearchParams();
+  const navigationContext = parseAgentProfileNavigationContext(searchParams);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<AgentTask | null>(null);
   const isRegeneratingRef = useRef(false);
+  const isRegeneratingOutputRef = useRef(false);
 
   const {
     data: agentTasks,
@@ -105,11 +110,28 @@ export default function AgentTasks({
         setSelectedTask(updatedTask);
       }
 
-      toast.success("Teammate finished the task.");
+      if (isRegeneratingOutputRef.current) {
+        toast.success(
+          updatedTask?.outputDocumentTitle
+            ? `New document created: "${updatedTask.outputDocumentTitle}"`
+            : "Teammate redid the task.",
+        );
+        return;
+      }
+
+      toast.success(
+        updatedTask?.outputDocumentTitle
+          ? `Document created: "${updatedTask.outputDocumentTitle}"`
+          : "Teammate finished the task.",
+      );
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Failed to start task.",
+        error instanceof Error
+          ? error.message
+          : isRegeneratingOutputRef.current
+            ? "Failed to redo task."
+            : "Failed to start task.",
       );
     },
   });
@@ -129,15 +151,17 @@ export default function AgentTasks({
     });
   }
 
-  function handleStartTaskOutput() {
+  function handleStartTaskOutput(regenerate = false) {
     if (!projectId || !selectedTask) {
       return;
     }
 
+    isRegeneratingOutputRef.current = regenerate;
     startTaskOutputMutation.mutate({
       teammateId,
       projectId,
       taskTitle: selectedTask.title,
+      regenerate,
     });
   }
 
@@ -373,8 +397,14 @@ export default function AgentTasks({
           selectedTask ? canAcceptAgentTask(tasks, selectedTask.title) : false
         }
         projectName={projectName}
+        teammateId={teammateId}
+        profileFrom={navigationContext.from}
+        profileProjectId={navigationContext.projectId}
         onStartOutput={handleStartTaskOutput}
         isStartingOutput={startTaskOutputMutation.isPending}
+        isRegeneratingOutput={
+          startTaskOutputMutation.variables?.regenerate === true
+        }
       />
     </>
   );

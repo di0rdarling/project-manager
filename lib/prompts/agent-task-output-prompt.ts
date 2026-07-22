@@ -9,18 +9,7 @@ import {
   getChatTeammatePersonalityTraits,
   type ChatTeammateId,
 } from "@/lib/chats/chat-teammates";
-import type { AgentTask, AgentTaskOutputFormat } from "@/lib/types";
-
-const JSON_SCHEMA_BLOCK = `{
-  "content": string,           // the actual deliverable — the full note/document body, ready for the user to read and act on
-  "approach": string,          // 2–4 sentences, first person: how you tackled this, what you looked at, and the choices you made while producing the deliverable
-  "completion_summary": string // 2–3 sentences, first person: what is now true or unblocked for the project because this is done, tied back to the task's stated impact
-}`;
-
-const OUTPUT_FORMAT_GUIDANCE: Record<AgentTaskOutputFormat, string> = {
-  note: "a focused note: a few clearly organized paragraphs or a short list, not a sprawling document",
-  document: "a longer structured document: use headings/sections appropriate to the deliverable described",
-};
+import type { AgentTask } from "@/lib/types";
 
 type BuildAgentTaskOutputPromptInput = {
   teammateId: ChatTeammateId;
@@ -30,6 +19,8 @@ type BuildAgentTaskOutputPromptInput = {
   projectContext: string;
   task: AgentTask;
   userName?: string | null;
+  /** When true, the user asked for a fresh attempt — produce a new document. */
+  isRegenerate?: boolean;
 };
 
 /**
@@ -47,10 +38,9 @@ export function buildAgentTaskOutputPrompt({
   projectContext,
   task,
   userName,
+  isRegenerate = false,
 }: BuildAgentTaskOutputPromptInput): string {
   const resolvedUserName = userName?.trim() || "the user";
-  const formatGuidance =
-    OUTPUT_FORMAT_GUIDANCE[task.outputFormat] ?? OUTPUT_FORMAT_GUIDANCE.note;
 
   const sections = [
     buildAiTeammatesMemoryRosterPrompt(teammateId),
@@ -63,6 +53,16 @@ export function buildAgentTaskOutputPrompt({
     "",
     `${resolvedUserName} has accepted a task you suggested for yourself, on the project "${projectName}". You are ${agentName}, the ${agentRole}. It's time to actually do the work and produce the deliverable — not suggest it again, not describe what you would do, but write the real thing.`,
     "",
+  ];
+
+  if (isRegenerate) {
+    sections.push(
+      `${resolvedUserName} wasn't satisfied with your previous attempt and wants you to redo this task from scratch. Produce a fresh document — don't repeat the previous version verbatim; reconsider the approach and improve the deliverable.`,
+      "",
+    );
+  }
+
+  sections.push(
     "### The task you're completing",
     "",
     `Title: ${task.title}`,
@@ -81,20 +81,15 @@ export function buildAgentTaskOutputPrompt({
     "",
     "### Output instructions",
     "",
-    "Return a JSON object with exactly these fields. No preamble, no markdown fencing outside the JSON, no explanation — just the JSON object.",
+    "You have a `create_document` tool. Calling it is how you actually deliver this work — it saves what you produce to the user's Documents for review. Do not respond with plain text describing what you would do; call `create_document` exactly once, with the finished deliverable as its arguments.",
     "",
-    "```",
-    JSON_SCHEMA_BLOCK,
-    "```",
-    "",
-    `- \`content\` is the actual deliverable itself: write ${formatGuidance}. This is what ${resolvedUserName} will read as the finished output — do not describe it, write it.`,
+    `- \`content\` is the actual deliverable itself: write a focused document with clearly organized sections or paragraphs. This is what ${resolvedUserName} will read as the finished output — do not describe it, write it.`,
     "- `content` must fulfil exactly what `output_description` above promised, grounded in the specific project context, not generic filler that could apply to any project.",
+    "- `title` is a short, specific name for this document — this is how the user will find it in their Documents list, so make it identifiable at a glance.",
     "- `approach` explains, in your own voice, how you went about producing this — what you drew on, what you prioritized, and any notable choices — so the user understands your reasoning, not just the result.",
     "- `completion_summary` states plainly what is now true, unblocked, or de-risked for the project because this work is done, connecting back to the impact you originally described.",
-    "- Write all three fields in first person, exactly as you would describe your own completed work — never in the third person and never introducing yourself.",
-    "",
-    "Return only the JSON object.",
-  ];
+    "- Write all fields in first person, exactly as you would describe your own completed work — never in the third person and never introducing yourself.",
+  );
 
   return sections.join("\n");
 }

@@ -303,8 +303,6 @@ export type UserMemoryResponse = {
   updatedAt: string | null;
 };
 
-export type AgentTaskOutputFormat = "note" | "document";
-
 export type AgentTaskStatus = "pending" | "accepted" | "rejected";
 
 /**
@@ -324,8 +322,6 @@ export type AgentTask = {
   impact: string;
   /** What happens, or continues to be a gap, if this task is skipped. */
   riskIfSkipped: string;
-  /** Deliverable type — typically a new note; document for longer structured output. */
-  outputFormat: AgentTaskOutputFormat;
   /** What the agent intends to put in the deliverable and what purpose it serves. */
   outputDescription: string;
   /** User decision on whether the agent should run this task autonomously. */
@@ -334,8 +330,13 @@ export type AgentTask = {
   projectName?: string;
   /** Whether the agent has produced output for this (accepted) task yet. */
   outputStatus?: AgentTaskOutputStatus;
-  /** The actual note/document content the agent produced. */
-  outputContent?: string;
+  /**
+   * The document the agent created (via the create_document tool) to hold
+   * this task's deliverable. The full content lives on that AgentDocument,
+   * not here — this is just enough to link/point the user to it.
+   */
+  outputDocumentId?: string;
+  outputDocumentTitle?: string;
   /** How the agent tackled the task — their approach and reasoning. */
   outputApproach?: string;
   /** What is now true/unblocked in the project because this work is done. */

@@ -1,5 +1,9 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, type FunctionCall } from "@google/generative-ai";
 import { GoogleGenAI, type GenerateContentResponse } from "@google/genai";
+import {
+  CREATE_AGENT_DOCUMENT_TOOL,
+  CREATE_AGENT_DOCUMENT_TOOL_CONFIG,
+} from "@/lib/agents/agent-document-tool";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import { buildChatSystemPrompt } from "@/lib/prompts/chat-prompt";
 import type { ChatGroundingSource } from "@/lib/types";
@@ -297,8 +301,28 @@ export async function generateAgentTasks(prompt: string): Promise<string> {
   return generateJsonText(prompt, getMemoryModelName());
 }
 
-export async function generateAgentTaskOutput(prompt: string): Promise<string> {
-  return generateJsonText(prompt, getMemoryModelName());
+/**
+ * Asks Gemini to complete an accepted agent task by calling the
+ * create_document tool with the finished deliverable, rather than
+ * returning plain text/JSON describing it. Returns the raw tool call so
+ * the caller can validate its args and execute it (persist the document).
+ */
+export async function generateAgentTaskOutput(
+  prompt: string,
+): Promise<FunctionCall> {
+  const model = getGeminiClient().getGenerativeModel({
+    model: getMemoryModelName(),
+    tools: [{ functionDeclarations: [CREATE_AGENT_DOCUMENT_TOOL] }],
+    toolConfig: CREATE_AGENT_DOCUMENT_TOOL_CONFIG,
+  });
+  const result = await model.generateContent(prompt);
+  const [call] = result.response.functionCalls() ?? [];
+
+  if (!call || call.name !== CREATE_AGENT_DOCUMENT_TOOL.name) {
+    throw new Error("Gemini did not call the create_document tool");
+  }
+
+  return call;
 }
 
 export async function generateArchivedChatSummary(

@@ -7,6 +7,7 @@ import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 
 interface AgentSectionProps {
+  id?: string;
   title: string;
   description?: string;
   addButtonLabel?: string;
@@ -23,6 +24,7 @@ interface AgentSectionProps {
 }
 
 export default function AgentSection({
+  id,
   title,
   description,
   addButtonLabel,
@@ -53,7 +55,7 @@ export default function AgentSection({
   }
 
   return (
-    <section className="space-y-4">
+    <section id={id} className="space-y-4 scroll-mt-6">
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-3">
           <h2 className="min-w-0 text-lg font-semibold">
