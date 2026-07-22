@@ -85,6 +85,8 @@ type AgentDocumentBase<TId> = {
   title: string;
   content: string;
   status: AgentDocumentStatus;
+  /** The autonomous task that produced this document, when known. */
+  taskTitle?: string;
   createdAt: string;
   updatedAt: string;
 };

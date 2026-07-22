@@ -140,6 +140,7 @@ export async function POST(request: Request, context: RouteContext) {
       teammateId: parsedTeammate.teammateId,
       projectId: parsedProject.projectId,
       projectName: project.name,
+      taskTitle,
       args: toolArgs,
     });
 

@@ -195,6 +195,47 @@ export function normalizeMarkdownTables(markdown: string): string {
   return normalized.join("\n");
 }
 
+/**
+ * Replaces GFM pipe-table blocks in plain or mixed HTML/markdown text with
+ * HTML tables. Non-table lines are left unchanged.
+ */
+export function convertEmbeddedMarkdownTableBlocks(content: string): string {
+  const lines = normalizeMarkdownTables(content).split("\n");
+  const result: string[] = [];
+  let index = 0;
+
+  while (index < lines.length) {
+    const line = lines[index];
+
+    if (isMarkdownTableRow(line)) {
+      const tableLines: string[] = [];
+
+      while (index < lines.length && isMarkdownTableRow(lines[index])) {
+        tableLines.push(lines[index].trim());
+        index += 1;
+      }
+
+      if (
+        tableLines.length >= 2 &&
+        isMarkdownTableSeparator(tableLines[1])
+      ) {
+        result.push(buildHtmlTable(tableLines));
+        continue;
+      }
+
+      tableLines.forEach((tableLine) => {
+        result.push(tableLine);
+      });
+      continue;
+    }
+
+    result.push(line);
+    index += 1;
+  }
+
+  return result.join("\n");
+}
+
 export function convertMarkdownTableParagraphsInHtml(html: string): string {
   const paragraphRegex = /<p[^>]*>([\s\S]*?)<\/p>/gi;
   type Segment =
@@ -396,7 +437,11 @@ export function convertFencedCodeBlocksInHtml(html: string): string {
 
 export function prepareRichTextHtmlForDisplay(html: string): string {
   return wrapBareHtmlTables(
-    convertFencedCodeBlocksInHtml(convertMarkdownTableParagraphsInHtml(html)),
+    convertFencedCodeBlocksInHtml(
+      convertMarkdownTableParagraphsInHtml(
+        convertEmbeddedMarkdownTableBlocks(html),
+      ),
+    ),
   );
 }
 
@@ -416,8 +461,18 @@ export function htmlToPlainText(html: string): string {
   );
 }
 
+const HTML_CONTENT_TAG_PATTERN =
+  /<\/?(?:a(?:rea)?|blockquote|br|col(?:group)?|div|dl|dt|dd|em|h[1-6]|hr|img|li|ol|p|pre|table|tbody|td|tfoot|th|thead|tr|ul|strong|b|i|u|s|code|span|mark|del|ins|sub|sup)\b/i;
+
 export function isHtmlContent(content: string): boolean {
-  return /<\/?[a-z][\s\S]*>/i.test(content.trim());
+  return HTML_CONTENT_TAG_PATTERN.test(content.trim());
+}
+
+/** True when content looks like TipTap/editor HTML rather than markdown text. */
+export function isEditorHtmlContent(content: string): boolean {
+  return /<\/?(?:p|div|h[1-6]|ul|ol|blockquote|pre|table)\b/i.test(
+    content.trim(),
+  );
 }
 
 export function hasFencedCodeBlocks(content: string): boolean {
@@ -437,7 +492,12 @@ export function getRenderableRichTextContent(
     return { type: "html", content: "" };
   }
 
-  if (!isHtmlContent(trimmed)) {
+  if (
+    !isHtmlContent(trimmed) ||
+    (containsMarkdownTable(trimmed) &&
+      !/<table[\s>]/i.test(trimmed) &&
+      !isEditorHtmlContent(trimmed))
+  ) {
     return {
       type: "markdown",
       content: normalizeMarkdownTables(trimmed),

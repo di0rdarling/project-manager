@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { ChevronRightIcon, ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
@@ -20,7 +20,7 @@ import { useStartAgentTaskOutput } from "@/hooks/mutations/chats/useStartAgentTa
 import { useUpdateAgentTaskStatus } from "@/hooks/mutations/chats/useUpdateAgentTaskStatus";
 import { useFetchAgentTasks } from "@/hooks/queries/useFetchAgentTasks";
 import { getAgentTaskStatus, getAgentTaskStatusBadgeClassName, getAgentTaskStatusLabel, getAgentTaskProjectBadgeClassName, getAgentTaskProjectName, canGenerateAgentTasks, canAcceptAgentTask, getAcceptedAgentTasks } from "@/lib/agents/agent-tasks";
-import { parseAgentProfileNavigationContext } from "@/lib/chats/agent-profile-navigation";
+import { parseAgentProfileNavigationContext, AGENT_PROFILE_TASK_TITLE_PARAM, AGENT_TASKS_SECTION_ID } from "@/lib/chats/agent-profile-navigation";
 import type { StartAgentTaskOutputInput } from "@/lib/api/agent-tasks";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type { AgentTask } from "@/lib/types";
@@ -35,7 +35,10 @@ export default function AgentTasks({
   projectId,
 }: Readonly<AgentTasksProps>) {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
   const navigationContext = parseAgentProfileNavigationContext(searchParams);
+  const openTaskTitle = searchParams.get(AGENT_PROFILE_TASK_TITLE_PARAM);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<AgentTask | null>(null);
   const isRegeneratingRef = useRef(false);
@@ -193,6 +196,31 @@ export default function AgentTasks({
   const canGenerateMoreTasks = canGenerateAgentTasks(tasks);
   const isInitialLoading = Boolean(projectId) && isFetching && !agentTasks;
 
+  useEffect(() => {
+    if (!openTaskTitle || !projectId || isFetching) {
+      return;
+    }
+
+    const task = tasks.find((item) => item.title === openTaskTitle);
+
+    if (task) {
+      setSelectedTask(task);
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete(AGENT_PROFILE_TASK_TITLE_PARAM);
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [
+    openTaskTitle,
+    projectId,
+    isFetching,
+    tasks,
+    searchParams,
+    pathname,
+    router,
+  ]);
+
   if (!projectId) {
     return (
       <section className="space-y-3">
@@ -212,7 +240,7 @@ export default function AgentTasks({
 
   return (
     <>
-      <section className="space-y-3">
+      <section id={AGENT_TASKS_SECTION_ID} className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h2 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
             <ClipboardDocumentCheckIcon className="size-4" aria-hidden />

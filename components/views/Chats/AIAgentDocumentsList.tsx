@@ -1,11 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import type { MouseEvent } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ListItemDate } from "@/components/ui/ListItemDate";
 import {
   DataTable,
   type DataTableColumn,
 } from "@/components/ui/tables/DataTable";
+import { getAgentTaskProjectBadgeClassName } from "@/lib/agents/agent-tasks";
 import {
   getAgentDocumentDetailPath,
   getAgentDocumentStatusBadgeClassName,
@@ -13,6 +15,7 @@ import {
 } from "@/lib/agents/agent-documents";
 import {
   appendAgentProfileFrom,
+  appendAgentProfileTaskTitle,
   type AgentProfileFrom,
 } from "@/lib/chats/agent-profile-navigation";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
@@ -32,6 +35,36 @@ export default function AIAgentDocumentsList({
   profileProjectId,
 }: Readonly<AIAgentDocumentsListProps>) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  function handleTaskClick(
+    event: MouseEvent,
+    document: AgentDocumentResponse,
+  ) {
+    event.stopPropagation();
+
+    if (!document.taskTitle) {
+      return;
+    }
+
+    const currentPath = searchParams.toString()
+      ? `${pathname}?${searchParams.toString()}`
+      : pathname;
+    const profilePath = appendAgentProfileFrom(
+      currentPath,
+      profileFrom ?? null,
+      profileProjectId,
+    );
+
+    router.push(
+      appendAgentProfileTaskTitle(
+        profilePath,
+        document.taskTitle,
+        document.projectId,
+      ),
+    );
+  }
 
   const columns: DataTableColumn<AgentDocumentResponse>[] = [
     {
@@ -42,6 +75,26 @@ export default function AIAgentDocumentsList({
       render: (document) => document.title || "Untitled document",
       getSortValue: (document) =>
         (document.title || "Untitled document").toLocaleLowerCase(),
+    },
+    {
+      key: "task",
+      header: "Task",
+      cellClassName: "px-4 py-3 text-sm text-zinc-500 dark:text-zinc-400",
+      render: (document) =>
+        document.taskTitle ? (
+          <button
+            type="button"
+            onClick={(event) => handleTaskClick(event, document)}
+            title={document.taskTitle}
+            className={`inline-flex max-w-[12rem] truncate rounded-full px-2.5 py-0.5 text-xs font-medium transition hover:opacity-80 ${getAgentTaskProjectBadgeClassName()}`}
+          >
+            {document.taskTitle}
+          </button>
+        ) : (
+          "—"
+        ),
+      getSortValue: (document) =>
+        (document.taskTitle ?? "").toLocaleLowerCase(),
     },
     {
       key: "project",

@@ -2,6 +2,7 @@ import { MarkdownContent } from "@/components/ui/MarkdownContent";
 import {
   annotateRichTextHeadings,
   getRenderableRichTextContent,
+  normalizeMarkdownTables,
   prepareRichTextHtmlForDisplay,
 } from "@/lib/rich-text";
 import type { RichTextHeading } from "@/lib/rich-text";
@@ -24,7 +25,7 @@ export function RichTextContent({
   if (renderable.type === "markdown") {
     return (
       <MarkdownContent
-        content={renderable.content}
+        content={normalizeMarkdownTables(renderable.content)}
         className={textClassName}
         headings={headings}
       />

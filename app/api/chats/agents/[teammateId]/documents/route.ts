@@ -1,5 +1,8 @@
 import { isChatTeammateId } from "@/lib/chats/chat-teammates";
-import { getAgentDocuments } from "@/lib/agents/agent-documents-store";
+import {
+  attachTaskTitlesToDocuments,
+  getAgentDocuments,
+} from "@/lib/agents/agent-documents-store";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 
@@ -38,8 +41,14 @@ export async function GET(_request: Request, context: RouteContext) {
       auth.userId,
       parsed.teammateId,
     );
+    const documentsWithTasks = await attachTaskTitlesToDocuments(
+      db,
+      auth.userId,
+      parsed.teammateId,
+      documents,
+    );
 
-    return Response.json(documents);
+    return Response.json(documentsWithTasks);
   } catch {
     return Response.json(
       { error: "Failed to fetch agent documents" },

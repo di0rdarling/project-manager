@@ -1,6 +1,10 @@
 import type { Db, ObjectId } from "mongodb";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import { toIsoString } from "@/lib/dates";
+import {
+  AGENT_TASKS_COLLECTION,
+  type StoredAgentTasks,
+} from "@/lib/agents/agent-tasks-store";
 import type {
   AgentDocument,
   AgentDocumentResponse,
@@ -31,6 +35,7 @@ export function serializeAgentDocument(
     title: document.title,
     content: document.content,
     status: document.status,
+    taskTitle: document.taskTitle,
     createdAt: toIsoString(document.createdAt),
     updatedAt: document.updatedAt
       ? toIsoString(document.updatedAt)
@@ -50,6 +55,38 @@ export async function getAgentDocuments(
     .toArray();
 
   return documents.map(serializeAgentDocument);
+}
+
+/** Resolves task titles from agent_tasks records when not stored on the document. */
+export async function attachTaskTitlesToDocuments(
+  db: Db,
+  userId: ObjectId,
+  teammateId: ChatTeammateId,
+  documents: AgentDocumentResponse[],
+): Promise<AgentDocumentResponse[]> {
+  if (documents.length === 0) {
+    return documents;
+  }
+
+  const taskRecords = await db
+    .collection<StoredAgentTasks>(AGENT_TASKS_COLLECTION)
+    .find({ userId, teammateId })
+    .toArray();
+
+  const documentIdToTaskTitle = new Map<string, string>();
+
+  for (const record of taskRecords) {
+    for (const task of record.tasks) {
+      if (task.outputDocumentId) {
+        documentIdToTaskTitle.set(task.outputDocumentId, task.title);
+      }
+    }
+  }
+
+  return documents.map((document) => ({
+    ...document,
+    taskTitle: document.taskTitle ?? documentIdToTaskTitle.get(document._id),
+  }));
 }
 
 export async function getAgentDocumentById(
@@ -72,6 +109,7 @@ type CreateAgentDocumentInput = {
   projectName?: string | null;
   title: string;
   content: string;
+  taskTitle?: string;
   status?: AgentDocumentStatus;
 };
 
@@ -87,6 +125,7 @@ export async function createAgentDocument(
     projectName: input.projectName?.trim() || undefined,
     title: input.title.trim(),
     content: input.content.trim(),
+    taskTitle: input.taskTitle?.trim() || undefined,
     status: input.status ?? "ready_for_review",
     createdAt: now,
     updatedAt: now,

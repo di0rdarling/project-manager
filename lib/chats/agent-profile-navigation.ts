@@ -5,6 +5,9 @@ import {
 
 export const AGENT_PROFILE_FROM_SEARCH_PARAM = "from";
 export const AGENT_PROFILE_PROJECT_ID_PARAM = "projectId";
+export const AGENT_PROFILE_TASK_TITLE_PARAM = "taskTitle";
+
+export const AGENT_TASKS_SECTION_ID = "agent-tasks";
 
 export type AgentProfileFrom = "agents" | "chats";
 
@@ -87,6 +90,24 @@ export function appendAgentProfileFrom(
   projectId?: string | null,
 ): string {
   return appendNavigationContext(path, { from, projectId });
+}
+
+export function appendAgentProfileTaskTitle(
+  path: string,
+  taskTitle: string,
+  projectId?: string | null,
+): string {
+  const [pathname, search = ""] = path.split("?");
+  const params = new URLSearchParams(search);
+
+  if (projectId) {
+    params.set(AGENT_PROFILE_PROJECT_ID_PARAM, projectId);
+  }
+
+  params.set(AGENT_PROFILE_TASK_TITLE_PARAM, taskTitle);
+
+  const query = params.toString();
+  return `${pathname}?${query}#${AGENT_TASKS_SECTION_ID}`;
 }
 
 export function getAgentProfileBackNavigation(

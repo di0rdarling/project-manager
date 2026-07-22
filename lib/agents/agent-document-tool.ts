@@ -99,6 +99,7 @@ type ExecuteCreateAgentDocumentToolInput = {
   teammateId: ChatTeammateId;
   projectId: ObjectId;
   projectName?: string | null;
+  taskTitle: string;
   args: CreateAgentDocumentToolArgs;
 };
 
@@ -113,6 +114,7 @@ export async function executeCreateAgentDocumentTool({
   teammateId,
   projectId,
   projectName,
+  taskTitle,
   args,
 }: ExecuteCreateAgentDocumentToolInput): Promise<AgentDocumentResponse> {
   return createAgentDocument(db, {
@@ -120,6 +122,7 @@ export async function executeCreateAgentDocumentTool({
     teammateId,
     projectId,
     projectName,
+    taskTitle,
     title: args.title,
     content: args.content,
     status: "ready_for_review",
