@@ -274,17 +274,9 @@ export type AgentMemoryResponse = {
   updatedAt: string | null;
 };
 
-export type UserMemoryDecision = {
-  topic: string;
-  choice: string;
-  project: string;
-  when: string;
-};
-
 export type UserMemoryResponse = {
   teammateId: ChatTeammateId;
   mostRecently: string | null;
-  decisions: UserMemoryDecision[];
   stableContext: string[];
   updatedAt: string | null;
 };

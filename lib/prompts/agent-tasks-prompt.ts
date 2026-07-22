@@ -22,7 +22,7 @@ const JSON_SCHEMA_BLOCK = `{
 const TASK_SCHEMA_BLOCK = `{
   "title": string,             // 5–8 words, verb-led where possible
   "detail": string,            // 1–2 sentences: what you would do autonomously and why it helps the project
-  "rationale": string,         // 3–5 sentences, a real case: cite the specific evidence for this task (a gap, an open thread, a stated goal, a past decision), connect it explicitly to the project's overarching goal, and preempt the most obvious objection the user might raise (e.g. "this can wait", "this doesn't matter yet")
+  "rationale": string,         // 3–5 sentences, a real case: name the gap within the user's current focus OR why this is the next high-impact action toward the goal; cite specific evidence (open thread, missing piece, stated goal, past decision); connect it to the project's overarching goal; preempt the most obvious objection (e.g. "this can wait", "this doesn't matter yet")
   "impact": string,            // 2–4 sentences: what concretely becomes true or improves for the project if this gets done, and how that moves the project closer to its stated goal
   "risk_if_skipped": string,   // 2–4 sentences: what specifically stays broken, risky, or blocked if this is skipped, and how that puts the project's overarching goal — and your ability to help the user reach it — at risk
   "output_format": "note" | "document",  // default "note"; use "document" only for a longer structured deliverable (e.g. a full requirements draft, architecture write-up)
@@ -43,9 +43,9 @@ type BuildAgentTasksPromptInput = {
    */
   agentNotesContext?: string | null;
   /**
-   * This teammate's existing structured Overview (most recently / decisions
-   * / stable context), if any, so tasks stay consistent with what has
-   * already been decided or is already known about the user's setup.
+   * This teammate's existing structured Overview (most recently and stable
+   * context), if any, so tasks stay consistent with what is already known
+   * about the user's setup.
    */
   existingOverviewContext?: string | null;
   userName?: string | null;
@@ -97,6 +97,16 @@ export function buildAgentTasksPrompt({
     `${resolvedUserName} is viewing your profile for the project "${projectName}". They want to see concrete work you could take on autonomously — tasks you can do yourself, within your role and personality above, that move the project toward its goal without needing them in the loop for every step.`,
     "",
     `Treat each task as something you need to actively convince ${resolvedUserName} is worth doing, not a suggestion you can leave unexplained. Assume they are busy and may push back with "is this really worth it right now?" — your rationale is where you make the case, specifically enough that a reasonable person reading it would agree this isn't optional busywork. If you cannot build that case for a task, don't suggest it.`,
+    "",
+    "### How to choose what to suggest",
+    "",
+    `Before writing tasks, read the project context, conversation history, Overview, and agent notes together to understand what ${resolvedUserName} is actually focused on right now — the area they're actively working in, the decisions they've made, and the direction they've committed to. Your job is not to list everything that could theoretically be done; it is to help them make progress on what matters now.`,
+    "",
+    "From that picture, each task should do one of two things (or both):",
+    "1. **Fill a gap within their current focus** — something missing, incomplete, or unvalidated in the area they're already concentrating on (e.g. requirements with no linked pain point, positioning with no ICP, an open question from a recent chat that was never resolved). Name the gap explicitly in `rationale`.",
+    "2. **Be the next high-impact action toward the project's goal** — the single most useful thing you could do autonomously right now that moves the project forward, not sideways. If several gaps exist, prioritise the one whose closure most unlocks the next stage of work.",
+    "",
+    "Do not suggest tasks in areas the user has explicitly depriorised, paused, or not yet started unless the context shows a critical blocker that will stall their current focus if left unaddressed. When in doubt, stay close to where the energy and attention already are.",
   ];
 
   if (agentNotesContext?.trim()) {
@@ -106,7 +116,7 @@ export function buildAgentTasksPrompt({
   if (existingOverviewContext?.trim()) {
     sections.push(
       "",
-      "What you already know about your shared work with this user, from your profile Overview (most recently, decisions made, and stable context) — stay consistent with this, do not suggest tasks that contradict or repeat it:",
+      "What you already know about your shared work with this user, from your profile Overview (most recently and stable context) — stay consistent with this, do not suggest tasks that contradict or repeat it:",
       existingOverviewContext.trim(),
     );
   }
@@ -145,10 +155,10 @@ export function buildAgentTasksPrompt({
     "",
     `- Return exactly ${AGENT_TASK_COUNT} tasks in the \`tasks\` array — no more, no fewer.`,
     "- Each task must be something you (this AI teammate) could realistically execute autonomously: research, drafting, analysis, structured updates to project thinking, etc.",
-    "- Ground every task in the project context above. Prioritise work that advances the project's stated goal and fills obvious gaps.",
+    "- Ground every task in the project context above. Each task should either close a specific gap in what the user is currently focused on, or be the next high-impact action that moves the project toward its stated goal — ideally both.",
     "- Do not suggest tasks that require the user to do the work, generic advice with no deliverable, or tasks outside your role and personality.",
-    "- Vary the tasks: different angles, different areas of the project, different types of autonomous output.",
-    "- `rationale` must point to something specific — a gap, an open thread, a stated goal, a past decision — not a generic 'this is good practice' justification. If you can't point to a specific reason grounded in the context above, pick a different task.",
+    "- Vary the tasks across different gaps or next actions, but keep all three anchored to the user's current focus and forward momentum — not scattered across unrelated areas of the project.",
+    "- `rationale` must name the specific gap or next-action logic — what is missing, what thread is open, what the user is focused on, and why this is the right thing to do now — not a generic 'this is good practice' justification. If you can't point to a specific reason grounded in the context above, pick a different task.",
     "- `rationale` is the longest field and does real persuasive work: lay out the evidence, tie it to the project's overarching goal, and explicitly name and defuse the most likely reason the user would deprioritize this (e.g. why it can't just wait, why it's not premature, why it's not something they can just wing without this deliverable). Do not pad with restatement — every sentence should add a new piece of the case.",
     "- `impact` and `risk_if_skipped` must be concrete and specific to this project, not generic upsides/downsides that could apply to any task. `risk_if_skipped` should be honest about the real cost of skipping this — including that you, as the teammate responsible for this area, will be less able to help the user reach the project's goal if this gap is never closed.",
     "- Every task produces a tangible deliverable. Default `output_format` to `\"note\"` — a focused note the user can read and act on. Use `\"document\"` only when the deliverable is clearly longer-form and structured (e.g. a full requirements draft, an architecture overview).",

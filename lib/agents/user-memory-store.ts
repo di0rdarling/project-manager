@@ -2,7 +2,6 @@ import type { Db, ObjectId } from "mongodb";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type { UserMemoryDraft } from "@/lib/agents/user-memory-json";
 import { EMPTY_USER_MEMORY_DRAFT } from "@/lib/agents/user-memory-json";
-import type { UserMemoryDecision } from "@/lib/types";
 
 export const USER_MEMORIES_COLLECTION = "agent_user_memories";
 
@@ -10,7 +9,6 @@ export type StoredUserMemory = {
   userId: ObjectId;
   teammateId: ChatTeammateId;
   mostRecently: string | null;
-  decisions: UserMemoryDecision[];
   stableContext: string[];
   updatedAt: string | Date;
 };
@@ -18,7 +16,7 @@ export type StoredUserMemory = {
 /**
  * The structured, user-facing counterpart to the agent's own first-person
  * Memory (see agent-memory-store.ts). Shown on the agent profile page as
- * "Most recently", "Key decisions", and "Stable context".
+ * "Most recently" and "Stable context".
  *
  * Updated automatically after each chat message once that chat's
  * conversation summary refreshes (incremental merge). Can also be fully
@@ -45,7 +43,6 @@ export async function upsertUserMemory(
     userId,
     teammateId,
     mostRecently: draft.mostRecently,
-    decisions: draft.decisions,
     stableContext: draft.stableContext,
     updatedAt,
   };

@@ -14,10 +14,10 @@ import {
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import AgentAtAGlance from "@/components/views/Chats/AgentAtAGlance";
 import AgentConversations from "@/components/views/Chats/AgentConversations";
-import AgentKeyDecisions from "@/components/views/Chats/AgentKeyDecisions";
 import AgentMostRecently from "@/components/views/Chats/AgentMostRecently";
 import AgentTasks from "@/components/views/Chats/AgentTasks";
 import AgentStableContext from "@/components/views/Chats/AgentStableContext";
+import AIAgentMemory from "@/components/views/Chats/AIAgentMemory";
 import { useDeleteUserMemory } from "@/hooks/mutations/chats/useDeleteUserMemory";
 import { useGenerateUserMemory } from "@/hooks/mutations/chats/useGenerateUserMemory";
 import { useFetchAgentTasks } from "@/hooks/queries/useFetchAgentTasks";
@@ -76,12 +76,9 @@ export default function AgentUserMemoryOverview({
   }
 
   const isInitialLoading = isFetching && userMemory === undefined;
-  const decisions = userMemory?.decisions ?? [];
   const stableContext = userMemory?.stableContext ?? [];
   const hasAnyData =
-    Boolean(userMemory?.mostRecently) ||
-    decisions.length > 0 ||
-    stableContext.length > 0;
+    Boolean(userMemory?.mostRecently) || stableContext.length > 0;
   const tasksCount = agentTasks?.tasks.length ?? 0;
 
   return (
@@ -132,7 +129,7 @@ export default function AgentUserMemoryOverview({
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="space-y-6 lg:col-span-2">
               <AgentTasks teammateId={teammateId} projectId={projectId} />
-              <AgentKeyDecisions decisions={decisions} />
+              <AIAgentMemory teammateId={teammateId} />
             </div>
             <div className="space-y-6">
               <AgentAtAGlance chatsCount={null} tasksCount={tasksCount} />
@@ -145,8 +142,8 @@ export default function AgentUserMemoryOverview({
         <div className="space-y-6">
           <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-900/50">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              This fills in automatically as you chat — decisions and stable
-              context will appear here. You can also generate it now from past
+              This fills in automatically as you chat — stable context will
+              appear here. You can also generate it now from past
               conversations.
             </p>
             {isGenerateError ? (
@@ -166,7 +163,16 @@ export default function AgentUserMemoryOverview({
               Generate overview
             </Button>
           </div>
-          <AgentTasks teammateId={teammateId} projectId={projectId} />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="space-y-6 lg:col-span-2">
+              <AgentTasks teammateId={teammateId} projectId={projectId} />
+              <AIAgentMemory teammateId={teammateId} />
+            </div>
+            <div className="space-y-6">
+              <AgentAtAGlance chatsCount={null} tasksCount={tasksCount} />
+              <AgentConversations />
+            </div>
+          </div>
         </div>
       )}
 

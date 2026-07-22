@@ -65,7 +65,7 @@ export default function AgentTaskDetailModal({
     OUTPUT_FORMAT_LABELS[task.outputFormat] ?? OUTPUT_FORMAT_LABELS.note;
 
   return (
-    <Modal open={open} onClose={onClose} title={task.title} size="narrow">
+    <Modal open={open} onClose={onClose} title={task.title} size="wide">
       <div className="space-y-5">
         <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
           {task.detail}

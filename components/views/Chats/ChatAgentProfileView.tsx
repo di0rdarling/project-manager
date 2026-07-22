@@ -15,7 +15,6 @@ import {
   getAgentProfileBackNavigation,
   parseAgentProfileNavigationContext,
 } from "@/lib/chats/agent-profile-navigation";
-import AIAgentMemory from "@/components/views/Chats/AIAgentMemory";
 import AIAgentNotesSection from "@/components/views/Chats/AIAgentNotesSection";
 import AgentUserMemoryOverview from "@/components/views/Chats/AgentUserMemoryOverview";
 
@@ -87,7 +86,6 @@ export default function ChatAgentProfileView({
         projectId={navigationContext.projectId}
       />
 
-      <AIAgentMemory teammateId={teammateId} />
       <AIAgentNotesSection
         teammateId={teammateId}
         agentName={teammate.name}

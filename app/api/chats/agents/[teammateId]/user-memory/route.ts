@@ -31,7 +31,6 @@ function serializeUserMemory(
   return {
     teammateId,
     mostRecently: memory?.mostRecently ?? null,
-    decisions: memory?.decisions ?? [],
     stableContext: memory?.stableContext ?? [],
     updatedAt: memory ? toIsoString(memory.updatedAt) : null,
   };

@@ -1,19 +1,13 @@
-import type {
-  UserMemoryDecision,
-} from "@/lib/types";
-
 /** Max stable-context items kept, matching the prompt's own instruction. */
 const MAX_STABLE_CONTEXT_ITEMS = 4;
 
 export type UserMemoryDraft = {
   mostRecently: string | null;
-  decisions: UserMemoryDecision[];
   stableContext: string[];
 };
 
 export const EMPTY_USER_MEMORY_DRAFT: UserMemoryDraft = {
   mostRecently: null,
-  decisions: [],
   stableContext: [],
 };
 
@@ -46,22 +40,6 @@ export function parseUserMemoryJson(raw: string): UserMemoryDraft {
     throw new Error("Gemini returned a non-object user memory payload");
   }
 
-  const decisionsRaw = record.decisions;
-  const decisions: UserMemoryDecision[] = Array.isArray(decisionsRaw)
-    ? decisionsRaw
-        .map(asRecord)
-        .filter((item): item is Record<string, unknown> => item !== null)
-        .map((item) => ({
-          topic: asTrimmedString(item.topic),
-          choice: asTrimmedString(item.choice),
-          project: asTrimmedString(item.project) || "General",
-          when: asTrimmedString(item.when),
-        }))
-        .filter(
-          (decision) => decision.topic.length > 0 && decision.choice.length > 0,
-        )
-    : [];
-
   const stableContextRaw = record.stable_context;
   const stableContext: string[] = Array.isArray(stableContextRaw)
     ? stableContextRaw
@@ -77,7 +55,6 @@ export function parseUserMemoryJson(raw: string): UserMemoryDraft {
 
   return {
     mostRecently: mostRecently || null,
-    decisions,
     stableContext,
   };
 }
@@ -91,12 +68,6 @@ export function serializeUserMemoryForPrompt(draft: UserMemoryDraft): string {
   return JSON.stringify(
     {
       most_recently: draft.mostRecently ?? "",
-      decisions: draft.decisions.map((decision) => ({
-        topic: decision.topic,
-        choice: decision.choice,
-        project: decision.project,
-        when: decision.when,
-      })),
       stable_context: draft.stableContext,
     },
     null,

@@ -8,15 +8,7 @@ import { serializeUserMemoryForPrompt, type UserMemoryDraft } from "@/lib/agents
 
 const JSON_SCHEMA_BLOCK = `{
   "most_recently": string,
-  "decisions": Decision[],
   "stable_context": string[]
-}`;
-
-const DECISION_SCHEMA_BLOCK = `{
-  "topic": string,          // short noun phrase, e.g. "Monetisation model"
-  "choice": string,         // what was decided, in plain language
-  "project": string,
-  "when": string            // approximate date or "this week" etc.
 }`;
 
 /** Field-by-field instructions shared by both the full rebuild and merge prompts. */
@@ -24,15 +16,6 @@ const FIELD_INSTRUCTIONS = [
   "### Field instructions",
   "",
   "**`most_recently`** — one sentence. The single most useful thing for {{userName}} to know right now as they return to this conversation. Should name a concrete next action or pending question, not just summarise a topic. This is the first thing they read.",
-  "",
-  "---",
-  "",
-  "**`decisions`** — array of Decision objects. Things that were explicitly decided and do not need to be revisited. Only include if the decision is durable and affects future work.",
-  "",
-  "Each Decision:",
-  "```",
-  DECISION_SCHEMA_BLOCK,
-  "```",
   "",
   "---",
   "",
@@ -72,7 +55,7 @@ export function buildUserMemoryPrompt({
   const sections = [
     `You are ${agentName}, the ${agentRole}.`,
     "",
-    `You are generating a structured summary of your shared work with ${resolvedUserName} — not for yourself, but for them. They will read this on your profile page to quickly remember where things stand, what still needs their attention, and what has already been decided. Write it as if you are briefing them, not as if you are writing notes for yourself.`,
+    `You are generating a structured summary of your shared work with ${resolvedUserName} — not for yourself, but for them. They will read this on your profile page to quickly remember where things stand and what still needs their attention. Write it as if you are briefing them, not as if you are writing notes for yourself.`,
     "",
     `${resolvedUserName} has ADHD and context-switches frequently across multiple projects. Prioritise clarity over completeness. A short, accurate entry is better than a thorough one that blurs into the rest.`,
     "",
@@ -153,13 +136,12 @@ export function buildUserMemoryMergePrompt({
   const sections = [
     `You are ${agentName}, the ${agentRole}.`,
     "",
-    `You are updating a structured user-facing summary after a new conversation. ${resolvedUserName} uses this to track decisions and what needs their attention across all their projects.`,
+    `You are updating a structured user-facing summary after a new conversation. ${resolvedUserName} uses this to track what needs their attention across all their projects.`,
     "",
     "Your job is to make the minimum necessary changes to the existing summary to reflect the new conversation. Do not rewrite what has not changed.",
     "",
     "Rules:",
     "- Update `most_recently` to reflect the new conversation's most actionable takeaway",
-    "- Add new decisions to `decisions` if something was decided in this conversation",
     "- Update `stable_context` only if a constraint or fact genuinely changed",
   ];
 
