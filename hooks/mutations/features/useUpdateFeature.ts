@@ -31,6 +31,10 @@ export function useUpdateFeature(options?: UseUpdateFeatureOptions) {
             existing._id === feature._id ? feature : existing,
           ),
       );
+      queryClient.setQueryData(
+        featureKeys.detail(variables.projectId, feature._id),
+        feature,
+      );
       onSuccess?.(feature, variables, onMutateResult, context);
     },
   });

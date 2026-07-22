@@ -1,21 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { ContextTag } from "@/components/ui/ContextTag";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
-import { RichTextContent } from "@/components/ui/inputs/richText/RichTextContent";
 import PageContent from "@/components/layout/PageContent";
 import NotesSection from "@/components/views/ProjectDetail/NotesSection";
 import ChallengesSection from "@/components/views/ProjectDetail/ChallengesSection";
 import DomainKnowledgeSection from "@/components/views/ProjectDetail/DomainKnowledgeSection";
 import AIFeatureSummary from "@/components/views/FeatureDetail/AIFeatureSummary";
+import FeatureDescriptionSection from "@/components/views/FeatureDetail/FeatureDescriptionSection";
 import { useFetchFeature } from "@/hooks/queries/useFetchFeature";
 import { useFetchProject } from "@/hooks/queries/useFetchProject";
 import { useFetchRequirements } from "@/hooks/queries/useFetchRequirements";
-import { useRegisterProjectSection } from "@/hooks/useRegisterProjectSection";
 import { formatDisplayDate } from "@/lib/dates";
 
 interface FeatureDetailViewProps {
@@ -54,9 +52,6 @@ export default function FeatureDetailView({
         feature.requirementIds.includes(requirement._id),
       )
     : [];
-
-  const descriptionSectionRef = useRef<HTMLElement>(null);
-  useRegisterProjectSection("description", descriptionSectionRef);
 
   return (
     <PageContent>
@@ -101,21 +96,7 @@ export default function FeatureDetailView({
 
           <AIFeatureSummary projectId={projectId} featureId={featureId} />
 
-          <section
-            ref={descriptionSectionRef}
-            id="description"
-            className="scroll-mt-6 space-y-3"
-          >
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-              Description
-            </h2>
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-              <RichTextContent
-                content={feature.content}
-                className="text-sm text-zinc-800 dark:text-zinc-200"
-              />
-            </div>
-          </section>
+          <FeatureDescriptionSection projectId={projectId} feature={feature} />
 
           <ChallengesSection
             projectId={projectId}
