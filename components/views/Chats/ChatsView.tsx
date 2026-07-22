@@ -8,22 +8,28 @@ import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { FilterPill } from "@/components/ui/FilterPill";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useFetchChats } from "@/hooks/queries/useFetchChats";
-import { useFetchProjects } from "@/hooks/queries/useFetchProjects";
+import { useFetchProject } from "@/hooks/queries/useFetchProject";
 import PageContent from "@/components/layout/PageContent";
 import type { ChatListStatus } from "@/lib/api/chats";
+import { getChatDetailHref } from "@/lib/chats/agent-profile-navigation";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import ChatsList from "./ChatsList";
 import ChatsToolbar from "./ChatsToolbar";
 import CreateChatModal from "./modals/CreateChatModal";
 
-export default function ChatsView() {
+type ChatsViewProps = {
+  projectId: string;
+};
+
+export default function ChatsView({ projectId }: Readonly<ChatsViewProps>) {
   const router = useRouter();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [listStatus, setListStatus] = useState<ChatListStatus>("active");
   const [selectedTeammateId, setSelectedTeammateId] = useState<
     ChatTeammateId | ""
   >("");
-  const [selectedProjectId, setSelectedProjectId] = useState("");
+
+  const { data: project } = useFetchProject(projectId);
 
   const {
     data: chats = [],
@@ -32,24 +38,22 @@ export default function ChatsView() {
     error,
   } = useFetchChats({ status: listStatus });
 
-  const { data: projects = [] } = useFetchProjects();
+  const projectChats = useMemo(
+    () => chats.filter((chat) => chat.projectId === projectId),
+    [chats, projectId],
+  );
 
   const filteredChats = useMemo(() => {
-    return chats.filter((chat) => {
+    return projectChats.filter((chat) => {
       if (selectedTeammateId && chat.teammateId !== selectedTeammateId) {
-        return false;
-      }
-
-      if (selectedProjectId && chat.projectId !== selectedProjectId) {
         return false;
       }
 
       return true;
     });
-  }, [chats, selectedProjectId, selectedTeammateId]);
+  }, [projectChats, selectedTeammateId]);
 
-  const hasActiveFilters =
-    selectedTeammateId !== "" || selectedProjectId !== "";
+  const hasActiveFilters = selectedTeammateId !== "";
 
   const showArchived = listStatus === "archived";
   const emptyMessage =
@@ -57,7 +61,7 @@ export default function ChatsView() {
       ? hasActiveFilters
         ? "No archived chats match these filters."
         : "No archived chats yet."
-      : chats.length === 0
+      : projectChats.length === 0
         ? "No chats yet. Start a new conversation to get help from your AI teammates."
         : hasActiveFilters
           ? "No chats match these filters."
@@ -69,7 +73,6 @@ export default function ChatsView() {
 
   function clearFilters() {
     setSelectedTeammateId("");
-    setSelectedProjectId("");
   }
 
   return (
@@ -77,7 +80,9 @@ export default function ChatsView() {
       <div className="space-y-2">
         <h1 className="text-4xl font-bold tracking-tight">AI Chats</h1>
         <p className="text-zinc-600 dark:text-zinc-400">
-          Your conversations with AI teammates across projects
+          {project
+            ? `Conversations with AI teammates about ${project.name}`
+            : "Conversations with AI teammates about this project"}
         </p>
       </div>
 
@@ -108,7 +113,7 @@ export default function ChatsView() {
           </LoadingMessage>
         ) : isError ? (
           <ErrorMessage error={error} fallbackMessage="Failed to load chats" />
-        ) : chats.length === 0 && listStatus === "active" && !hasActiveFilters ? (
+        ) : projectChats.length === 0 && listStatus === "active" && !hasActiveFilters ? (
           <div className="rounded-xl border border-dashed border-zinc-300 px-4 py-8 text-center dark:border-zinc-700">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
               {emptyMessage}
@@ -121,10 +126,7 @@ export default function ChatsView() {
           <>
             <ChatsToolbar
               selectedTeammateId={selectedTeammateId}
-              selectedProjectId={selectedProjectId}
-              projects={projects}
               onTeammateChange={setSelectedTeammateId}
-              onProjectChange={setSelectedProjectId}
               onNewChat={openCreateModal}
               showNewChatButton={!showArchived}
             />
@@ -149,6 +151,7 @@ export default function ChatsView() {
               <ChatsList
                 chats={filteredChats}
                 showArchived={showArchived}
+                projectId={projectId}
                 onDeleteSuccess={(chatTitle) =>
                   toast.success(`Chat "${chatTitle}" deleted successfully.`)
                 }
@@ -167,7 +170,10 @@ export default function ChatsView() {
       <CreateChatModal
         open={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={(chatId) => router.push(`/chats/${chatId}`)}
+        onSuccess={(chatId) =>
+          router.push(getChatDetailHref(chatId, projectId))
+        }
+        projectId={projectId}
       />
     </PageContent>
   );

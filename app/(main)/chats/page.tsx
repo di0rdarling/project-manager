@@ -1,9 +1,5 @@
-import ChatsView from "@/components/views/Chats/ChatsView";
+import { redirect } from "next/navigation";
 
 export default function ChatsPage() {
-  return (
-    <div className="flex flex-1 flex-col bg-zinc-50 font-sans dark:bg-black">
-      <ChatsView />
-    </div>
-  );
+  redirect("/home");
 }

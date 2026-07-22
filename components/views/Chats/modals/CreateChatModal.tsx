@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
@@ -11,7 +10,6 @@ import { ChatModelSelect } from "@/components/views/Chats/ChatModelSelect";
 import { Modal } from "@/components/ui/Modal";
 import { useCreateChat } from "@/hooks/mutations/chats/useCreateChat";
 import { useFetchFeatures } from "@/hooks/queries/useFetchFeatures";
-import { useFetchProjects } from "@/hooks/queries/useFetchProjects";
 import { useFetchRequirements } from "@/hooks/queries/useFetchRequirements";
 import { CHAT_TEAMMATE_SELECT_OPTIONS } from "@/lib/chats/chat-teammate-options";
 import {
@@ -24,14 +22,15 @@ type CreateChatModalProps = {
   open: boolean;
   onClose: () => void;
   onSuccess: (chatId: string) => void;
+  projectId: string;
 };
 
 export default function CreateChatModal({
   open,
   onClose,
   onSuccess,
+  projectId,
 }: CreateChatModalProps) {
-  const [selectedProjectId, setSelectedProjectId] = useState("");
   const [selectedRequirementId, setSelectedRequirementId] = useState("");
   const [selectedFeatureId, setSelectedFeatureId] = useState("");
   const [selectedTeammateId, setSelectedTeammateId] = useState<ChatTeammateId>(
@@ -41,24 +40,12 @@ export default function CreateChatModal({
     useState<ChatModelId>(DEFAULT_CHAT_MODEL_ID);
 
   const {
-    data: projects = [],
-    isPending: isLoadingProjects,
-    isError: isProjectsError,
-    error: projectsError,
-  } = useFetchProjects({ enabled: open });
-
-  const effectiveProjectId =
-    selectedProjectId && projects.some((project) => project._id === selectedProjectId)
-      ? selectedProjectId
-      : (projects[0]?._id ?? "");
-
-  const {
     data: requirements = [],
     isPending: isLoadingRequirements,
     isError: isRequirementsError,
     error: requirementsError,
-  } = useFetchRequirements(effectiveProjectId, {
-    enabled: open && Boolean(effectiveProjectId),
+  } = useFetchRequirements(projectId, {
+    enabled: open,
   });
 
   const {
@@ -66,18 +53,21 @@ export default function CreateChatModal({
     isPending: isLoadingFeatures,
     isError: isFeaturesError,
     error: featuresError,
-  } = useFetchFeatures(effectiveProjectId, {
-    enabled: open && Boolean(effectiveProjectId),
+  } = useFetchFeatures(projectId, {
+    enabled: open,
   });
 
   useEffect(() => {
+    if (!open) {
+      return;
+    }
+
     setSelectedRequirementId("");
     setSelectedFeatureId("");
-  }, [effectiveProjectId]);
+  }, [open, projectId]);
 
   const createChatMutation = useCreateChat({
     onSuccess: (chat) => {
-      setSelectedProjectId("");
       setSelectedRequirementId("");
       setSelectedFeatureId("");
       setSelectedTeammateId(DEFAULT_CHAT_TEAMMATE_ID);
@@ -90,12 +80,8 @@ export default function CreateChatModal({
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!effectiveProjectId) {
-      return;
-    }
-
     createChatMutation.mutate({
-      projectId: effectiveProjectId,
+      projectId,
       teammateId: selectedTeammateId,
       requirementId: selectedRequirementId || null,
       featureId: selectedFeatureId || null,
@@ -108,7 +94,6 @@ export default function CreateChatModal({
       return;
     }
 
-    setSelectedProjectId("");
     setSelectedRequirementId("");
     setSelectedFeatureId("");
     setSelectedTeammateId(DEFAULT_CHAT_TEAMMATE_ID);
@@ -122,20 +107,15 @@ export default function CreateChatModal({
       ? createChatMutation.error.message
       : null;
 
-  const isLoadingProjectDetails =
-    Boolean(effectiveProjectId) &&
-    (isLoadingRequirements || isLoadingFeatures);
-  const hasProjectDetailsError =
-    Boolean(effectiveProjectId) &&
-    (isRequirementsError || isFeaturesError);
+  const isLoadingProjectDetails = isLoadingRequirements || isLoadingFeatures;
+  const hasProjectDetailsError = isRequirementsError || isFeaturesError;
 
   return (
     <Modal open={open} onClose={handleClose} title="Start a new chat">
       <form onSubmit={handleSubmit} className="space-y-4">
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Choose a project to discuss and who you&apos;d like to talk to. You
-          can optionally narrow the conversation to a specific requirement or
-          feature.
+          Choose who you&apos;d like to talk to. You can optionally narrow the
+          conversation to a specific requirement or feature.
         </p>
 
         <AvatarSelect
@@ -153,83 +133,44 @@ export default function CreateChatModal({
           showLabel
         />
 
-        {isLoadingProjects ? (
-          <LoadingMessage>Loading projects...</LoadingMessage>
-        ) : isProjectsError ? (
+        {isLoadingProjectDetails ? (
+          <LoadingMessage>Loading project details...</LoadingMessage>
+        ) : hasProjectDetailsError ? (
           <ErrorMessage
-            error={projectsError}
-            fallbackMessage="Failed to load projects"
+            error={requirementsError ?? featuresError}
+            fallbackMessage="Failed to load project requirements and features"
           />
-        ) : projects.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-zinc-300 px-4 py-6 text-center dark:border-zinc-700">
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              You need at least one project before starting a chat.
-            </p>
-            <Link
-              href="/home"
-              className="mt-3 inline-block text-sm font-medium text-zinc-900 underline underline-offset-2 dark:text-zinc-100"
-              onClick={handleClose}
-            >
-              Go to Project Manager
-            </Link>
-          </div>
-        ) : (
-          <>
-            <Select
-              id="projectId"
-              label="Project"
-              value={effectiveProjectId}
-              onChange={(event) => setSelectedProjectId(event.target.value)}
-              options={projects.map((project) => ({
-                value: project._id,
-                label: project.name,
-              }))}
-              required
-            />
+        ) : requirements.length > 0 ? (
+          <Select
+            id="requirementId"
+            label="Requirement (optional)"
+            value={selectedRequirementId}
+            onChange={(event) => setSelectedRequirementId(event.target.value)}
+            options={[
+              { value: "", label: "No specific requirement" },
+              ...requirements.map((requirement) => ({
+                value: requirement._id,
+                label: requirement.title.trim() || "Untitled requirement",
+              })),
+            ]}
+          />
+        ) : null}
 
-            {isLoadingProjectDetails ? (
-              <LoadingMessage>Loading project details...</LoadingMessage>
-            ) : hasProjectDetailsError ? (
-              <ErrorMessage
-                error={requirementsError ?? featuresError}
-                fallbackMessage="Failed to load project requirements and features"
-              />
-            ) : requirements.length > 0 ? (
-              <Select
-                id="requirementId"
-                label="Requirement (optional)"
-                value={selectedRequirementId}
-                onChange={(event) =>
-                  setSelectedRequirementId(event.target.value)
-                }
-                options={[
-                  { value: "", label: "No specific requirement" },
-                  ...requirements.map((requirement) => ({
-                    value: requirement._id,
-                    label:
-                      requirement.title.trim() || "Untitled requirement",
-                  })),
-                ]}
-              />
-            ) : null}
-
-            {features.length > 0 ? (
-              <Select
-                id="featureId"
-                label="Feature (optional)"
-                value={selectedFeatureId}
-                onChange={(event) => setSelectedFeatureId(event.target.value)}
-                options={[
-                  { value: "", label: "No specific feature" },
-                  ...features.map((feature) => ({
-                    value: feature._id,
-                    label: feature.title.trim() || "Untitled feature",
-                  })),
-                ]}
-              />
-            ) : null}
-          </>
-        )}
+        {features.length > 0 ? (
+          <Select
+            id="featureId"
+            label="Feature (optional)"
+            value={selectedFeatureId}
+            onChange={(event) => setSelectedFeatureId(event.target.value)}
+            options={[
+              { value: "", label: "No specific feature" },
+              ...features.map((feature) => ({
+                value: feature._id,
+                label: feature.title.trim() || "Untitled feature",
+              })),
+            ]}
+          />
+        ) : null}
 
         {formError ? (
           <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>
@@ -248,10 +189,6 @@ export default function CreateChatModal({
             type="submit"
             disabled={
               createChatMutation.isPending ||
-              isLoadingProjects ||
-              isProjectsError ||
-              projects.length === 0 ||
-              !effectiveProjectId ||
               isLoadingProjectDetails ||
               hasProjectDetailsError
             }

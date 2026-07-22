@@ -15,12 +15,14 @@ type AIAgentNotesSectionProps = {
   teammateId: ChatTeammateId;
   agentName: string;
   profileFrom?: AgentProfileFrom | null;
+  profileProjectId?: string | null;
 };
 
 export default function AIAgentNotesSection({
   teammateId,
   agentName,
   profileFrom,
+  profileProjectId,
 }: Readonly<AIAgentNotesSectionProps>) {
   const [isCreateNoteModalOpen, setIsCreateNoteModalOpen] = useState(false);
 
@@ -50,6 +52,7 @@ export default function AIAgentNotesSection({
           teammateId={teammateId}
           notes={notes}
           profileFrom={profileFrom}
+          profileProjectId={profileProjectId}
           onDeleteSuccess={() => toast.success("Note deleted successfully.")}
           onShareSuccess={() => toast.success("Note sharing updated.")}
           renderDeleteModal={({ open, item, onClose, onSuccess }) => (

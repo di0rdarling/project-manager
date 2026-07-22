@@ -5,10 +5,14 @@ import type { AgentProfileFrom } from "@/lib/chats/agent-profile-navigation";
 import TeammateCard from "./TeammateCard";
 
 type ChatAgentsRowProps = {
-  from?: AgentProfileFrom | null;
+  from: AgentProfileFrom;
+  projectId: string;
 };
 
-export default function ChatAgentsRow({ from }: Readonly<ChatAgentsRowProps>) {
+export default function ChatAgentsRow({
+  from,
+  projectId,
+}: Readonly<ChatAgentsRowProps>) {
   return (
     <section className="space-y-4">
       <h2 className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
@@ -17,7 +21,12 @@ export default function ChatAgentsRow({ from }: Readonly<ChatAgentsRowProps>) {
 
       <div className="grid gap-3 sm:grid-cols-2">
         {CHAT_TEAMMATES_FOR_DISPLAY.map((teammate) => (
-          <TeammateCard key={teammate.id} teammate={teammate} from={from} />
+          <TeammateCard
+            key={teammate.id}
+            teammate={teammate}
+            from={from}
+            projectId={projectId}
+          />
         ))}
       </div>
     </section>

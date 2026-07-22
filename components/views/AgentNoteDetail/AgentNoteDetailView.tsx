@@ -21,9 +21,8 @@ import {
   isChatTeammateId,
 } from "@/lib/chats/chat-teammates";
 import {
-  AGENT_PROFILE_FROM_SEARCH_PARAM,
   appendAgentProfileFrom,
-  parseAgentProfileFrom,
+  parseAgentProfileNavigationContext,
 } from "@/lib/chats/agent-profile-navigation";
 
 const AGENT_NOTE_FORM_ID = "agent-note-form";
@@ -38,9 +37,7 @@ export default function AgentNoteDetailView({
   noteId,
 }: Readonly<AgentNoteDetailViewProps>) {
   const searchParams = useSearchParams();
-  const profileFrom = parseAgentProfileFrom(
-    searchParams.get(AGENT_PROFILE_FROM_SEARCH_PARAM),
-  );
+  const navigationContext = parseAgentProfileNavigationContext(searchParams);
   const teammateId = isChatTeammateId(rawTeammateId) ? rawTeammateId : null;
   const agentName = teammateId ? getChatTeammate(teammateId).name : "Agent";
 
@@ -105,7 +102,8 @@ export default function AgentNoteDetailView({
   const viewingTeammateId = teammateId;
   const backHref = appendAgentProfileFrom(
     `/chats/agents/${viewingTeammateId}`,
-    profileFrom,
+    navigationContext.from ?? null,
+    navigationContext.projectId,
   );
   const backLabel = `Back to ${agentName}`;
 

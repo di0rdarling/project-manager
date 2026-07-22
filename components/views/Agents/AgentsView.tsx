@@ -2,18 +2,27 @@
 
 import PageContent from "@/components/layout/PageContent";
 import ChatAgentsRow from "@/components/views/Chats/ChatAgentsRow";
+import { useFetchProject } from "@/hooks/queries/useFetchProject";
 
-export default function AgentsView() {
+type AgentsViewProps = {
+  projectId: string;
+};
+
+export default function AgentsView({ projectId }: Readonly<AgentsViewProps>) {
+  const { data: project } = useFetchProject(projectId);
+
   return (
     <PageContent>
       <div className="space-y-2">
         <h1 className="text-4xl font-bold tracking-tight">Agents</h1>
         <p className="text-zinc-600 dark:text-zinc-400">
-          Your AI teammates and their roles across projects
+          {project
+            ? `AI teammates available for ${project.name}`
+            : "AI teammates available for this project"}
         </p>
       </div>
 
-      <ChatAgentsRow from="agents" />
+      <ChatAgentsRow from="agents" projectId={projectId} />
     </PageContent>
   );
 }

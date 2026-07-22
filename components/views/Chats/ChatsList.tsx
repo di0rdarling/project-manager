@@ -9,6 +9,7 @@ import {
   deleteItemAction,
   ItemActionsMenu,
 } from "@/components/ui/ItemActionsMenu";
+import { getChatDetailHref } from "@/lib/chats/agent-profile-navigation";
 import { getChatTeammate } from "@/lib/chats/chat-teammates";
 import { formatCompactDisplayDate } from "@/lib/dates";
 import type { ChatListItemResponse } from "@/lib/types";
@@ -19,6 +20,7 @@ import DeleteChatModal from "./modals/DeleteChatModal";
 interface ChatsListProps {
   chats: ChatListItemResponse[];
   showArchived?: boolean;
+  projectId: string;
   onDeleteSuccess?: (chatTitle: string) => void;
   onArchiveSuccess?: (chatTitle: string) => void;
   onUnarchiveSuccess?: (chatTitle: string) => void;
@@ -35,6 +37,7 @@ function getChatSnippet(chat: ChatListItemResponse): string | null {
 export default function ChatsList({
   chats,
   showArchived = false,
+  projectId,
   onDeleteSuccess,
   onArchiveSuccess,
   onUnarchiveSuccess,
@@ -64,7 +67,7 @@ export default function ChatsList({
             >
               <div className="flex items-start justify-between gap-4">
                 <Link
-                  href={`/chats/${chat._id}`}
+                  href={getChatDetailHref(chat._id, projectId)}
                   className="flex min-w-0 flex-1 flex-col gap-2 rounded-lg outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-100"
                 >
                   <div className="flex items-start gap-3">
@@ -86,11 +89,6 @@ export default function ChatsList({
                       <ContextTag className="bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
                         {teammate.name}
                       </ContextTag>
-                      {chat.project ? (
-                        <ContextTag className="bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100">
-                          {chat.project.name}
-                        </ContextTag>
-                      ) : null}
                       {chat.requirement ? (
                         <ContextTag className="bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
                           {chat.requirement.title}

@@ -30,6 +30,7 @@ interface AIAgentNotesListProps {
   teammateId: ChatTeammateId;
   notes: AgentNoteResponse[];
   profileFrom?: AgentProfileFrom | null;
+  profileProjectId?: string | null;
   onDeleteSuccess?: () => void;
   onShareSuccess?: () => void;
   renderDeleteModal: (props: ItemModalRenderProps) => ReactNode;
@@ -59,6 +60,7 @@ export default function AIAgentNotesList({
   teammateId,
   notes,
   profileFrom,
+  profileProjectId,
   onDeleteSuccess,
   onShareSuccess,
   renderDeleteModal,
@@ -118,6 +120,7 @@ export default function AIAgentNotesList({
           appendAgentProfileFrom(
             getAgentNoteDetailPath(teammateId, note._id),
             profileFrom ?? null,
+            profileProjectId,
           )
         }
         getItemLabel={(note) => note.title || "note"}

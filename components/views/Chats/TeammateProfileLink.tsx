@@ -14,6 +14,7 @@ type TeammateProfileLinkProps = {
   children: ReactNode;
   className?: string;
   from?: AgentProfileFrom | null;
+  projectId?: string | null;
 };
 
 export function TeammateProfileLink({
@@ -21,10 +22,11 @@ export function TeammateProfileLink({
   children,
   className,
   from,
+  projectId,
 }: TeammateProfileLinkProps) {
   return (
     <Link
-      href={getTeammateProfileHref(teammate.id, from)}
+      href={getTeammateProfileHref(teammate.id, from, projectId)}
       aria-label={`View ${teammate.name}'s profile`}
       className={className}
     >
@@ -38,6 +40,7 @@ type TeammateProfileAvatarLinkProps = {
   size?: "sm" | "md";
   className?: string;
   from?: AgentProfileFrom | null;
+  projectId?: string | null;
 };
 
 export function TeammateProfileAvatarLink({
@@ -45,11 +48,13 @@ export function TeammateProfileAvatarLink({
   size = "sm",
   className,
   from,
+  projectId,
 }: TeammateProfileAvatarLinkProps) {
   return (
     <TeammateProfileLink
       teammate={teammate}
       from={from}
+      projectId={projectId}
       className={`inline-flex shrink-0 rounded-full transition hover:ring-2 hover:ring-zinc-300 dark:hover:ring-zinc-700 ${className ?? ""}`}
     >
       <Avatar

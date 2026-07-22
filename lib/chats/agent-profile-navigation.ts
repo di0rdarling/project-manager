@@ -1,6 +1,17 @@
+import {
+  getProjectAgentsPath,
+  getProjectChatsPath,
+} from "@/lib/project-detail-sections";
+
 export const AGENT_PROFILE_FROM_SEARCH_PARAM = "from";
+export const AGENT_PROFILE_PROJECT_ID_PARAM = "projectId";
 
 export type AgentProfileFrom = "agents" | "chats";
+
+export type AgentProfileNavigationContext = {
+  from?: AgentProfileFrom | null;
+  projectId?: string | null;
+};
 
 function isAgentProfileFrom(value: string): value is AgentProfileFrom {
   return value === "agents" || value === "chats";
@@ -16,46 +27,105 @@ export function parseAgentProfileFrom(
   return value;
 }
 
-export function getTeammateProfileHref(
-  teammateId: string,
-  from?: AgentProfileFrom | null,
-): string {
-  const basePath = `/chats/agents/${teammateId}`;
-
-  if (!from) {
-    return basePath;
-  }
-
-  const params = new URLSearchParams({
-    [AGENT_PROFILE_FROM_SEARCH_PARAM]: from,
-  });
-
-  return `${basePath}?${params.toString()}`;
+export function parseAgentProfileProjectId(
+  value: string | null | undefined,
+): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
 }
 
-export function appendAgentProfileFrom(
+export function parseAgentProfileNavigationContext(
+  searchParams: Pick<URLSearchParams, "get">,
+): AgentProfileNavigationContext {
+  return {
+    from: parseAgentProfileFrom(
+      searchParams.get(AGENT_PROFILE_FROM_SEARCH_PARAM),
+    ),
+    projectId: parseAgentProfileProjectId(
+      searchParams.get(AGENT_PROFILE_PROJECT_ID_PARAM),
+    ),
+  };
+}
+
+function appendNavigationContext(
   path: string,
-  from: AgentProfileFrom | null,
+  context?: AgentProfileNavigationContext | null,
 ): string {
-  if (!from) {
+  if (!context?.from && !context?.projectId) {
     return path;
   }
 
   const [pathname, search = ""] = path.split("?");
   const params = new URLSearchParams(search);
-  params.set(AGENT_PROFILE_FROM_SEARCH_PARAM, from);
-  const query = params.toString();
 
+  if (context.from) {
+    params.set(AGENT_PROFILE_FROM_SEARCH_PARAM, context.from);
+  }
+
+  if (context.projectId) {
+    params.set(AGENT_PROFILE_PROJECT_ID_PARAM, context.projectId);
+  }
+
+  const query = params.toString();
   return query ? `${pathname}?${query}` : pathname;
 }
 
-export function getAgentProfileBackNavigation(from: AgentProfileFrom | null): {
+export function getTeammateProfileHref(
+  teammateId: string,
+  from?: AgentProfileFrom | null,
+  projectId?: string | null,
+): string {
+  return appendNavigationContext(`/chats/agents/${teammateId}`, {
+    from,
+    projectId,
+  });
+}
+
+export function appendAgentProfileFrom(
+  path: string,
+  from: AgentProfileFrom | null,
+  projectId?: string | null,
+): string {
+  return appendNavigationContext(path, { from, projectId });
+}
+
+export function getAgentProfileBackNavigation(
+  context: AgentProfileNavigationContext,
+): { href: string; label: string } {
+  if (context.projectId) {
+    if (context.from === "agents") {
+      return {
+        href: getProjectAgentsPath(context.projectId),
+        label: "Back to Agents",
+      };
+    }
+
+    return {
+      href: getProjectChatsPath(context.projectId),
+      label: "Back to AI Chats",
+    };
+  }
+
+  return { href: "/home", label: "Back to projects" };
+}
+
+export function getChatDetailHref(
+  chatId: string,
+  projectId: string,
+): string {
+  return appendNavigationContext(`/chats/${chatId}`, { projectId });
+}
+
+export function getChatBackNavigation(projectId: string | null | undefined): {
   href: string;
   label: string;
 } {
-  if (from === "agents") {
-    return { href: "/agents", label: "Back to Agents" };
+  if (projectId) {
+    return {
+      href: getProjectChatsPath(projectId),
+      label: "Back to chats",
+    };
   }
 
-  return { href: "/chats", label: "Back to AI Chats" };
+  return { href: "/home", label: "Back to projects" };
 }

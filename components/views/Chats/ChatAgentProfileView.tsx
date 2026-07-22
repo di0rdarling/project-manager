@@ -12,9 +12,8 @@ import {
   isChatTeammateId,
 } from "@/lib/chats/chat-teammates";
 import {
-  AGENT_PROFILE_FROM_SEARCH_PARAM,
   getAgentProfileBackNavigation,
-  parseAgentProfileFrom,
+  parseAgentProfileNavigationContext,
 } from "@/lib/chats/agent-profile-navigation";
 import AIAgentMemory from "@/components/views/Chats/AIAgentMemory";
 import AIAgentNotesSection from "@/components/views/Chats/AIAgentNotesSection";
@@ -28,10 +27,8 @@ export default function ChatAgentProfileView({
   teammateId,
 }: Readonly<ChatAgentProfileViewProps>) {
   const searchParams = useSearchParams();
-  const profileFrom = parseAgentProfileFrom(
-    searchParams.get(AGENT_PROFILE_FROM_SEARCH_PARAM),
-  );
-  const backNavigation = getAgentProfileBackNavigation(profileFrom);
+  const navigationContext = parseAgentProfileNavigationContext(searchParams);
+  const backNavigation = getAgentProfileBackNavigation(navigationContext);
 
   if (!isChatTeammateId(teammateId)) {
     return (
@@ -91,7 +88,8 @@ export default function ChatAgentProfileView({
       <AIAgentNotesSection
         teammateId={teammateId}
         agentName={teammate.name}
-        profileFrom={profileFrom}
+        profileFrom={navigationContext.from}
+        profileProjectId={navigationContext.projectId}
       />
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Personality &amp; approach</h2>

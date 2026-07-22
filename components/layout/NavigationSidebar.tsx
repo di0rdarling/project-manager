@@ -2,16 +2,14 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { clearAuthQueryCache } from "@/lib/auth/auth-query-cache";
 import {
   ArrowLeftIcon,
   ArrowRightOnRectangleIcon,
-  ChatBubbleLeftRightIcon,
   HomeIcon,
   UserCircleIcon,
-  UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
 import { ProjectManagerLogo } from "@/components/ui/ProjectManagerLogo";
@@ -24,20 +22,23 @@ import {
   FEATURE_NOTES_NAV,
   getFeaturePathInfo,
 } from "@/lib/feature-detail-sections";
+import { parseAgentProfileNavigationContext } from "@/lib/chats/agent-profile-navigation";
 import {
   getFeatureNotesPath,
   getProjectNotesPath,
 } from "@/lib/notes";
 import {
-  getProjectPathInfo,
+  getProjectAgentsPath,
+  getProjectChatsPath,
+  getProjectSidebarInfo,
+  PROJECT_AGENTS_NAV,
+  PROJECT_CHATS_NAV,
   PROJECT_DETAIL_SECTIONS,
   PROJECT_NOTES_NAV,
 } from "@/lib/project-detail-sections";
 
 const navItems = [
   { href: "/home", label: "Home", icon: HomeIcon },
-  { href: "/agents", label: "Agents", icon: UserGroupIcon },
-  { href: "/chats", label: "Chats", icon: ChatBubbleLeftRightIcon },
   { href: "/account", label: "Account", icon: UserCircleIcon },
 ] as const;
 
@@ -53,11 +54,13 @@ export default function NavigationSidebar({
   onNavigate,
 }: NavigationSidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: currentUser } = useFetchCurrentUser();
   const projectSectionNav = useProjectSectionNav();
-  const projectPathInfo = getProjectPathInfo(pathname);
+  const navigationContext = parseAgentProfileNavigationContext(searchParams);
+  const projectPathInfo = getProjectSidebarInfo(pathname, navigationContext);
   const featurePathInfo = getFeaturePathInfo(pathname);
   const showProjectSidebar = projectPathInfo !== null;
   const showFeatureSidebar = featurePathInfo !== null;
@@ -110,6 +113,8 @@ export default function NavigationSidebar({
   const projectId =
     projectPathInfo?.projectId ?? featurePathInfo?.projectId ?? "";
   const notesHref = getProjectNotesPath(projectId);
+  const agentsHref = getProjectAgentsPath(projectId);
+  const chatsHref = getProjectChatsPath(projectId);
   const projectHref = `/projects/${projectId}`;
   const featureHref = featurePathInfo
     ? `/projects/${projectId}/features/${featurePathInfo.featureId}`
@@ -118,6 +123,8 @@ export default function NavigationSidebar({
     ? getFeatureNotesPath(projectId, featurePathInfo.featureId)
     : notesHref;
   const NotesIcon = PROJECT_NOTES_NAV.icon;
+  const AgentsIcon = PROJECT_AGENTS_NAV.icon;
+  const ChatsIcon = PROJECT_CHATS_NAV.icon;
   const FeatureNotesIcon = FEATURE_NOTES_NAV.icon;
 
   const navLinkClassName = (isActive: boolean) =>
@@ -149,6 +156,7 @@ export default function NavigationSidebar({
         ) : null}
       </div>
 
+
       <div className="relative min-h-0 flex-1 overflow-hidden">
         <nav
           aria-hidden={showContextSidebar}
@@ -178,6 +186,8 @@ export default function NavigationSidebar({
           })}
         </nav>
 
+        
+
         <nav
           aria-hidden={!showProjectSidebar}
           className={`absolute inset-0 flex flex-col gap-1 overflow-y-auto p-3 transition-all duration-200 ease-out ${
@@ -193,6 +203,26 @@ export default function NavigationSidebar({
           >
             <ArrowLeftIcon className="size-5 shrink-0" aria-hidden />
             All projects
+          </Link>
+
+          <div className="my-1 border-t border-zinc-200 dark:border-zinc-800" />
+
+          <Link
+            href={agentsHref}
+            onClick={onNavigate}
+            className={navLinkClassName(projectPathInfo?.isAgentsRoute ?? false)}
+          >
+            <AgentsIcon className="size-5 shrink-0" aria-hidden />
+            {PROJECT_AGENTS_NAV.title}
+          </Link>
+
+          <Link
+            href={chatsHref}
+            onClick={onNavigate}
+            className={navLinkClassName(projectPathInfo?.isChatsRoute ?? false)}
+          >
+            <ChatsIcon className="size-5 shrink-0" aria-hidden />
+            {PROJECT_CHATS_NAV.title}
           </Link>
 
           <div className="my-1 border-t border-zinc-200 dark:border-zinc-800" />

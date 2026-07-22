@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import {
   ArrowLeftIcon,
@@ -35,6 +36,11 @@ import {
   type ChatModelId,
 } from "@/lib/chats/chat-models";
 import { getChatTeammate, type ChatTeammate } from "@/lib/chats/chat-teammates";
+import {
+  getChatBackNavigation,
+  getChatDetailHref,
+  parseAgentProfileNavigationContext,
+} from "@/lib/chats/agent-profile-navigation";
 import { formatDisplayDateTime } from "@/lib/dates";
 import type { ChatMessageResponse } from "@/lib/types";
 
@@ -46,16 +52,20 @@ function TeammateAvatar({
   teammate,
   size = "sm",
   className,
+  projectId,
 }: {
   teammate: ChatTeammate;
   size?: "sm" | "md";
   className?: string;
+  projectId?: string | null;
 }) {
   return (
     <TeammateProfileAvatarLink
       teammate={teammate}
       size={size}
       className={className}
+      from="chats"
+      projectId={projectId}
     />
   );
 }
@@ -63,9 +73,11 @@ function TeammateAvatar({
 function ChatMessageBubble({
   message,
   teammate,
+  projectId,
 }: {
   message: ChatMessageResponse;
   teammate: ChatTeammate;
+  projectId?: string | null;
 }) {
   const isUser = message.role === "user";
 
@@ -94,7 +106,7 @@ function ChatMessageBubble({
 
   return (
     <div className="flex items-start gap-3">
-      <TeammateAvatar teammate={teammate} className="mt-1" />
+      <TeammateAvatar teammate={teammate} className="mt-1" projectId={projectId} />
       <div className="max-w-[85%] rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
         <MarkdownContent content={message.content} variant="default" />
         <ChatMessageGrounding message={message} />
@@ -157,10 +169,16 @@ function ChatContextChips({
   );
 }
 
-function AssistantTypingIndicator({ teammate }: { teammate: ChatTeammate }) {
+function AssistantTypingIndicator({
+  teammate,
+  projectId,
+}: {
+  teammate: ChatTeammate;
+  projectId?: string | null;
+}) {
   return (
     <div className="flex items-start gap-3">
-      <TeammateAvatar teammate={teammate} className="mt-1" />
+      <TeammateAvatar teammate={teammate} className="mt-1" projectId={projectId} />
       <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
         Thinking...
       </div>
@@ -171,6 +189,10 @@ function AssistantTypingIndicator({ teammate }: { teammate: ChatTeammate }) {
 export default function ChatDetailView({
   chatId,
 }: Readonly<ChatDetailViewProps>) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { projectId: projectIdFromQuery } =
+    parseAgentProfileNavigationContext(searchParams);
   const [message, setMessage] = useState("");
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [isEditTitleModalOpen, setIsEditTitleModalOpen] = useState(false);
@@ -182,6 +204,15 @@ export default function ChatDetailView({
     isError,
     error,
   } = useFetchChat(chatId);
+
+  const projectId = projectIdFromQuery ?? chat?.projectId ?? null;
+  const backNavigation = getChatBackNavigation(projectId);
+
+  useEffect(() => {
+    if (!projectIdFromQuery && chat?.projectId) {
+      router.replace(getChatDetailHref(chatId, chat.projectId));
+    }
+  }, [chat?.projectId, chatId, projectIdFromQuery, router]);
 
   const sendMessageMutation = useSendChatMessage({
     onSuccess: () => {
@@ -277,11 +308,11 @@ export default function ChatDetailView({
     return (
       <PageContent className="gap-6">
         <Link
-          href="/chats"
+          href={backNavigation.href}
           className="inline-flex w-fit items-center gap-2 text-sm font-medium text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
         >
           <ArrowLeftIcon className="size-4" aria-hidden />
-          Back to chats
+          {backNavigation.label}
         </Link>
         <ErrorMessage error={error} fallbackMessage="Failed to load chat" />
       </PageContent>
@@ -295,14 +326,14 @@ export default function ChatDetailView({
       <div className="shrink-0 border-b border-zinc-200 bg-white px-4 py-3 sm:px-6 sm:py-4 dark:border-zinc-800 dark:bg-zinc-950">
         <div className={`flex items-center gap-3 sm:gap-4 ${pageInnerClassName}`}>
           <Link
-            href="/chats"
+            href={backNavigation.href}
             className="inline-flex shrink-0 items-center gap-2 rounded-lg px-2 py-1 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
           >
             <ArrowLeftIcon className="size-4" aria-hidden />
             <span className="hidden sm:inline">Back</span>
           </Link>
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <TeammateAvatar teammate={teammate} size="md" />
+            <TeammateAvatar teammate={teammate} size="md" projectId={projectId} />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1">
                 <h1 className="truncate text-base font-semibold sm:text-lg">
@@ -319,6 +350,8 @@ export default function ChatDetailView({
               <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
                 <TeammateProfileLink
                   teammate={teammate}
+                  from="chats"
+                  projectId={projectId}
                   className="font-medium text-zinc-700 transition hover:text-zinc-900 hover:underline dark:text-zinc-300 dark:hover:text-zinc-100"
                 >
                   {teammate.name}
@@ -399,12 +432,13 @@ export default function ChatDetailView({
                 key={chatMessage._id}
                 message={chatMessage}
                 teammate={teammate}
+                projectId={projectId}
               />
             ))
           )}
 
           {sendMessageMutation.isPending ? (
-            <AssistantTypingIndicator teammate={teammate} />
+            <AssistantTypingIndicator teammate={teammate} projectId={projectId} />
           ) : null}
 
           <div ref={messagesEndRef} />
