@@ -276,8 +276,128 @@ export function wrapBareHtmlTables(html: string): string {
   });
 }
 
+const PRE_BLOCK_PATTERN = /<pre[\s>][\s\S]*?<\/pre>/gi;
+
+function htmlFragmentToCodeText(html: string): string {
+  return decodeHtmlEntities(
+    html
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>\s*<p[^>]*>/gi, "\n")
+      .replace(/<\/p>/gi, "\n")
+      .replace(/<p[^>]*>/gi, "")
+      .replace(/<[^>]+>/g, "")
+      .replace(/^\n+/, "")
+      .replace(/\n+$/, ""),
+  );
+}
+
+function skipOpeningFenceLine(segment: string): {
+  language: string;
+  contentStart: number;
+} {
+  const langMatch = segment.slice(3).match(/^(\w*)/);
+  const language = langMatch?.[1] ?? "";
+  const afterLanguageIndex = 3 + language.length;
+  const rest = segment.slice(afterLanguageIndex);
+  const lineBreakMatch = rest.match(
+    /^[\s\r\n]*(?:(?:<\/p>\s*)?(?:<p[^>]*>)?\s*|<br\s*\/?>|\r\n|\n)?/i,
+  );
+  const contentStart =
+    afterLanguageIndex + (lineBreakMatch?.[0]?.length ?? 0);
+
+  return { language, contentStart };
+}
+
+function findFenceReplaceBounds(
+  fragment: string,
+  openIndex: number,
+  closeIndex: number,
+): { replaceStart: number; replaceEnd: number } {
+  let replaceStart = openIndex;
+  const openingPrefix = fragment.slice(0, openIndex);
+  const openingParagraphMatch = openingPrefix.match(/<p[^>]*>\s*$/i);
+  if (openingParagraphMatch) {
+    replaceStart = openIndex - openingParagraphMatch[0].length;
+  }
+
+  let replaceEnd = closeIndex + 3;
+  const closingSuffix = fragment.slice(closeIndex + 3);
+  const closingParagraphMatch = closingSuffix.match(/^\s*<\/p>/i);
+  if (closingParagraphMatch) {
+    replaceEnd += closingParagraphMatch[0].length;
+  }
+
+  return { replaceStart, replaceEnd };
+}
+
+function convertFencesInFragment(fragment: string): string {
+  if (!hasFencedCodeBlocks(fragment)) {
+    return fragment;
+  }
+
+  let result = "";
+  let cursor = 0;
+
+  while (cursor < fragment.length) {
+    const openIndex = fragment.indexOf("```", cursor);
+    if (openIndex === -1) {
+      result += fragment.slice(cursor);
+      break;
+    }
+
+    const closeIndex = fragment.indexOf("```", openIndex + 3);
+    if (closeIndex === -1) {
+      result += fragment.slice(openIndex);
+      break;
+    }
+
+    const { replaceStart, replaceEnd } = findFenceReplaceBounds(
+      fragment,
+      openIndex,
+      closeIndex,
+    );
+    const segment = fragment.slice(openIndex, closeIndex + 3);
+    const { language, contentStart } = skipOpeningFenceLine(segment);
+    const closeInSegment = segment.lastIndexOf("```");
+    const codeHtml = segment.slice(contentStart, closeInSegment);
+    const codeText = htmlFragmentToCodeText(codeHtml);
+    const languageClass = language
+      ? ` class="language-${escapeHtml(language)}"`
+      : "";
+
+    result += fragment.slice(cursor, replaceStart);
+    result += `<pre><code${languageClass}>${escapeHtml(codeText)}</code></pre>`;
+    cursor = replaceEnd;
+  }
+
+  return result;
+}
+
+export function convertFencedCodeBlocksInHtml(html: string): string {
+  if (!hasFencedCodeBlocks(html)) {
+    return html;
+  }
+
+  let result = "";
+  let lastIndex = 0;
+  const preRegex = new RegExp(PRE_BLOCK_PATTERN.source, PRE_BLOCK_PATTERN.flags);
+  let preMatch = preRegex.exec(html);
+
+  while (preMatch) {
+    result += convertFencesInFragment(html.slice(lastIndex, preMatch.index));
+    result += preMatch[0];
+    lastIndex = preMatch.index + preMatch[0].length;
+    preMatch = preRegex.exec(html);
+  }
+
+  result += convertFencesInFragment(html.slice(lastIndex));
+  return result;
+}
+
 export function prepareRichTextHtmlForDisplay(html: string): string {
-  return wrapBareHtmlTables(convertMarkdownTableParagraphsInHtml(html));
+  return wrapBareHtmlTables(
+    convertFencedCodeBlocksInHtml(convertMarkdownTableParagraphsInHtml(html)),
+  );
 }
 
 export function htmlToPlainText(html: string): string {
@@ -317,16 +437,10 @@ export function getRenderableRichTextContent(
     return { type: "html", content: "" };
   }
 
-  const isHtml = isHtmlContent(trimmed);
-  const hasFences = hasFencedCodeBlocks(trimmed);
-  const hasPreBlocks = /<pre[\s>]/i.test(trimmed);
-
-  if (!isHtml || (hasFences && !hasPreBlocks)) {
+  if (!isHtmlContent(trimmed)) {
     return {
       type: "markdown",
-      content: normalizeMarkdownTables(
-        isHtml ? htmlToPlainText(trimmed) : trimmed,
-      ),
+      content: normalizeMarkdownTables(trimmed),
     };
   }
 

@@ -7,7 +7,7 @@ import type { RichTextHeading } from "@/lib/rich-text";
 export const documentContentPanelClassName =
   "note-toc-content note-toc-content-editing rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950";
 
-export const documentReadContentPanelClassName = "note-toc-content";
+export const documentReadContentPanelClassName = "note-toc-content tiptap-content";
 
 const tocClassName =
   "lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:w-64 lg:shrink-0 lg:overflow-y-auto";

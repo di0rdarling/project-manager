@@ -142,8 +142,106 @@ body {
   list-style: disc;
 }
 
+.tiptap-content ul ul {
+  list-style: circle;
+}
+
+.tiptap-content ul ul ul {
+  list-style: square;
+}
+
 .tiptap-content ol {
   list-style: decimal;
+}
+
+.note-toc-content ul,
+.note-toc-content ol {
+  margin: 0.5em 0;
+  padding-left: 1.5rem;
+}
+
+.note-toc-content ul {
+  list-style: disc;
+}
+
+.note-toc-content ul ul {
+  list-style: circle;
+}
+
+.note-toc-content ul ul ul {
+  list-style: square;
+}
+
+.note-toc-content ol {
+  list-style: decimal;
+}
+
+.note-toc-content h1,
+.note-toc-content h2,
+.note-toc-content h3 {
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0.75em 0 0.25em;
+}
+
+.note-toc-content h1 {
+  font-size: 1.25rem;
+}
+
+.note-toc-content h2 {
+  font-size: 1.125rem;
+}
+
+.note-toc-content h3 {
+  font-size: 1rem;
+}
+
+.note-toc-content strong {
+  font-weight: 600;
+}
+
+.note-toc-content em {
+  font-style: italic;
+}
+
+.note-toc-content u {
+  text-decoration: underline;
+}
+
+.note-toc-content s {
+  text-decoration: line-through;
+}
+
+.note-toc-content blockquote {
+  border-left: 3px solid #52525b;
+  color: #a1a1aa;
+  margin: 0.75em 0;
+  padding-left: 0.75rem;
+}
+
+.note-toc-content code {
+  background: #27272a;
+  border-radius: 0.25rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.875em;
+  padding: 0.125rem 0.25rem;
+}
+
+.note-toc-content pre {
+  background: #27272a;
+  border-radius: 0.5rem;
+  margin: 0.75em 0;
+  overflow-x: auto;
+  padding: 0.75rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.note-toc-content pre code {
+  background: transparent;
+  font-family: var(--font-mono), monospace;
+  padding: 0;
+  white-space: inherit;
 }
 
 .tiptap-content h1,
@@ -210,11 +308,15 @@ body {
   margin: 0.75em 0;
   overflow-x: auto;
   padding: 0.75rem;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .tiptap-content pre code {
   background: transparent;
+  font-family: var(--font-mono), monospace;
   padding: 0;
+  white-space: inherit;
 }
 
 .tiptap-content table,
