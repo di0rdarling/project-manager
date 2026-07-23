@@ -21,7 +21,7 @@ import {
   getProjectNameForUser,
   parseProjectId,
   parseTeammateId,
-  serializeAgentTasks,
+  serializeAgentTasksResponse,
 } from "@/lib/agents/agent-tasks-route-helpers";
 import { serializeUserMemoryForPrompt } from "@/lib/agents/user-memory-json";
 import { getUserMemory } from "@/lib/agents/user-memory-store";
@@ -75,7 +75,9 @@ export async function GET(request: Request, context: RouteContext) {
     );
 
     return Response.json(
-      serializeAgentTasks(
+      await serializeAgentTasksResponse(
+        db,
+        auth.userId,
         parsedTeammate.teammateId,
         parsedProject.projectIdString,
         record,
@@ -209,7 +211,9 @@ export async function POST(request: Request, context: RouteContext) {
     );
 
     return Response.json(
-      serializeAgentTasks(
+      await serializeAgentTasksResponse(
+        db,
+        auth.userId,
         parsedTeammate.teammateId,
         parsedProject.projectIdString,
         stored,
@@ -266,7 +270,9 @@ export async function DELETE(request: Request, context: RouteContext) {
     );
 
     return Response.json(
-      serializeAgentTasks(
+      await serializeAgentTasksResponse(
+        db,
+        auth.userId,
         parsedTeammate.teammateId,
         parsedProject.projectIdString,
         stored,
@@ -363,7 +369,9 @@ export async function PATCH(request: Request, context: RouteContext) {
     );
 
     return Response.json(
-      serializeAgentTasks(
+      await serializeAgentTasksResponse(
+        db,
+        auth.userId,
         parsedTeammate.teammateId,
         parsedProject.projectIdString,
         stored,

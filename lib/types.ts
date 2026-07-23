@@ -305,7 +305,9 @@ export type UserMemoryResponse = {
   updatedAt: string | null;
 };
 
-export type AgentTaskStatus = "pending" | "accepted" | "rejected";
+export type AgentTaskDecisionStatus = "pending" | "accepted" | "rejected";
+
+export type AgentTaskStatus = AgentTaskDecisionStatus | "in_review";
 
 /**
  * Lifecycle of the agent actually carrying out an accepted task.
@@ -327,7 +329,7 @@ export type AgentTask = {
   /** What the agent intends to put in the deliverable and what purpose it serves. */
   outputDescription: string;
   /** User decision on whether the agent should run this task autonomously. */
-  status?: AgentTaskStatus;
+  status?: AgentTaskDecisionStatus;
   /** Project this task was suggested for. */
   projectName?: string;
   /** Whether the agent has produced output for this (accepted) task yet. */
@@ -339,6 +341,8 @@ export type AgentTask = {
    */
   outputDocumentId?: string;
   outputDocumentTitle?: string;
+  /** Populated by the API from the linked agent document, when available. */
+  outputDocumentStatus?: AgentDocumentStatus;
   /** How the agent tackled the task — their approach and reasoning. */
   outputApproach?: string;
   /** What is now true/unblocked in the project because this work is done. */

@@ -1,13 +1,22 @@
 import { AGENT_TASK_COUNT } from "@/lib/agents/agent-tasks-json";
-import type { AgentTask, AgentTaskOutputStatus, AgentTaskStatus } from "@/lib/types";
+import { isAgentDocumentInReviewStage } from "@/lib/agents/agent-documents";
+import type {
+  AgentTask,
+  AgentTaskDecisionStatus,
+  AgentTaskOutputStatus,
+  AgentTaskStatus,
+} from "@/lib/types";
 
 export const AGENT_TASK_STATUS_OPTIONS = [
   { value: "pending", label: "Pending" },
   { value: "accepted", label: "Accepted" },
+  { value: "in_review", label: "In Review" },
   { value: "rejected", label: "Rejected" },
 ] as const;
 
-export function parseAgentTaskStatus(value: unknown): AgentTaskStatus | null {
+export function parseAgentTaskStatus(
+  value: unknown,
+): AgentTaskDecisionStatus | null {
   if (value === "pending" || value === "accepted" || value === "rejected") {
     return value;
   }
@@ -15,12 +24,28 @@ export function parseAgentTaskStatus(value: unknown): AgentTaskStatus | null {
   return null;
 }
 
-export function getAgentTaskStatus(task: AgentTask): AgentTaskStatus {
+export function getAgentTaskDecisionStatus(
+  task: AgentTask,
+): AgentTaskDecisionStatus {
   return task.status ?? "pending";
 }
 
+export function getAgentTaskStatus(task: AgentTask): AgentTaskStatus {
+  const decision = getAgentTaskDecisionStatus(task);
+
+  if (
+    decision === "accepted" &&
+    task.outputDocumentStatus &&
+    isAgentDocumentInReviewStage(task.outputDocumentStatus)
+  ) {
+    return "in_review";
+  }
+
+  return decision;
+}
+
 export function isAgentTaskPending(task: AgentTask): boolean {
-  return getAgentTaskStatus(task) === "pending";
+  return getAgentTaskDecisionStatus(task) === "pending";
 }
 
 export function getAgentTaskStatusLabel(status: AgentTaskStatus): string {
@@ -36,6 +61,8 @@ export function getAgentTaskStatusBadgeClassName(
   switch (status) {
     case "pending":
       return "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200";
+    case "in_review":
+      return "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200";
     case "rejected":
       return "bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200";
     case "accepted":
@@ -44,7 +71,9 @@ export function getAgentTaskStatusBadgeClassName(
 }
 
 export function getAcceptedAgentTasks(tasks: AgentTask[]): AgentTask[] {
-  return tasks.filter((task) => getAgentTaskStatus(task) === "accepted");
+  return tasks.filter(
+    (task) => getAgentTaskDecisionStatus(task) === "accepted",
+  );
 }
 
 export function getAgentTaskGenerationSlots(tasks: AgentTask[]): number {
@@ -65,7 +94,7 @@ export function canAcceptAgentTask(
     return false;
   }
 
-  if (getAgentTaskStatus(task) === "accepted") {
+  if (getAgentTaskDecisionStatus(task) === "accepted") {
     return true;
   }
 
@@ -97,7 +126,7 @@ export function normalizeAgentTasksProjectName(
 }
 
 export function canAccessAgentTaskOutputTabs(task: AgentTask): boolean {
-  return getAgentTaskStatus(task) === "accepted";
+  return getAgentTaskDecisionStatus(task) === "accepted";
 }
 
 export function getAgentTaskOutputStatus(

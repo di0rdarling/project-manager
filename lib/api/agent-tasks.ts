@@ -1,4 +1,4 @@
-import type { AgentTaskStatus, AgentTasksResponse } from "@/lib/types";
+import type { AgentTasksResponse } from "@/lib/types";
 import type { ChatModelId } from "@/lib/chats/chat-models";
 import { parseResponse } from "@/lib/api/response";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
@@ -10,7 +10,7 @@ export type AgentTasksRequest = {
 
 export type UpdateAgentTaskStatusRequest = AgentTasksRequest & {
   taskTitle: string;
-  status: Exclude<AgentTaskStatus, "pending">;
+  status: "accepted" | "rejected";
 };
 
 export type StartAgentTaskOutputInput = {

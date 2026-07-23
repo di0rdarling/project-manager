@@ -2,7 +2,7 @@ import type { Db, ObjectId } from "mongodb";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type { AgentTasksDraft } from "@/lib/agents/agent-tasks-json";
 import { EMPTY_AGENT_TASKS_DRAFT } from "@/lib/agents/agent-tasks-json";
-import type { AgentTask, AgentTaskStatus } from "@/lib/types";
+import type { AgentTask, AgentTaskDecisionStatus } from "@/lib/types";
 
 export const AGENT_TASKS_COLLECTION = "agent_tasks";
 
@@ -75,7 +75,7 @@ export async function updateAgentTaskStatus(
   teammateId: ChatTeammateId,
   projectId: ObjectId,
   taskTitle: string,
-  status: AgentTaskStatus,
+  status: AgentTaskDecisionStatus,
   updatedAt: string = new Date().toISOString(),
 ): Promise<StoredAgentTasks | null> {
   const record = await getAgentTasks(db, userId, teammateId, projectId);

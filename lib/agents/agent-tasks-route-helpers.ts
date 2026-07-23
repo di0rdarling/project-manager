@@ -1,8 +1,9 @@
 import { ObjectId, type Db } from "mongodb";
+import { AGENT_DOCUMENTS_COLLECTION } from "@/lib/agents/agent-documents-store";
 import { isChatTeammateId, type ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type { StoredAgentTasks } from "@/lib/agents/agent-tasks-store";
 import { toIsoString } from "@/lib/dates";
-import type { AgentTasksResponse } from "@/lib/types";
+import type { AgentDocumentStatus, AgentTask, AgentTasksResponse } from "@/lib/types";
 
 export function serializeAgentTasks(
   teammateId: ChatTeammateId,
@@ -23,6 +24,76 @@ export function serializeAgentTasks(
     tasks,
     updatedAt: record ? toIsoString(record.updatedAt) : null,
   };
+}
+
+export async function attachDocumentStatusToAgentTasks(
+  db: Db,
+  userId: ObjectId,
+  teammateId: ChatTeammateId,
+  tasks: AgentTask[],
+): Promise<AgentTask[]> {
+  const documentIds = tasks
+    .map((task) => task.outputDocumentId)
+    .filter((id): id is string => Boolean(id && ObjectId.isValid(id)));
+
+  if (documentIds.length === 0) {
+    return tasks;
+  }
+
+  const documents = await db
+    .collection(AGENT_DOCUMENTS_COLLECTION)
+    .find({
+      _id: { $in: documentIds.map((id) => new ObjectId(id)) },
+      userId,
+      teammateId,
+    })
+    .project({ _id: 1, status: 1 })
+    .toArray();
+
+  const statusById = new Map(
+    documents.map((document) => [
+      document._id.toString(),
+      document.status as AgentDocumentStatus,
+    ]),
+  );
+
+  return tasks.map((task) => {
+    if (!task.outputDocumentId) {
+      return task;
+    }
+
+    const outputDocumentStatus = statusById.get(task.outputDocumentId);
+
+    if (!outputDocumentStatus) {
+      return task;
+    }
+
+    return { ...task, outputDocumentStatus };
+  });
+}
+
+export async function serializeAgentTasksResponse(
+  db: Db,
+  userId: ObjectId,
+  teammateId: ChatTeammateId,
+  projectId: string,
+  record: StoredAgentTasks | null,
+  projectName: string | null = null,
+): Promise<AgentTasksResponse> {
+  const response = serializeAgentTasks(
+    teammateId,
+    projectId,
+    record,
+    projectName,
+  );
+  const tasks = await attachDocumentStatusToAgentTasks(
+    db,
+    userId,
+    teammateId,
+    response.tasks,
+  );
+
+  return { ...response, tasks };
 }
 
 export async function getProjectNameForUser(

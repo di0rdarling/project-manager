@@ -21,6 +21,7 @@ import {
 } from "@/lib/agents/agent-documents";
 import {
   canAccessAgentTaskOutputTabs,
+  getAgentTaskDecisionStatus,
   getAgentTaskOutputStatus,
   getAgentTaskStatus,
   getAgentTaskStatusBadgeClassName,
@@ -37,7 +38,7 @@ import {
   DEFAULT_CHAT_MODEL_ID,
   type ChatModelId,
 } from "@/lib/chats/chat-models";
-import type { AgentTask, AgentTaskStatus } from "@/lib/types";
+import type { AgentTask, AgentTaskDecisionStatus } from "@/lib/types";
 import type { StartAgentTaskOutputInput } from "@/lib/api/agent-tasks";
 
 type AgentTaskDetailModalProps = {
@@ -431,7 +432,7 @@ export default function AgentTaskDetailModal({
   const [isRedoConfirmOpen, setIsRedoConfirmOpen] = useState(false);
   const [selectedModelId, setSelectedModelId] =
     useState<ChatModelId>(DEFAULT_CHAT_MODEL_ID);
-  const previousTaskStatusRef = useRef<AgentTaskStatus | null>(null);
+  const previousTaskStatusRef = useRef<AgentTaskDecisionStatus | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -447,7 +448,7 @@ export default function AgentTaskDetailModal({
 
     setActiveTab("overview");
     setSelectedModelId(DEFAULT_CHAT_MODEL_ID);
-    previousTaskStatusRef.current = getAgentTaskStatus(task);
+    previousTaskStatusRef.current = getAgentTaskDecisionStatus(task);
   }, [open, task?.title]);
 
   useEffect(() => {
@@ -455,7 +456,7 @@ export default function AgentTaskDetailModal({
       return;
     }
 
-    const status = getAgentTaskStatus(task);
+    const status = getAgentTaskDecisionStatus(task);
     const previousStatus = previousTaskStatusRef.current;
 
     if (
@@ -474,8 +475,9 @@ export default function AgentTaskDetailModal({
   }
 
   const taskStatus = getAgentTaskStatus(task);
+  const taskDecisionStatus = getAgentTaskDecisionStatus(task);
   const taskProjectName = getAgentTaskProjectName(task, projectName);
-  const isAccepted = taskStatus === "accepted";
+  const isAccepted = taskDecisionStatus === "accepted";
   const outputStatus = getAgentTaskOutputStatus(task);
   const outputTabsEnabled = canAccessAgentTaskOutputTabs(task);
   const showOverviewActions =
@@ -486,7 +488,7 @@ export default function AgentTaskDetailModal({
     outputStatus === "completed" &&
     !isStartingOutput &&
     Boolean(onStartOutput);
-  const acceptDisabled = isUpdating || (taskStatus !== "accepted" && !canAccept);
+  const acceptDisabled = isUpdating || (taskDecisionStatus !== "accepted" && !canAccept);
   const redoDocumentTitle = task.outputDocumentTitle || "Untitled document";
 
   function handleRequestRedo() {

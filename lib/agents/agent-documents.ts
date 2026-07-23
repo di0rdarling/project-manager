@@ -30,6 +30,12 @@ export function getAgentDocumentStatusLabel(
   return match?.label ?? status;
 }
 
+export function isAgentDocumentInReviewStage(
+  status: AgentDocumentStatus,
+): boolean {
+  return status === "ready_for_review" || status === "in_review";
+}
+
 export function getAgentDocumentStatusBadgeClassName(
   status: AgentDocumentStatus,
 ): string {

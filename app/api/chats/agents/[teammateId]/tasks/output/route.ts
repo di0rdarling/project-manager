@@ -15,7 +15,7 @@ import {
   getProjectNameForUser,
   parseProjectId,
   parseTeammateId,
-  serializeAgentTasks,
+  serializeAgentTasksResponse,
 } from "@/lib/agents/agent-tasks-route-helpers";
 import { requireUserId } from "@/lib/current-user";
 import { generateAgentTaskOutput } from "@/lib/gemini";
@@ -169,7 +169,9 @@ export async function POST(request: Request, context: RouteContext) {
     );
 
     return Response.json(
-      serializeAgentTasks(
+      await serializeAgentTasksResponse(
+        db,
+        auth.userId,
         parsedTeammate.teammateId,
         parsedProject.projectIdString,
         stored,
