@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { isChatModelId } from "@/lib/chats/chat-models";
+import { isKimiReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
 import { getChatContextUsage } from "@/lib/chats/chat-context/get-chat-context-usage";
 import { serializeChatsWithContext } from "@/lib/chats/chat-list-items";
 import { requireUserId } from "@/lib/current-user";
@@ -123,6 +124,20 @@ export async function PATCH(request: Request, context: RouteContext) {
       }
 
       updates.modelId = body.modelId;
+    }
+
+    if (body.reasoningEffort !== undefined) {
+      if (
+        body.reasoningEffort !== null &&
+        !isKimiReasoningEffort(body.reasoningEffort)
+      ) {
+        return Response.json(
+          { error: "Invalid reasoning effort" },
+          { status: 400 },
+        );
+      }
+
+      updates.reasoningEffort = body.reasoningEffort;
     }
 
     if (Object.keys(updates).length === 0) {

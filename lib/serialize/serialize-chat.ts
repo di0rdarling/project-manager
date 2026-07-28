@@ -1,5 +1,9 @@
 import { DEFAULT_CHAT_TEAMMATE_ID, isChatTeammateId } from "@/lib/chats/chat-teammates";
 import { normalizeChatModelId } from "@/lib/chats/chat-models";
+import {
+  isKimiReasoningEffort,
+  resolveChatReasoningEffort,
+} from "@/lib/chats/kimi-reasoning-effort";
 import { toIsoString } from "@/lib/dates";
 import type {
   Chat,
@@ -18,6 +22,7 @@ export type StoredChat = Omit<
   | "titleIsCustom"
   | "aiTitleGenerated"
   | "modelId"
+  | "reasoningEffort"
 > & {
   requirementId?: Chat["requirementId"];
   featureId?: Chat["featureId"];
@@ -25,6 +30,7 @@ export type StoredChat = Omit<
   titleIsCustom?: Chat["titleIsCustom"];
   aiTitleGenerated?: Chat["aiTitleGenerated"];
   modelId?: Chat["modelId"];
+  reasoningEffort?: Chat["reasoningEffort"];
   createdAt: string | Date;
   updatedAt: string | Date;
 };
@@ -45,6 +51,13 @@ export function serializeChat(chat: StoredChat): ChatResponse {
       ? chat.teammateId
       : DEFAULT_CHAT_TEAMMATE_ID,
     modelId: normalizeChatModelId(chat.modelId),
+    reasoningEffort:
+      resolveChatReasoningEffort(
+        normalizeChatModelId(chat.modelId),
+        isKimiReasoningEffort(chat.reasoningEffort)
+          ? chat.reasoningEffort
+          : null,
+      ) ?? null,
     title: chat.title,
     titleIsCustom: chat.titleIsCustom ?? false,
     aiTitleGenerated: chat.aiTitleGenerated ?? false,

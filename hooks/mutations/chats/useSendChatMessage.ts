@@ -66,6 +66,8 @@ export function useSendChatMessage(options?: UseSendChatMessageOptions) {
             requirement: current.requirement,
             feature: current.feature,
             modelId: data.chat.modelId ?? current.modelId,
+            reasoningEffort:
+              data.chat.reasoningEffort ?? current.reasoningEffort,
             contextUsage: data.contextUsage,
             messages: nextMessages,
           };

@@ -1,5 +1,6 @@
 import type { ObjectId } from "mongodb";
 import type { ChatModelId } from "@/lib/chats/chat-models";
+import type { KimiReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 
 type UserBase<TId> = {
@@ -242,6 +243,7 @@ type ChatBase<TId> = {
   featureId: TId | null;
   teammateId: ChatTeammateId;
   modelId: ChatModelId;
+  reasoningEffort?: KimiReasoningEffort | null;
   title: string;
   titleIsCustom: boolean;
   aiTitleGenerated: boolean;

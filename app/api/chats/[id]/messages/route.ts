@@ -162,6 +162,7 @@ export async function POST(request: Request, context: RouteContext) {
       generationContext.agentNotesContext,
       generationContext.userName,
       generationContext.modelId,
+      generationContext.reasoningEffort,
     );
     const now = new Date().toISOString();
     const userMessage: Omit<ChatMessage, "_id"> = {

@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import type { ChatModelId } from "@/lib/chats/chat-models";
+import type { KimiReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
 import { getChatModelApiName } from "@/lib/chats/chat-models";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type {
@@ -132,6 +133,7 @@ export async function generateKimiChatReply(
   agentNotesContext?: string,
   userName?: string | null,
   modelId?: string,
+  reasoningEffort?: KimiReasoningEffort,
 ): Promise<GenerateChatReplyResult> {
   try {
     const client = getKimiClient();
@@ -146,6 +148,7 @@ export async function generateKimiChatReply(
 
     const completion = await client.chat.completions.create({
       model: resolveKimiModelName(modelId),
+      ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {}),
       messages: [
         { role: "system", content: systemPrompt },
         ...history.map((entry) => ({
@@ -154,7 +157,7 @@ export async function generateKimiChatReply(
         })),
         { role: "user", content: message },
       ],
-    });
+    } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming);
 
     const assistantMessage = completion.choices[0]?.message;
     const content = assistantMessage

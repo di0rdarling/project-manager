@@ -7,6 +7,10 @@ import {
   DEFAULT_CHAT_MODEL_ID,
   isChatModelId,
 } from "@/lib/chats/chat-models";
+import {
+  DEFAULT_KIMI_REASONING_EFFORT,
+  isKimiReasoningEffort,
+} from "@/lib/chats/kimi-reasoning-effort";
 import { serializeChatsWithContext } from "@/lib/chats/chat-list-items";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
@@ -85,6 +89,12 @@ export async function POST(request: Request) {
     const modelId = isChatModelId(body.modelId)
       ? body.modelId
       : DEFAULT_CHAT_MODEL_ID;
+    const reasoningEffort =
+      modelId === "kimi-k3"
+        ? isKimiReasoningEffort(body.reasoningEffort)
+          ? body.reasoningEffort
+          : DEFAULT_KIMI_REASONING_EFFORT
+        : null;
 
     const requirementId =
       typeof body.requirementId === "string" && body.requirementId.trim()
@@ -141,6 +151,7 @@ export async function POST(request: Request) {
       featureId: featureId ? new ObjectId(featureId) : null,
       teammateId,
       modelId,
+      reasoningEffort,
       title: "New Chat",
       titleIsCustom: false,
       aiTitleGenerated: false,

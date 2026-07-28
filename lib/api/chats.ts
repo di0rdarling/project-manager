@@ -1,5 +1,6 @@
 import { parseResponse } from "@/lib/api/response";
 import type { ChatModelId } from "@/lib/chats/chat-models";
+import type { KimiReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type {
   ChatListItemResponse,
@@ -28,6 +29,7 @@ export async function createChat(input: {
   requirementId?: string | null;
   featureId?: string | null;
   modelId?: ChatModelId;
+  reasoningEffort?: KimiReasoningEffort | null;
 }): Promise<ChatListItemResponse> {
   const response = await fetch("/api/chats", {
     method: "POST",
@@ -56,12 +58,13 @@ export async function updateChat(input: {
   chatId: string;
   title?: string;
   modelId?: ChatModelId;
+  reasoningEffort?: KimiReasoningEffort | null;
 }): Promise<ChatResponse> {
-  const { chatId, title, modelId } = input;
+  const { chatId, title, modelId, reasoningEffort } = input;
   const response = await fetch(`/api/chats/${chatId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, modelId }),
+    body: JSON.stringify({ title, modelId, reasoningEffort }),
   });
 
   return parseResponse<ChatResponse>(response);

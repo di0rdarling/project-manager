@@ -1,5 +1,6 @@
 import type { Db, ObjectId } from "mongodb";
-import { normalizeChatModelId } from "@/lib/chats/chat-models";
+import { resolveChatReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
+import type { KimiReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
 import { loadAgentNotesContext } from "@/lib/agents/agent-notes-store";
 import {
   getOtherTeammatesRecentChatSummaries,
@@ -20,6 +21,7 @@ export type ChatGenerationContext = {
   history: GeminiChatMessage[];
   teammateId: ChatTeammateId;
   modelId: string;
+  reasoningEffort?: KimiReasoningEffort;
   projectContext?: string;
   otherConversationsContext?: string;
   otherTeammatesContext?: string;
@@ -77,7 +79,11 @@ export async function loadChatGenerationContext(
   return {
     history,
     teammateId: chatResponse.teammateId,
-    modelId: normalizeChatModelId(chat.modelId),
+    modelId: chatResponse.modelId,
+    reasoningEffort: resolveChatReasoningEffort(
+      chatResponse.modelId,
+      chatResponse.reasoningEffort,
+    ),
     projectContext: projectContext ?? undefined,
     otherConversationsContext,
     otherTeammatesContext,

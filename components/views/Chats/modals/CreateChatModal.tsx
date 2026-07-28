@@ -7,6 +7,7 @@ import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { AvatarSelect } from "@/components/ui/inputs/AvatarSelect";
 import { Select } from "@/components/ui/inputs/Select";
 import { ChatModelSelect } from "@/components/views/Chats/ChatModelSelect";
+import { ChatReasoningEffortSelect } from "@/components/views/Chats/ChatReasoningEffortSelect";
 import { Modal } from "@/components/ui/Modal";
 import { useCreateChat } from "@/hooks/mutations/chats/useCreateChat";
 import { useFetchFeatures } from "@/hooks/queries/useFetchFeatures";
@@ -17,6 +18,11 @@ import {
   type ChatTeammateId,
 } from "@/lib/chats/chat-teammates";
 import { DEFAULT_CHAT_MODEL_ID, type ChatModelId } from "@/lib/chats/chat-models";
+import {
+  chatModelSupportsReasoningEffort,
+  DEFAULT_KIMI_REASONING_EFFORT,
+  type KimiReasoningEffort,
+} from "@/lib/chats/kimi-reasoning-effort";
 
 type CreateChatModalProps = {
   open: boolean;
@@ -40,6 +46,8 @@ export default function CreateChatModal({
   );
   const [selectedModelId, setSelectedModelId] =
     useState<ChatModelId>(DEFAULT_CHAT_MODEL_ID);
+  const [selectedReasoningEffort, setSelectedReasoningEffort] =
+    useState<KimiReasoningEffort>(DEFAULT_KIMI_REASONING_EFFORT);
 
   const {
     data: requirements = [],
@@ -75,6 +83,7 @@ export default function CreateChatModal({
       setSelectedFeatureId("");
       setSelectedTeammateId(DEFAULT_CHAT_TEAMMATE_ID);
       setSelectedModelId(DEFAULT_CHAT_MODEL_ID);
+      setSelectedReasoningEffort(DEFAULT_KIMI_REASONING_EFFORT);
       onSuccess(chat._id);
       onClose();
     },
@@ -89,6 +98,9 @@ export default function CreateChatModal({
       requirementId: selectedRequirementId || null,
       featureId: selectedFeatureId || null,
       modelId: selectedModelId,
+      ...(chatModelSupportsReasoningEffort(selectedModelId)
+        ? { reasoningEffort: selectedReasoningEffort }
+        : {}),
     });
   }
 
@@ -101,6 +113,7 @@ export default function CreateChatModal({
     setSelectedFeatureId("");
     setSelectedTeammateId(DEFAULT_CHAT_TEAMMATE_ID);
     setSelectedModelId(DEFAULT_CHAT_MODEL_ID);
+    setSelectedReasoningEffort(DEFAULT_KIMI_REASONING_EFFORT);
     createChatMutation.reset();
     onClose();
   }
@@ -135,6 +148,15 @@ export default function CreateChatModal({
           onChange={setSelectedModelId}
           showLabel
         />
+
+        {chatModelSupportsReasoningEffort(selectedModelId) ? (
+          <ChatReasoningEffortSelect
+            id="create-chat-reasoning-effort"
+            value={selectedReasoningEffort}
+            onChange={setSelectedReasoningEffort}
+            showLabel
+          />
+        ) : null}
 
         {isLoadingProjectDetails ? (
           <LoadingMessage>Loading project details...</LoadingMessage>

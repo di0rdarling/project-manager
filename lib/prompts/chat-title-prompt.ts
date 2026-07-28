@@ -8,7 +8,7 @@ import {
  * user-set title override gets an AI-generated title, replacing the
  * placeholder title created from the first message.
  */
-export const CHAT_TITLE_GENERATION_TURN_THRESHOLD = 3;
+export const CHAT_TITLE_GENERATION_TURN_THRESHOLD = 2;
 
 export function buildChatTitlePrompt(
   messages: ConversationSummaryMessage[],

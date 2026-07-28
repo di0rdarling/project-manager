@@ -20,6 +20,7 @@ import { MarkdownContent } from "@/components/ui/MarkdownContent";
 import EditChatTitleModal from "@/components/views/Chats/modals/EditChatTitleModal";
 import { ChatContextUsageIndicator } from "@/components/views/Chats/ChatContextUsageIndicator";
 import { ChatModelSelect } from "@/components/views/Chats/ChatModelSelect";
+import { ChatReasoningEffortSelect } from "@/components/views/Chats/ChatReasoningEffortSelect";
 import ChatMessageGrounding from "@/components/views/Chats/ChatMessageGrounding";
 import ChatSummaryModal from "@/components/views/Chats/modals/ChatSummaryModal";
 import {
@@ -35,6 +36,13 @@ import {
   normalizeChatModelId,
   type ChatModelId,
 } from "@/lib/chats/chat-models";
+import {
+  chatModelSupportsReasoningEffort,
+  DEFAULT_KIMI_REASONING_EFFORT,
+  getKimiReasoningEffortLabel,
+  normalizeKimiReasoningEffort,
+  type KimiReasoningEffort,
+} from "@/lib/chats/kimi-reasoning-effort";
 import { getChatTeammate, type ChatTeammate } from "@/lib/chats/chat-teammates";
 import {
   getChatBackNavigation,
@@ -231,8 +239,17 @@ export default function ChatDetailView({
   });
 
   const updateChatModelMutation = useUpdateChat({
-    onSuccess: (updatedChat) => {
-      toast.success(`Model changed to ${getChatModelLabel(updatedChat.modelId)}.`);
+    onSuccess: (updatedChat, variables) => {
+      if (variables.modelId !== undefined) {
+        toast.success(`Model changed to ${getChatModelLabel(updatedChat.modelId)}.`);
+        return;
+      }
+
+      if (variables.reasoningEffort !== undefined && updatedChat.reasoningEffort) {
+        toast.success(
+          `Reasoning effort changed to ${getKimiReasoningEffortLabel(updatedChat.reasoningEffort)}.`,
+        );
+      }
     },
     onError: (mutationError) => {
       toast.error(mutationError.message);
@@ -242,6 +259,12 @@ export default function ChatDetailView({
   const isArchived = Boolean(chat?.archivedAt);
   const isAtContextLimit = Boolean(chat?.contextUsage?.isAtLimit);
   const selectedModelId = normalizeChatModelId(chat?.modelId);
+  const selectedReasoningEffort = normalizeKimiReasoningEffort(
+    chat?.reasoningEffort ?? DEFAULT_KIMI_REASONING_EFFORT,
+  );
+  const showReasoningEffortSelect = chatModelSupportsReasoningEffort(
+    selectedModelId,
+  );
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -305,6 +328,21 @@ export default function ChatDetailView({
     updateChatModelMutation.mutate({
       chatId,
       modelId,
+    });
+  }
+
+  function handleReasoningEffortChange(reasoningEffort: KimiReasoningEffort) {
+    if (
+      reasoningEffort === selectedReasoningEffort ||
+      updateChatModelMutation.isPending ||
+      isArchived
+    ) {
+      return;
+    }
+
+    updateChatModelMutation.mutate({
+      chatId,
+      reasoningEffort,
     });
   }
 
@@ -378,17 +416,33 @@ export default function ChatDetailView({
             requirement={chat.requirement}
             feature={chat.feature}
           />
-          <div className="w-28 shrink-0 sm:w-36 md:w-44">
-            <ChatModelSelect
-              id="chat-model"
-              value={selectedModelId}
-              onChange={handleModelChange}
-              disabled={
-                isArchived ||
-                updateChatModelMutation.isPending ||
-                sendMessageMutation.isPending
-              }
-            />
+          <div className="flex shrink-0 items-center gap-2">
+            <div className="w-28 sm:w-36 md:w-44">
+              <ChatModelSelect
+                id="chat-model"
+                value={selectedModelId}
+                onChange={handleModelChange}
+                disabled={
+                  isArchived ||
+                  updateChatModelMutation.isPending ||
+                  sendMessageMutation.isPending
+                }
+              />
+            </div>
+            {showReasoningEffortSelect ? (
+              <div className="w-20 sm:w-24">
+                <ChatReasoningEffortSelect
+                  id="chat-reasoning-effort"
+                  value={selectedReasoningEffort}
+                  onChange={handleReasoningEffortChange}
+                  disabled={
+                    isArchived ||
+                    updateChatModelMutation.isPending ||
+                    sendMessageMutation.isPending
+                  }
+                />
+              </div>
+            ) : null}
           </div>
           <div className="flex shrink-0 items-center gap-1">
             {isArchived ? (

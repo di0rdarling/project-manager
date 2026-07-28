@@ -17,6 +17,7 @@ import {
   countKimiTextTokens,
   generateKimiChatReply,
 } from "@/lib/kimi";
+import type { KimiReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
 
 export type {
   CountChatContextTokensInput,
@@ -38,6 +39,7 @@ export async function generateChatReply(
   agentNotesContext?: string,
   userName?: string | null,
   modelName?: string,
+  reasoningEffort?: KimiReasoningEffort,
 ): Promise<GenerateChatReplyResult> {
   const modelId = resolveModelId(modelName);
 
@@ -52,6 +54,7 @@ export async function generateChatReply(
       agentNotesContext,
       userName,
       modelId,
+      reasoningEffort,
     );
   }
 
