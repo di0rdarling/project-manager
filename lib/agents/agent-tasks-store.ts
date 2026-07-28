@@ -2,6 +2,7 @@ import type { Db, ObjectId } from "mongodb";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type { AgentTasksDraft } from "@/lib/agents/agent-tasks-json";
 import { EMPTY_AGENT_TASKS_DRAFT } from "@/lib/agents/agent-tasks-json";
+import type { ChatModelId } from "@/lib/chats/chat-models";
 import type { AgentTask, AgentTaskDecisionStatus } from "@/lib/types";
 
 export const AGENT_TASKS_COLLECTION = "agent_tasks";
@@ -107,6 +108,7 @@ export async function updateAgentTaskStatus(
 export type AgentTaskOutputResult = {
   documentId: string;
   documentTitle: string;
+  modelId: ChatModelId;
   approach: string;
   completionSummary: string;
 };
@@ -139,6 +141,7 @@ export async function updateAgentTaskOutput(
           outputStatus: "completed" as const,
           outputDocumentId: output.documentId,
           outputDocumentTitle: output.documentTitle,
+          outputModelId: output.modelId,
           outputApproach: output.approach,
           outputCompletionSummary: output.completionSummary,
         }

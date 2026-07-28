@@ -1,5 +1,9 @@
 import { AGENT_TASK_COUNT } from "@/lib/agents/agent-tasks-json";
 import { isAgentDocumentInReviewStage } from "@/lib/agents/agent-documents";
+import {
+  normalizeChatModelId,
+  type ChatModelId,
+} from "@/lib/chats/chat-models";
 import type {
   AgentTask,
   AgentTaskDecisionStatus,
@@ -133,6 +137,10 @@ export function getAgentTaskOutputStatus(
   task: AgentTask,
 ): AgentTaskOutputStatus {
   return task.outputStatus ?? "not_started";
+}
+
+export function getAgentTaskOutputModelId(task: AgentTask): ChatModelId {
+  return normalizeChatModelId(task.outputModelId);
 }
 
 export function hasAgentTaskOutput(task: AgentTask): boolean {

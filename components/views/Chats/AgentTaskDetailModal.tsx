@@ -22,6 +22,7 @@ import {
 import {
   canAccessAgentTaskOutputTabs,
   getAgentTaskDecisionStatus,
+  getAgentTaskOutputModelId,
   getAgentTaskOutputStatus,
   getAgentTaskStatus,
   getAgentTaskStatusBadgeClassName,
@@ -447,9 +448,9 @@ export default function AgentTaskDetailModal({
     }
 
     setActiveTab("overview");
-    setSelectedModelId(DEFAULT_CHAT_MODEL_ID);
+    setSelectedModelId(getAgentTaskOutputModelId(task));
     previousTaskStatusRef.current = getAgentTaskDecisionStatus(task);
-  }, [open, task?.title]);
+  }, [open, task?.title, task?.outputModelId]);
 
   useEffect(() => {
     if (!open || !task) {

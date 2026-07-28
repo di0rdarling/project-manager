@@ -343,6 +343,8 @@ export type AgentTask = {
   outputDocumentTitle?: string;
   /** Populated by the API from the linked agent document, when available. */
   outputDocumentStatus?: AgentDocumentStatus;
+  /** Model used when the teammate last completed or redid this task's output. */
+  outputModelId?: ChatModelId;
   /** How the agent tackled the task — their approach and reasoning. */
   outputApproach?: string;
   /** What is now true/unblocked in the project because this work is done. */

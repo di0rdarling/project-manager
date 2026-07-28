@@ -153,6 +153,7 @@ export async function POST(request: Request, context: RouteContext) {
       {
         documentId: document._id,
         documentTitle: document.title,
+        modelId,
         approach: toolArgs.approach,
         completionSummary: toolArgs.completionSummary,
       },
