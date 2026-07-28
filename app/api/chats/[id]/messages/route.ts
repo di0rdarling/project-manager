@@ -8,9 +8,13 @@ import {
 import { loadChatGenerationContext } from "@/lib/chats/chat-context/chat-generation-context";
 import {
   generateChatReply,
+  getChatProviderConfigError,
+} from "@/lib/chat-generation";
+import {
   generateChatTitle,
   generateConversationSummary,
 } from "@/lib/gemini";
+import { KimiApiError } from "@/lib/kimi";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { findUserById } from "@/lib/users";
@@ -129,6 +133,22 @@ export async function POST(request: Request, context: RouteContext) {
           error: `This conversation has reached the ${CHAT_CONTEXT_TOKEN_LIMIT.toLocaleString()}-token context limit. Start a new chat to continue.`,
         },
         { status: 400 },
+      );
+    }
+
+    const providerConfigError = getChatProviderConfigError(
+      generationContext.modelId,
+    );
+
+    if (providerConfigError) {
+      return Response.json(
+        {
+          error:
+            providerConfigError === "KIMI_API_KEY is not configured"
+              ? "Kimi chat is not configured. Add KIMI_API_KEY to your environment."
+              : "AI chat is not configured",
+        },
+        { status: 503 },
       );
     }
 
@@ -317,14 +337,27 @@ export async function POST(request: Request, context: RouteContext) {
       contextUsage: updatedContextUsage,
     });
   } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message === "GEMINI_API_KEY is not configured"
-    ) {
-      return Response.json(
-        { error: "AI chat is not configured" },
-        { status: 503 },
-      );
+    if (error instanceof KimiApiError) {
+      return Response.json({ error: error.message }, { status: error.status });
+    }
+
+    if (error instanceof Error) {
+      if (error.message === "GEMINI_API_KEY is not configured") {
+        return Response.json(
+          { error: "AI chat is not configured" },
+          { status: 503 },
+        );
+      }
+
+      if (error.message === "KIMI_API_KEY is not configured") {
+        return Response.json(
+          {
+            error:
+              "Kimi chat is not configured. Add KIMI_API_KEY to your environment.",
+          },
+          { status: 503 },
+        );
+      }
     }
 
     return Response.json(

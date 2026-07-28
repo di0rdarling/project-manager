@@ -4,7 +4,10 @@ import {
   CHAT_CONTEXT_TOKEN_LIMIT,
 } from "@/lib/chats/chat-context/chat-context-usage";
 import { loadChatGenerationContext } from "@/lib/chats/chat-context/chat-generation-context";
-import { countChatContextTokens, countTextTokens } from "@/lib/gemini";
+import {
+  countChatContextTokens,
+  countTextTokens,
+} from "@/lib/chat-generation";
 import { buildChatSystemPrompt } from "@/lib/prompts/chat-prompt";
 import type { StoredChat, StoredChatMessage } from "@/lib/serialize/serialize-chat";
 import type { ChatContextUsage, ChatContextUsageCategory } from "@/lib/types";
@@ -91,6 +94,8 @@ export async function getChatContextUsage(
     pendingMessage,
   });
 
+  const modelId = generationContext.modelId;
+
   const baseSystemPrompt = buildChatSystemPrompt(
     generationContext.teammateId,
     undefined,
@@ -121,11 +126,11 @@ export async function getChatContextUsage(
     projectContextTokens,
     conversationTokens,
   ] = await Promise.all([
-    countTextTokens(baseSystemPrompt),
-    countTextTokens(agentMemoryText),
-    countTextTokens(generationContext.otherTeammatesContext ?? ""),
-    countTextTokens(generationContext.projectContext ?? ""),
-    countTextTokens(conversationText),
+    countTextTokens(baseSystemPrompt, modelId),
+    countTextTokens(agentMemoryText, modelId),
+    countTextTokens(generationContext.otherTeammatesContext ?? "", modelId),
+    countTextTokens(generationContext.projectContext ?? "", modelId),
+    countTextTokens(conversationText, modelId),
   ]);
 
   const breakdown = scaleBreakdownToTotal(

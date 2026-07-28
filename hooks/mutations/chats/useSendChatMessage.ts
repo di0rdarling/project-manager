@@ -29,6 +29,7 @@ export function useSendChatMessage(options?: UseSendChatMessageOptions) {
 
   return useMutation({
     mutationFn: sendChatMessage,
+    retry: false,
     ...restOptions,
     onSuccess: (data, variables, onMutateResult, context) => {
       queryClient.setQueryData<ChatWithMessagesResponse>(
@@ -45,6 +46,19 @@ export function useSendChatMessage(options?: UseSendChatMessageOptions) {
             };
           }
 
+          const existingMessageIds = new Set(
+            current.messages.map((entry) => entry._id),
+          );
+          const nextMessages = [...current.messages];
+
+          if (!existingMessageIds.has(data.userMessage._id)) {
+            nextMessages.push(data.userMessage);
+          }
+
+          if (!existingMessageIds.has(data.assistantMessage._id)) {
+            nextMessages.push(data.assistantMessage);
+          }
+
           return {
             ...current,
             ...data.chat,
@@ -53,11 +67,7 @@ export function useSendChatMessage(options?: UseSendChatMessageOptions) {
             feature: current.feature,
             modelId: data.chat.modelId ?? current.modelId,
             contextUsage: data.contextUsage,
-            messages: [
-              ...current.messages,
-              data.userMessage,
-              data.assistantMessage,
-            ],
+            messages: nextMessages,
           };
         },
       );

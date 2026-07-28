@@ -9,19 +9,50 @@ export type SelectOption = {
   disabled?: boolean;
 };
 
+export type SelectOptionGroup = {
+  label: string;
+  options: SelectOption[];
+};
+
 type SelectProps = {
   label?: string;
   id: string;
-  options: SelectOption[];
+  options?: SelectOption[];
+  groups?: SelectOptionGroup[];
 } & Omit<SelectHTMLAttributes<HTMLSelectElement>, "children">;
 
 export function Select({
   label,
   id,
-  options,
+  options = [],
+  groups,
   className,
   ...props
 }: SelectProps) {
+  const optionElements = groups?.length
+    ? groups.map((group) => (
+        <optgroup key={group.label} label={group.label}>
+          {group.options.map((option) => (
+            <option
+              key={option.value}
+              value={option.value}
+              disabled={option.disabled}
+            >
+              {option.label}
+            </option>
+          ))}
+        </optgroup>
+      ))
+    : options.map((option) => (
+        <option
+          key={option.value}
+          value={option.value}
+          disabled={option.disabled}
+        >
+          {option.label}
+        </option>
+      ));
+
   return (
     <div className={label ? "space-y-2" : undefined}>
       {label ? (
@@ -36,15 +67,7 @@ export function Select({
         }
         {...props}
       >
-        {options.map((option) => (
-          <option
-            key={option.value}
-            value={option.value}
-            disabled={option.disabled}
-          >
-            {option.label}
-          </option>
-        ))}
+        {optionElements}
       </select>
     </div>
   );

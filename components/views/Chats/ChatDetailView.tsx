@@ -197,6 +197,7 @@ export default function ChatDetailView({
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [isEditTitleModalOpen, setIsEditTitleModalOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isSendingRef = useRef(false);
 
   const {
     data: chat,
@@ -215,9 +216,6 @@ export default function ChatDetailView({
   }, [chat?.projectId, chatId, projectIdFromQuery, router]);
 
   const sendMessageMutation = useSendChatMessage({
-    onSuccess: () => {
-      setMessage("");
-    },
     onError: (mutationError) => {
       toast.error(mutationError.message);
     },
@@ -254,6 +252,7 @@ export default function ChatDetailView({
 
     if (
       !trimmedMessage ||
+      isSendingRef.current ||
       sendMessageMutation.isPending ||
       isArchived ||
       isAtContextLimit
@@ -261,10 +260,23 @@ export default function ChatDetailView({
       return;
     }
 
-    sendMessageMutation.mutate({
-      chatId,
-      content: trimmedMessage,
-    });
+    isSendingRef.current = true;
+    setMessage("");
+
+    sendMessageMutation.mutate(
+      {
+        chatId,
+        content: trimmedMessage,
+      },
+      {
+        onError: () => {
+          setMessage(trimmedMessage);
+        },
+        onSettled: () => {
+          isSendingRef.current = false;
+        },
+      },
+    );
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -479,7 +491,8 @@ export default function ChatDetailView({
                 <ChatContextUsageIndicator usage={chat.contextUsage} />
               ) : null}
               <Button
-                type="submit"
+                type="button"
+                onClick={sendMessage}
                 disabled={!message.trim() || sendMessageMutation.isPending}
               >
                 {sendMessageMutation.isPending ? "Sending..." : "Send"}
