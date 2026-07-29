@@ -2,11 +2,6 @@ import React from "react";
 import Link from "next/link";
 import { ProjectManagerLogo } from "@/components/ui/ProjectManagerLogo";
 import {
-  ArchiveBoxIcon,
-  ChevronRightIcon,
-  Cog6ToothIcon,
-  CloudArrowUpIcon,
-  LockClosedIcon,
   PencilSquareIcon,
   SparklesIcon as SparklesIconSolid,
 } from "@heroicons/react/20/solid";
@@ -33,91 +28,64 @@ import {
 
 const primaryFeatures = [
   {
-    name: "Structured Project Workspaces",
+    name: "Your project, pre-structured",
     description:
-      "Organize all your project knowledge – requirements, features, tools, and notes – into consistent, clear sections for every technical challenge you face.",
-    href: "#features",
+      "Organise your project knowledge into consistent, structured sections. No scattered notes, no hunting for that one detail.",
     icon: ClipboardDocumentListIcon,
   },
   {
-    name: "AI Teammates as Your Co-Pilot",
+    name: "Specialist AI teammates",
     description:
-      "Chat with specialized AI agents who already understand your project's full context, helping you think through problems, get insights, and make decisions faster.",
-    href: "#features",
+      "Chat with AI teammates who already know your project's full context. Get answers in seconds, make decisions with confidence.",
     icon: ChatBubbleLeftRightIcon,
   },
   {
-    name: "Effortless Knowledge Management",
+    name: "Master Unfamiliar Tech",
     description:
-      "Capture core users, pain points, domain knowledge, and challenges directly within your project, creating a living \"second brain\" that evolves with your understanding.",
-    href: "#features",
+      "Map out new frameworks, APIs, and domain concepts directly in your workspace. Track what you know, what you're still learning, and get unstuck faster with your AI domain expert.",
     icon: BookOpenIcon,
   },
 ] as const;
 
 const secondaryFeatures = [
   {
-    name: "Instant Setup.",
+    name: "Pick up where you left off",
     description:
-      "Create a project and start capturing context immediately. No configuration or complex setup required, just your thoughts.",
-    icon: CloudArrowUpIcon,
-  },
-  {
-    name: "Private by Default.",
-    description:
-      "Your projects and conversations are completely yours, protected behind a secure, signed-in session. Your thinking, your space.",
-    icon: LockClosedIcon,
-  },
-  {
-    name: "One-Click AI Summaries.",
-    description:
-      "Get an instant, high-level overview of any project or complex feature with a single click. Perfect for getting back up to speed after a break.",
+      "One-click AI summaries of any project or feature. Get the high-level view instantly, so you can jump back in without re-reading everything.",
     icon: SparklesIconSolid,
   },
   {
-    name: "Archive, Don't Lose.",
+    name: "Think out loud, with context",
     description:
-      "Wrap up an AI chat without losing your insights. Archived conversations are one click away when you need to revisit a decision or discussion.",
-    icon: ArchiveBoxIcon,
+      "Chat with AI teammates who already know your project inside out. Get unstuck on architecture, clarify requirements, or master new tech, all in one place.",
+    icon: ChatBubbleLeftRightIcon,
   },
   {
-    name: "Built for Your Workflow.",
+    name: "Write it down, make it clear",
     description:
-      "Track pain points, current challenges, and tool evaluations right alongside your requirements and features, matching your natural problem-solving process.",
-    icon: Cog6ToothIcon,
-  },
-  {
-    name: "AI Writing Assistant.",
-    description:
-      "Instantly polish, shorten, or expand your project notes directly inside the rich text editor to keep your documentation clean and professional.",
+      "Polish, shorten, or expand your notes directly in the editor. Keep your documentation sharp without breaking your flow.",
     icon: PencilSquareIcon,
   },
-] as const;
-
-const stats = [
-  { id: 1, name: "Structured sections per project", value: "9" },
-  { id: 2, name: "AI thinking partners on call", value: "24/7" },
-  { id: 3, name: "Context lost between thoughts", value: "0" },
-  { id: 4, name: "Your data, your projects", value: "100%" },
 ] as const;
 
 const footerNavigation = {
   product: [
     { name: "Features", href: "#features" },
-    { name: "AI teammates", href: "#features" },
     { name: "Sign in", href: "/login" },
     { name: "Create account", href: "/signup" },
   ],
-  company: [
-    { name: "About", href: "#" },
-    { name: "Blog", href: "#" },
-    { name: "Careers", href: "#" },
-  ],
-  legal: [
-    { name: "Privacy", href: "#" },
-    { name: "Terms", href: "#" },
-  ],
 } as const;
+
+const MOCK_PROJECT_NAME = "API Analytics Dashboard";
+
+const MOCK_PROJECT_DESCRIPTION =
+  "A developer tool that tracks API usage, performance, and errors across client applications.";
+
+const MOCK_AI_SUMMARY =
+  "An analytics platform for developers to monitor how their APIs are used in production. The core challenge is balancing real-time event ingestion with fast dashboard queries, while keeping report generation from blocking the user experience. Early focus is on a small beta group of around 50 users.";
+
+const MOCK_AI_SUMMARY_MOBILE =
+  "Core challenge: balance real-time event ingestion with fast dashboard queries, without report generation blocking the user experience.";
 
 // ─── Hero Mockup: Project Detail Page ────────────────────────────────────────
 
@@ -148,25 +116,25 @@ const SIDEBAR_SECTIONS: {
 ];
 
 const MOCK_REQUIREMENTS = [
-  "Users can sign up with email/password or Google OAuth in a single step.",
-  "Onboarding completes in 3 steps or fewer with a visible progress indicator.",
-  "Dashboard loads and shows meaningful data within 2 seconds on first visit.",
-  "All screens are fully responsive down to 375px viewport width.",
+  "Real-time event ingestion",
+  "Report generation with PDF export",
+  "Usage-based rate limiting",
+  "Dashboard response time under 300ms",
 ];
 
 const MOCK_FEATURES = [
   {
-    name: "Single-step auth flow",
+    name: "Live usage dashboard",
     status: "in-progress",
     reqIndex: 0,
   },
   {
-    name: "Guided onboarding wizard",
+    name: "Scheduled & on-demand reports",
     status: "planned",
     reqIndex: 1,
   },
   {
-    name: "Dashboard skeleton loading",
+    name: "Client API keys & quotas",
     status: "planned",
     reqIndex: 2,
   },
@@ -183,7 +151,7 @@ function ProjectDetailMockup() {
               Project Manager
             </p>
             <p className="mt-0.5 truncate text-[11px] text-zinc-500 dark:text-zinc-400">
-              Onboarding Redesign
+              {MOCK_PROJECT_NAME}
             </p>
           </div>
 
@@ -232,15 +200,14 @@ function ProjectDetailMockup() {
             <div className="space-y-2">
               <div className="flex items-start justify-between gap-3">
                 <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                  Onboarding Redesign
+                  {MOCK_PROJECT_NAME}
                 </h2>
                 <div className="mt-0.5 shrink-0 rounded p-1.5 text-zinc-400 dark:text-zinc-500">
                   <PencilIcon className="size-4" aria-hidden />
                 </div>
               </div>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Redesigning the core user onboarding flow to reduce drop-off and
-                improve time-to-value across all sign-up channels.
+                {MOCK_PROJECT_DESCRIPTION}
               </p>
               <p className="text-xs text-zinc-400 dark:text-zinc-500">
                 Created Jun 3, 2026
@@ -259,12 +226,7 @@ function ProjectDetailMockup() {
                 </span>
               </div>
               <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                This project targets product teams and new users struggling with
-                initial setup. The primary pain point is a confusing multi-step
-                sign-up causing ~60% abandonment at step 2. Priority should be
-                simplifying auth, adding OAuth, and providing a guided wizard
-                with visible progress — all of which tie directly to your top
-                three requirements.
+                {MOCK_AI_SUMMARY}
               </p>
             </div>
 
@@ -390,7 +352,7 @@ function ProjectDetailMockupMobile() {
         <div className="space-y-1.5">
           <div className="flex items-start justify-between gap-2">
             <h2 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
-              Onboarding Redesign
+              {MOCK_PROJECT_NAME}
             </h2>
             <PencilIcon
               className="mt-0.5 size-4 shrink-0 text-zinc-400 dark:text-zinc-500"
@@ -398,8 +360,7 @@ function ProjectDetailMockupMobile() {
             />
           </div>
           <p className="text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
-            Redesigning the core user onboarding flow to reduce drop-off and
-            improve time-to-value.
+            {MOCK_PROJECT_DESCRIPTION}
           </p>
         </div>
 
@@ -415,8 +376,7 @@ function ProjectDetailMockupMobile() {
             </span>
           </div>
           <p className="text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
-            Priority: simplify auth, add OAuth, and provide a guided wizard
-            with visible progress.
+            {MOCK_AI_SUMMARY_MOBILE}
           </p>
         </div>
 
@@ -517,18 +477,24 @@ const MAIN_NAV = [
   { label: "Account", icon: UserCircleIcon, active: false },
 ] as const;
 
+const ARLO_AGENT = {
+  initials: "AR",
+  color: "bg-sky-600 dark:bg-sky-500",
+  name: "Arlo",
+} as const;
+
 const MOCK_CHATS = [
   {
     id: 1,
-    title: "Requirements deep-dive",
-    project: "Onboarding Redesign",
+    title: "Report generation approach",
+    project: MOCK_PROJECT_NAME,
     ago: "3m ago",
     active: true,
   },
   {
     id: 2,
     title: "Sprint prioritization",
-    project: "Onboarding Redesign",
+    project: MOCK_PROJECT_NAME,
     ago: "Yesterday",
     active: false,
   },
@@ -542,7 +508,7 @@ const MOCK_CHATS = [
   {
     id: 4,
     title: "Onboarding copy audit",
-    project: "Onboarding Redesign",
+    project: MOCK_PROJECT_NAME,
     ago: "Jul 7",
     active: false,
   },
@@ -551,26 +517,26 @@ const MOCK_CHATS = [
 const MOCK_MESSAGES = [
   {
     id: 1,
-    role: "agent" as const,
-    agent: { initials: "SA", color: "bg-violet-600 dark:bg-violet-500", name: "Sandy" },
-    text: "I reviewed your Requirements section. Requirement 2 describes a solution ('3-step wizard') rather than a user problem. A stronger framing would be: 'Users can complete onboarding without losing their progress between sessions.' Want me to draft a revised set?",
+    role: "user" as const,
+    text: "Not sure if I should add a queue for the report generation or just run it inline. Reports take about 30 seconds to build.",
   },
   {
     id: 2,
-    role: "user" as const,
-    text: "Yes — and can you check if anything's missing based on the pain points?",
+    role: "agent" as const,
+    agent: ARLO_AGENT,
+    text: "Given your current stack, inline will hurt. Your requirements say users trigger reports from the dashboard, so a 30s block means timeouts and a frozen UI. A queue lets you respond instantly and notify when it's done.\n\nWith your expected volume (you noted ~50 users), something lightweight like BullMQ on Redis is enough. No need for Kafka yet.",
   },
   {
     id: 3,
-    role: "agent" as const,
-    agent: { initials: "SA", color: "bg-violet-600 dark:bg-violet-500", name: "Sandy" },
-    text: "Done. Two gaps stand out: you've captured 'sign-up abandonment' as a pain point, but there's no requirement covering email verification feedback or session persistence. I'd suggest adding these as ready-to-paste lines:",
+    role: "user" as const,
+    text: "Yeah, I was worried about overengineering it. BullMQ sounds right.",
   },
-] as const;
-
-const SUGGESTED_REQUIREMENTS = [
-  "Users receive a clear confirmation email within 30 seconds of sign-up, with a working resend option.",
-  "Onboarding progress is saved automatically so users can resume from any device without starting over.",
+  {
+    id: 4,
+    role: "agent" as const,
+    agent: ARLO_AGENT,
+    text: "Worth capturing this as a decision in your project notes. Want me to draft it? Context, options considered, and why you chose the queue, so future-you remembers the reasoning.",
+  },
 ] as const;
 
 const MOCK_TEAMMATES = [
@@ -700,15 +666,15 @@ function AIChatsDetailMockup() {
         <div className="flex min-w-0 flex-1 flex-col bg-white dark:bg-zinc-900">
           {/* Chat header */}
           <div className="flex items-center gap-3 border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-violet-600 text-xs font-bold text-white dark:bg-violet-500">
-              SA
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-sky-600 text-xs font-bold text-white dark:bg-sky-500">
+              AR
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-zinc-900 dark:text-white">
-                Requirements deep-dive
+                Report generation approach
               </p>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Sandy · Business Analyst · Onboarding Redesign
+                Arlo · Solution Architect · {MOCK_PROJECT_NAME}
               </p>
             </div>
           </div>
@@ -735,38 +701,21 @@ function AIChatsDetailMockup() {
                   }`}
                 >
                   {msg.role === "agent" && (
-                    <p className="mb-1 text-xs font-semibold text-violet-600 dark:text-violet-400">
+                    <p className="mb-1 text-xs font-semibold text-sky-600 dark:text-sky-400">
                       {msg.agent.name}
                     </p>
                   )}
-                  <p className="text-sm leading-relaxed">{msg.text}</p>
+                  <p className="text-sm leading-relaxed whitespace-pre-line">{msg.text}</p>
                 </div>
               </div>
             ))}
-
-            {/* Sandy's suggested requirements */}
-            <div className="ml-11 space-y-2">
-              {SUGGESTED_REQUIREMENTS.map((req, i) => (
-                <div
-                  key={i}
-                  className="rounded-lg border border-violet-200 bg-violet-50 px-4 py-3 dark:border-violet-500/20 dark:bg-violet-500/10"
-                >
-                  <p className="text-xs font-semibold text-violet-700 dark:text-violet-400">
-                    Suggested requirement
-                  </p>
-                  <p className="mt-1 text-sm italic text-violet-800 dark:text-violet-300">
-                    &ldquo;{req}&rdquo;
-                  </p>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Input area */}
           <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
             <div className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800">
               <p className="flex-1 text-sm text-zinc-400 dark:text-zinc-500">
-                Ask Sandy anything about onboarding...
+                Ask Arlo anything about report generation...
               </p>
               <div className="flex size-7 items-center justify-center rounded-lg bg-zinc-900 dark:bg-white">
                 <PaperAirplaneIcon className="size-3.5 text-white dark:text-zinc-900" aria-hidden />
@@ -794,15 +743,15 @@ function AIChatsDetailMockupMobile() {
           className="size-4 shrink-0 text-zinc-500 dark:text-zinc-400"
           aria-hidden
         />
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-violet-600 text-[10px] font-bold text-white dark:bg-violet-500">
-          SA
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-sky-600 text-[10px] font-bold text-white dark:bg-sky-500">
+          AR
         </div>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-zinc-900 dark:text-white">
-            Requirements deep-dive
+            Report generation approach
           </p>
           <p className="truncate text-[11px] text-zinc-500 dark:text-zinc-400">
-            Sandy · Onboarding Redesign
+            Arlo · {MOCK_PROJECT_NAME}
           </p>
         </div>
       </div>
@@ -828,7 +777,7 @@ function AIChatsDetailMockupMobile() {
                   : "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
               }`}
             >
-              <p className="text-xs leading-relaxed">{msg.text}</p>
+              <p className="text-xs leading-relaxed whitespace-pre-line">{msg.text}</p>
             </div>
           </div>
         ))}
@@ -838,7 +787,7 @@ function AIChatsDetailMockupMobile() {
       <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
         <div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800">
           <p className="flex-1 truncate text-xs text-zinc-400 dark:text-zinc-500">
-            Ask Sandy anything...
+            Ask Arlo anything...
           </p>
           <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-zinc-900 dark:bg-white">
             <PaperAirplaneIcon
@@ -928,36 +877,19 @@ export default function LandingPage() {
           <BackgroundGrid />
           <GradientBlob className="absolute top-10 left-[calc(50%-4rem)] -z-10 transform-gpu blur-3xl sm:left-[calc(50%-18rem)] lg:top-[calc(50%-30rem)] lg:left-48 xl:left-[calc(50%-24rem)]" />
 
-          <div className="mx-auto max-w-7xl px-6 pt-10 pb-10 lg:flex">
+          <div className="mx-auto max-w-7xl px-6 pt-6 pb-10 sm:pt-10 lg:flex">
             <div className="mx-auto max-w-2xl shrink-0 lg:mx-0 lg:pt-8">
-              <div className="mt-8 sm:mt-32 lg:mt-16">
-                <a
-                  href="#features"
-                  className="inline-flex flex-wrap items-center gap-x-3 gap-y-2"
-                >
-                  <span className="shrink-0 rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700 ring-1 ring-inset ring-zinc-900/10 sm:text-sm/6 dark:bg-white/10 dark:text-zinc-200 dark:ring-white/20">
-                    New Release
-                  </span>
-                  <span className="inline-flex items-center gap-x-1.5 text-xs font-medium text-gray-600 sm:gap-x-2 sm:text-sm/6 dark:text-gray-300">
-                    <span>AI-powered project intelligence is here</span>
-                    <ChevronRightIcon
-                      aria-hidden="true"
-                      className="size-4 shrink-0 text-gray-400 sm:size-5 dark:text-gray-500"
-                    />
-                  </span>
-                </a>
-              </div>
-              <h1 className="mt-6 text-5xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-7xl dark:text-white">
-                Organise, Understand, Build.
+              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:mt-32 sm:text-7xl lg:mt-16 dark:text-white">
+                A second brain for your software projects.
               </h1>
-              <p className="mt-8 text-lg font-medium text-pretty text-gray-500 sm:text-xl/8 dark:text-gray-400">
-                Your AI-powered digital workspace for deep project thinking –
-                the second brain your projects deserve. Transform project chaos
-                into structured intelligence with tailored guidance.
+              <p className="mt-5 text-lg font-medium text-pretty text-gray-500 sm:mt-8 sm:text-xl/8 dark:text-gray-400">
+                Pre-built, not pieced together. Structured project docs and AI
+                teammates who already know your project, so you can spend your
+                time thinking, not organising.
               </p>
-              <div className="mt-10">
+              <div className="mt-6 sm:mt-10">
                 <p className="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Be the first to know
+                  Beta opens soon, join the waitlist for early access.
                 </p>
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
                   <Link
@@ -970,8 +902,7 @@ export default function LandingPage() {
                     href="#features"
                     className="text-sm/6 font-semibold text-gray-900 dark:text-white"
                   >
-                    Learn more about Project Manager{" "}
-                    <span aria-hidden="true">→</span>
+                    See how it works <span aria-hidden="true">↓</span>
                   </a>
                 </div>
               </div>
@@ -982,7 +913,7 @@ export default function LandingPage() {
                 scaled down via `zoom` to fit, then reverts to full size at `lg`
                 and intentionally overflows right like a product screenshot
                 bleeding off the edge. */}
-            <div className="mx-auto mt-16 flex max-w-2xl justify-center sm:mt-24 lg:mt-0 lg:mr-0 lg:ml-10 lg:max-w-none lg:flex-none lg:justify-start xl:ml-32">
+            <div className="mx-auto mt-8 flex max-w-2xl justify-center sm:mt-24 lg:mt-0 lg:mr-0 lg:ml-10 lg:max-w-none lg:flex-none lg:justify-start xl:ml-32">
               <div className="sm:hidden">
                 <ProjectDetailMockupMobile />
               </div>
@@ -1024,14 +955,6 @@ export default function LandingPage() {
                   </dt>
                   <dd className="mt-1 flex flex-auto flex-col text-base/7 text-gray-600 dark:text-gray-400">
                     <p className="flex-auto">{feature.description}</p>
-                    <p className="mt-6">
-                      <a
-                        href={feature.href}
-                        className="text-sm/6 font-semibold text-zinc-900 hover:text-zinc-700 dark:text-white dark:hover:text-zinc-300"
-                      >
-                        Learn more <span aria-hidden="true">→</span>
-                      </a>
-                    </p>
                   </dd>
                 </div>
               ))}
@@ -1050,9 +973,8 @@ export default function LandingPage() {
                 Your dedicated space for structured problem-solving.
               </p>
               <p className="mt-6 text-lg/8 text-gray-600 dark:text-gray-300">
-                Every project comes with the same intelligent building
-                blocks, ensuring nothing important slips through the cracks
-                as you tackle complexity.
+                The same intelligent building blocks for every project, so you
+                can focus on the work, not the setup.
               </p>
             </div>
           </div>
@@ -1089,35 +1011,6 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="mx-auto mt-32 max-w-7xl px-6 sm:mt-56 lg:px-8">
-          <div className="mx-auto max-w-2xl lg:mx-0 lg:max-w-xl">
-            <h2 className="text-base/8 font-semibold text-zinc-500 dark:text-zinc-400">
-              Why individual builders choose us
-            </h2>
-            <p className="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl dark:text-white">
-              Built to keep your projects&nbsp;organized.
-            </p>
-            <p className="mt-6 text-lg/8 text-gray-700 dark:text-gray-300">
-              Every project starts with the same intelligent structure, so
-              you always know where to look and what to trust for your work.
-            </p>
-          </div>
-          <dl className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-10 text-gray-900 sm:mt-20 sm:grid-cols-2 sm:gap-y-16 lg:mx-0 lg:max-w-none lg:grid-cols-4 dark:text-white">
-            {stats.map((stat) => (
-              <div
-                key={stat.id}
-                className="flex flex-col gap-y-3 border-l border-gray-900/15 pl-6 dark:border-white/10"
-              >
-                <dt className="text-sm/6">{stat.name}</dt>
-                <dd className="order-first text-3xl font-semibold tracking-tight">
-                  {stat.value}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-
         {/* CTA section */}
         <div className="relative isolate mt-32 px-6 py-32 sm:mt-56 sm:py-40 lg:px-8">
           <BackgroundGrid />
@@ -1135,31 +1028,19 @@ export default function LandingPage() {
           </div>
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-4xl font-semibold tracking-tight text-balance text-gray-900 sm:text-5xl dark:text-white">
-              Give your next project a clear, intelligent home.
+              Your next project deserves a second brain.
             </h2>
             <p className="mx-auto mt-6 max-w-xl text-lg/8 text-pretty text-gray-600 dark:text-gray-300">
-              Create your first project, invite your AI thinking partners,
-              and see everything come together in one powerful workspace
-              built for your success.
+              Join the waitlist and be one of the first developers through the
+              door when beta opens.
             </p>
             <div className="mt-10">
-              <p className="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">
-                Be the first to know
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-4">
-                <Link
-                  href="/waitlist"
-                  className="rounded-md bg-zinc-900 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:bg-white dark:text-zinc-900 dark:shadow-none dark:hover:bg-zinc-100 dark:focus-visible:outline-white"
-                >
-                  Join the Waitlist
-                </Link>
-                <Link
-                  href="/login"
-                  className="text-sm/6 font-semibold text-gray-900 dark:text-white"
-                >
-                  Sign In <span aria-hidden="true">→</span>
-                </Link>
-              </div>
+              <Link
+                href="/waitlist"
+                className="rounded-md bg-zinc-900 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:bg-white dark:text-zinc-900 dark:shadow-none dark:hover:bg-zinc-100 dark:focus-visible:outline-white"
+              >
+                Join the Waitlist
+              </Link>
             </div>
           </div>
         </div>
@@ -1168,58 +1049,22 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="border-t border-gray-200 py-12 dark:border-white/10">
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
-            <div>
-              <h3 className="text-sm/6 font-semibold text-gray-900 dark:text-white">
-                Product
-              </h3>
-              <ul className="mt-4 space-y-3">
-                {footerNavigation.product.map((item) => (
-                  <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      className="text-sm/6 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-                    >
-                      {item.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-sm/6 font-semibold text-gray-900 dark:text-white">
-                Company
-              </h3>
-              <ul className="mt-4 space-y-3">
-                {footerNavigation.company.map((item) => (
-                  <li key={item.name}>
-                    <a
-                      href={item.href}
-                      className="text-sm/6 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-                    >
-                      {item.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-sm/6 font-semibold text-gray-900 dark:text-white">
-                Legal
-              </h3>
-              <ul className="mt-4 space-y-3">
-                {footerNavigation.legal.map((item) => (
-                  <li key={item.name}>
-                    <a
-                      href={item.href}
-                      className="text-sm/6 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-                    >
-                      {item.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          <div>
+            <h3 className="text-sm/6 font-semibold text-gray-900 dark:text-white">
+              Product
+            </h3>
+            <ul className="mt-4 space-y-3">
+              {footerNavigation.product.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className="text-sm/6 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
           <p className="mt-12 text-sm/6 text-gray-600 dark:text-gray-400">
             &copy; {new Date().getFullYear()} Project Manager. All rights
