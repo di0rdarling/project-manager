@@ -58,6 +58,14 @@ export function getMemoryModelName(): string {
   );
 }
 
+export function getDashboardModelName(): string {
+  return (
+    process.env.GEMINI_DASHBOARD_MODEL ??
+    process.env.GEMINI_MODEL ??
+    "gemini-2.5-flash"
+  );
+}
+
 const DEFAULT_GEMINI_THINKING_BUDGET = 8192;
 
 function parseThinkingBudget(value: string | undefined): number {
@@ -270,6 +278,10 @@ export async function generateChatTitle(prompt: string): Promise<string> {
 
 export async function generateAgentMemory(prompt: string): Promise<string> {
   return generateText(prompt, getMemoryModelName());
+}
+
+export async function generateDashboardDigest(prompt: string): Promise<string> {
+  return generateJsonText(prompt, getDashboardModelName());
 }
 
 /**

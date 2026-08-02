@@ -77,6 +77,11 @@ export const agentTasksKeys = {
     ["agent-tasks", teammateId, projectId] as const,
 };
 
+export const dashboardKeys = {
+  stats: ["dashboard", "stats"] as const,
+  digest: ["dashboard", "digest"] as const,
+};
+
 export const agentNoteKeys = {
   list: (teammateId: string) => ["agent-notes", teammateId] as const,
   detail: (teammateId: string, noteId: string) =>

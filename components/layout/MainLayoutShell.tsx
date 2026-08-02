@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import NavigationSidebar from "@/components/layout/NavigationSidebar";
@@ -94,13 +94,24 @@ export default function MainLayoutShell({
           />
         ) : null}
 
-        <NavigationSidebar
-          id="navigation-sidebar"
-          isOpen={isMobileSidebarVisible}
-          isCollapsed={isMdUp && isCollapsed}
-          onToggleCollapse={toggleCollapsed}
-          onNavigate={() => setIsSidebarOpen(false)}
-        />
+        <Suspense
+          fallback={
+            <aside
+              aria-hidden
+              className={`fixed inset-y-0 left-0 z-40 shrink-0 border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 md:relative md:z-auto md:translate-x-0 ${
+                isMdUp && isCollapsed ? "w-16 md:w-16" : "w-56 md:w-56"
+              }`}
+            />
+          }
+        >
+          <NavigationSidebar
+            id="navigation-sidebar"
+            isOpen={isMobileSidebarVisible}
+            isCollapsed={isMdUp && isCollapsed}
+            onToggleCollapse={toggleCollapsed}
+            onNavigate={() => setIsSidebarOpen(false)}
+          />
+        </Suspense>
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex shrink-0 items-center gap-3 border-b border-zinc-200 px-4 py-3 md:hidden dark:border-zinc-800">

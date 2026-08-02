@@ -62,3 +62,37 @@ export function getRelativeDayLabel(
 
   return null;
 }
+
+export function formatRelativeDate(
+  isoDate: string,
+  referenceDate: Date | string = new Date(),
+): string {
+  const target = new Date(isoDate);
+  const reference =
+    referenceDate instanceof Date ? referenceDate : new Date(referenceDate);
+
+  const dayLabel = getRelativeDayLabel(target, reference);
+  if (dayLabel) {
+    return dayLabel;
+  }
+
+  const diffMs = reference.getTime() - target.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 7) {
+    return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+  }
+
+  if (diffDays < 30) {
+    const weeks = Math.floor(diffDays / 7);
+    return `${weeks} week${weeks === 1 ? "" : "s"} ago`;
+  }
+
+  const months = Math.floor(diffDays / 30);
+  if (months < 12) {
+    return `${months} month${months === 1 ? "" : "s"} ago`;
+  }
+
+  const years = Math.floor(diffDays / 365);
+  return `${years} year${years === 1 ? "" : "s"} ago`;
+}

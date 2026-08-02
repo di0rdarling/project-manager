@@ -360,3 +360,14 @@ export type AgentTasksResponse = {
   tasks: AgentTask[];
   updatedAt: string | null;
 };
+
+export type DashboardStatsResponse = {
+  totalProjects: number;
+  openChats: number;
+  notesThisWeek: number;
+};
+
+export type DashboardDigestResponse = {
+  digest: string;
+  suggestedAction: string;
+};
