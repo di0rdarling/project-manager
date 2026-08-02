@@ -295,6 +295,7 @@ export async function generateJordanDashboardDigest(
     agentNotesContext,
     userName,
     modelId,
+    undefined,
     new Date(),
   );
 

@@ -2,28 +2,24 @@
 
 import Link from "next/link";
 import { LightBulbIcon, SparklesIcon } from "@heroicons/react/24/outline";
-import { useQuery } from "@tanstack/react-query";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useGenerateDashboardDigest } from "@/hooks/mutations/dashboard/useGenerateDashboardDigest";
+import { useFetchDashboardDigest } from "@/hooks/queries/useFetchDashboardDigest";
 import { getChatTeammate } from "@/lib/chats/chat-teammates";
 import { getTeammateProfileHref } from "@/lib/chats/agent-profile-navigation";
-import { dashboardKeys } from "@/lib/query-keys";
-import type { DashboardDigestResponse } from "@/lib/types";
 
 const jordan = getChatTeammate("jordan");
 
 export default function CrossProjectAIDigest() {
-  const { data: digest, isFetching: isLoadingDigest } = useQuery<
-    DashboardDigestResponse,
-    Error
-  >({
-    queryKey: dashboardKeys.digest,
-    staleTime: Infinity,
-    enabled: false,
-  });
+  const {
+    data: digest,
+    isPending: isLoadingDigest,
+    isError: isFetchError,
+    error: fetchError,
+  } = useFetchDashboardDigest();
 
   const {
     mutate: generateDigest,
@@ -120,6 +116,21 @@ export default function CrossProjectAIDigest() {
         </div>
       ) : isLoadingDigest ? (
         <LoadingMessage>Loading digest...</LoadingMessage>
+      ) : isFetchError ? (
+        <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-900/50">
+          <ErrorMessage
+            error={fetchError}
+            fallbackMessage="Failed to load digest"
+          />
+          <Button
+            type="button"
+            onClick={handleGenerate}
+            disabled={isBusy}
+            className="mt-4"
+          >
+            Ask {jordan.name}
+          </Button>
+        </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-900/50">
           <p className="text-sm text-zinc-600 dark:text-zinc-400">

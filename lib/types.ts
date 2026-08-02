@@ -366,6 +366,31 @@ export type AgentTasksResponse = {
   updatedAt: string | null;
 };
 
+export type AgentTasksAllProjectsResponse = {
+  teammateId: ChatTeammateId;
+  projects: AgentTasksResponse[];
+};
+
+export type DashboardTaskItem = {
+  title: string;
+  detail: string;
+  status: AgentTaskStatus;
+  teammateId: ChatTeammateId;
+  teammateName: string;
+  teammateAvatarInitials: string;
+  teammateAvatarImageSrc?: string;
+  teammateAvatarColorClassName: string;
+  projectId: string;
+  projectName: string | null;
+  outputDocumentId?: string;
+  outputDocumentStatus?: AgentDocumentStatus;
+  updatedAt: string | null;
+};
+
+export type DashboardTasksResponse = {
+  tasks: DashboardTaskItem[];
+};
+
 export type RejectAgentDocumentResponse = {
   documentId: string;
   taskTitle: string | null;
@@ -381,6 +406,7 @@ export type DashboardStatsResponse = {
 export type DashboardDigestResponse = {
   digest: string;
   suggestedAction: string;
+  generatedAt?: string;
 };
 
 export type AgentDocumentReviewMessageResponse = {

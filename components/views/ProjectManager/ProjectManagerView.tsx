@@ -12,6 +12,7 @@ import CreateProjectModal from "./modals/CreateProjectModal";
 import CrossProjectAIDigest from "./CrossProjectAIDigest";
 import DashboardStats from "./DashboardStats";
 import HomepageRecentChatsSection from "./HomepageRecentChatsSection";
+import HomepageTasksSection from "./HomepageTasksSection";
 import HomepageTeammatesSection from "./HomepageTeammatesSection";
 import ProjectManagerList from "./ProjectManagerList";
 
@@ -62,6 +63,8 @@ export default function ProjectManagerView() {
       <HomepageTeammatesSection />
 
       <HomepageRecentChatsSection />
+
+      <HomepageTasksSection />
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">

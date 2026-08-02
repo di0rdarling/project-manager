@@ -1,13 +1,7 @@
 import { requireUserId } from "@/lib/current-user";
-import { getChatProviderConfigError } from "@/lib/chat-generation";
-import { generateJordanDashboardDigest } from "@/lib/dashboard/generate-jordan-digest";
 import getClientPromise from "@/lib/mongodb";
 import type { StoredProject } from "@/lib/serialize/serialize-project";
 import type { StoredChat } from "@/lib/serialize/serialize-chat";
-import {
-  findUserById,
-  getUserDashboardDigestModelId,
-} from "@/lib/users";
 
 function getStartOfWeek(date: Date): Date {
   const result = new Date(date);
@@ -51,57 +45,6 @@ export async function GET() {
   } catch {
     return Response.json(
       { error: "Failed to fetch dashboard stats" },
-      { status: 500 },
-    );
-  }
-}
-
-export async function POST() {
-  try {
-    const auth = await requireUserId();
-    if ("error" in auth) {
-      return auth.error;
-    }
-
-    const client = await getClientPromise();
-    const db = client.db();
-    const userId = auth.userId;
-
-    const user = await findUserById(db, userId);
-    const userName = user?.name ?? null;
-    const dashboardDigestModelId = getUserDashboardDigestModelId(user);
-    const providerConfigError = getChatProviderConfigError(
-      dashboardDigestModelId,
-    );
-
-    if (providerConfigError) {
-      return Response.json(
-        { error: "AI digest generation is not configured" },
-        { status: 503 },
-      );
-    }
-
-    const digest = await generateJordanDashboardDigest(
-      db,
-      userId,
-      userName,
-      dashboardDigestModelId,
-    );
-
-    return Response.json(digest);
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message === "GEMINI_API_KEY is not configured"
-    ) {
-      return Response.json(
-        { error: "AI digest generation is not configured" },
-        { status: 503 },
-      );
-    }
-
-    return Response.json(
-      { error: "Failed to generate dashboard digest" },
       { status: 500 },
     );
   }

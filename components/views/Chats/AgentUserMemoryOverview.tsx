@@ -16,6 +16,7 @@ import AgentAtAGlance from "@/components/views/Chats/AgentAtAGlance";
 import AgentConversations from "@/components/views/Chats/AgentConversations";
 import AgentMostRecently from "@/components/views/Chats/AgentMostRecently";
 import AgentTasks from "@/components/views/Chats/AgentTasks";
+import AgentTasksAllProjects from "@/components/views/Chats/AgentTasksAllProjects";
 import AgentStableContext from "@/components/views/Chats/AgentStableContext";
 import AIAgentMemory from "@/components/views/Chats/AIAgentMemory";
 import { useDeleteUserMemory } from "@/hooks/mutations/chats/useDeleteUserMemory";
@@ -133,7 +134,11 @@ export default function AgentUserMemoryOverview({
           <AgentMostRecently mostRecently={userMemory?.mostRecently ?? null} />
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="space-y-6 lg:col-span-2">
-              <AgentTasks teammateId={teammateId} projectId={projectId} />
+              {projectId ? (
+                <AgentTasks teammateId={teammateId} projectId={projectId} />
+              ) : (
+                <AgentTasksAllProjects teammateId={teammateId} />
+              )}
               <AIAgentMemory teammateId={teammateId} />
             </div>
             <div className="space-y-6">
@@ -174,7 +179,11 @@ export default function AgentUserMemoryOverview({
           </div>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="space-y-6 lg:col-span-2">
-              <AgentTasks teammateId={teammateId} projectId={projectId} />
+              {projectId ? (
+                <AgentTasks teammateId={teammateId} projectId={projectId} />
+              ) : (
+                <AgentTasksAllProjects teammateId={teammateId} />
+              )}
               <AIAgentMemory teammateId={teammateId} />
             </div>
             <div className="space-y-6">

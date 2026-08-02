@@ -75,11 +75,14 @@ export const userMemoryKeys = {
 export const agentTasksKeys = {
   detail: (teammateId: string, projectId: string) =>
     ["agent-tasks", teammateId, projectId] as const,
+  allProjects: (teammateId: string) =>
+    ["agent-tasks", teammateId, "all-projects"] as const,
 };
 
 export const dashboardKeys = {
   stats: ["dashboard", "stats"] as const,
   digest: ["dashboard", "digest"] as const,
+  tasks: ["dashboard", "tasks"] as const,
 };
 
 export const agentNoteKeys = {

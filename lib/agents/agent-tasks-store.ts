@@ -181,3 +181,24 @@ export async function updateAgentTaskOutput(
     updatedAt,
   );
 }
+
+export async function getAllAgentTasksForTeammate(
+  db: Db,
+  userId: ObjectId,
+  teammateId: ChatTeammateId,
+): Promise<StoredAgentTasks[]> {
+  return db
+    .collection<StoredAgentTasks>(AGENT_TASKS_COLLECTION)
+    .find({ userId, teammateId })
+    .toArray();
+}
+
+export async function getAllAgentTasksForUser(
+  db: Db,
+  userId: ObjectId,
+): Promise<StoredAgentTasks[]> {
+  return db
+    .collection<StoredAgentTasks>(AGENT_TASKS_COLLECTION)
+    .find({ userId })
+    .toArray();
+}
