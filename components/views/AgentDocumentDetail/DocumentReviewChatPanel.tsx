@@ -15,6 +15,7 @@ import {
   TeammateProfileLink,
 } from "@/components/views/Chats/TeammateProfileLink";
 import { useSendDocumentReviewMessage } from "@/hooks/mutations/agent-documents/useSendDocumentReviewMessage";
+import { useAcceptAgentDocument } from "@/hooks/mutations/agent-documents/useAcceptAgentDocument";
 import { useUpdateDocumentReviewChat } from "@/hooks/mutations/agent-documents/useUpdateDocumentReviewChat";
 import { useFetchDocumentReviewChat } from "@/hooks/queries/useFetchDocumentReviewChat";
 import {
@@ -32,12 +33,17 @@ import {
 } from "@/lib/chats/kimi-reasoning-effort";
 import { formatDisplayDateTime } from "@/lib/dates";
 import { shouldShowAssistantTypingIndicator } from "@/lib/chats/should-show-assistant-typing-indicator";
-import type { AgentDocumentReviewMessageResponse } from "@/lib/types";
+import { canAcceptAgentDocument } from "@/lib/agents/agent-documents";
+import type {
+  AgentDocumentReviewMessageResponse,
+  AgentDocumentStatus,
+} from "@/lib/types";
 
 type DocumentReviewChatPanelProps = {
   teammateId: ChatTeammateId;
   documentId: string;
   projectId?: string | null;
+  documentStatus?: AgentDocumentStatus;
 };
 
 function ReviewChatMessageBubble({
@@ -133,6 +139,7 @@ export function DocumentReviewChatPanel({
   teammateId,
   documentId,
   projectId = null,
+  documentStatus: initialDocumentStatus,
 }: Readonly<DocumentReviewChatPanelProps>) {
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -147,6 +154,15 @@ export function DocumentReviewChatPanel({
   } = useFetchDocumentReviewChat(teammateId, documentId);
 
   const sendMessageMutation = useSendDocumentReviewMessage({
+    onError: (mutationError) => {
+      toast.error(mutationError.message);
+    },
+  });
+
+  const acceptDocumentMutation = useAcceptAgentDocument({
+    onSuccess: () => {
+      toast.success("Task marked complete.");
+    },
     onError: (mutationError) => {
       toast.error(mutationError.message);
     },
@@ -186,6 +202,24 @@ export function DocumentReviewChatPanel({
     sendMessageMutation.isPending,
     reviewChat?.messages ?? [],
   );
+  const documentStatus =
+    reviewChat?.document.status ?? initialDocumentStatus ?? null;
+  const canMarkComplete = documentStatus
+    ? canAcceptAgentDocument(documentStatus)
+    : false;
+  const isMarkingComplete = acceptDocumentMutation.isPending;
+
+  function handleMarkComplete() {
+    if (!canMarkComplete || isMarkingComplete) {
+      return;
+    }
+
+    acceptDocumentMutation.mutate({
+      teammateId,
+      documentId,
+      projectId,
+    });
+  }
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -294,6 +328,16 @@ export function DocumentReviewChatPanel({
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               Discuss this deliverable
             </p>
+            {canMarkComplete ? (
+              <Button
+                type="button"
+                onClick={handleMarkComplete}
+                disabled={isMarkingComplete || isPending || isError}
+                className="mt-3 w-full"
+              >
+                {isMarkingComplete ? "Marking complete..." : "Mark task complete"}
+              </Button>
+            ) : null}
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <div className="w-36 min-w-0">
                 <ChatModelSelect

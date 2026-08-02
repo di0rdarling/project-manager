@@ -19,3 +19,19 @@ export async function fetchAgentDocument(input: {
   );
   return parseResponse<AgentDocumentResponse>(response);
 }
+
+export async function acceptAgentDocument(input: {
+  teammateId: ChatTeammateId;
+  documentId: string;
+}): Promise<AgentDocumentResponse> {
+  const { teammateId, documentId } = input;
+  const response = await fetch(
+    `/api/chats/agents/${teammateId}/documents/${documentId}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "accepted" }),
+    },
+  );
+  return parseResponse<AgentDocumentResponse>(response);
+}

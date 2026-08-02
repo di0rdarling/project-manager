@@ -36,6 +36,18 @@ export function isAgentDocumentInReviewStage(
   return status === "ready_for_review" || status === "in_review";
 }
 
+export function isAgentDocumentAccepted(
+  status: AgentDocumentStatus,
+): boolean {
+  return status === "accepted";
+}
+
+export function canAcceptAgentDocument(
+  status: AgentDocumentStatus,
+): boolean {
+  return isAgentDocumentInReviewStage(status);
+}
+
 export function getAgentDocumentStatusBadgeClassName(
   status: AgentDocumentStatus,
 ): string {

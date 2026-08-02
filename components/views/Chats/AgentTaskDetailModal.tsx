@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import {
   ArrowTrendingUpIcon,
   CheckCircleIcon,
@@ -16,11 +17,13 @@ import { DeleteAISummaryModal } from "@/components/ui/DeleteAISummaryModal";
 import { Modal } from "@/components/ui/Modal";
 import { Tabs, TabsList, TabsPanel, TabsTrigger } from "@/components/ui/Tabs";
 import { ChatModelSelect } from "@/components/views/Chats/ChatModelSelect";
+import { useAcceptAgentDocument } from "@/hooks/mutations/agent-documents/useAcceptAgentDocument";
 import {
   getAgentDocumentDetailPath,
 } from "@/lib/agents/agent-documents";
 import {
   canAccessAgentTaskOutputTabs,
+  canMarkAgentTaskComplete,
   getAgentTaskDecisionStatus,
   getAgentTaskOutputModelId,
   getAgentTaskOutputStatus,
@@ -29,6 +32,7 @@ import {
   getAgentTaskStatusLabel,
   getAgentTaskProjectBadgeClassName,
   getAgentTaskProjectName,
+  hasAgentTaskOutput,
 } from "@/lib/agents/agent-tasks";
 import {
   appendAgentProfileFrom,
@@ -407,8 +411,121 @@ function AgentTaskReviewPlaceholder() {
       </p>
       <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
         After the teammate finishes and submits their output, you&apos;ll review
-        and sign off on it here before it is added to Documents.
+        and sign off on it here.
       </p>
+    </div>
+  );
+}
+
+function AgentTaskReviewCompleted() {
+  return (
+    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-10 text-center dark:border-emerald-900/50 dark:bg-emerald-950/30">
+      <CheckCircleIcon
+        className="mx-auto size-8 text-emerald-500 dark:text-emerald-400"
+        aria-hidden
+      />
+      <p className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-100">
+        Task complete
+      </p>
+      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+        You signed off on this deliverable. It&apos;s saved in this
+        teammate&apos;s Documents.
+      </p>
+    </div>
+  );
+}
+
+function AgentTaskReviewContent({
+  task,
+  teammateId,
+  profileFrom,
+  profileProjectId,
+  onClose,
+  onMarkComplete,
+  isMarkingComplete,
+}: Readonly<{
+  task: AgentTask;
+  teammateId?: ChatTeammateId;
+  profileFrom?: AgentProfileFrom | null;
+  profileProjectId?: string | null;
+  onClose?: () => void;
+  onMarkComplete?: () => void;
+  isMarkingComplete?: boolean;
+}>) {
+  const documentHref =
+    task.outputDocumentId && teammateId
+      ? appendAgentProfileFrom(
+          getAgentDocumentDetailPath(teammateId, task.outputDocumentId),
+          profileFrom ?? null,
+          profileProjectId,
+        )
+      : null;
+  const documentTitle = task.outputDocumentTitle || "Untitled document";
+  const taskStatus = getAgentTaskStatus(task);
+
+  if (taskStatus === "completed") {
+    return <AgentTaskReviewCompleted />;
+  }
+
+  if (!hasAgentTaskOutput(task)) {
+    return <AgentTaskReviewPlaceholder />;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          <DocumentTextIcon
+            className="size-4 shrink-0 text-blue-500 dark:text-blue-400"
+            aria-hidden
+          />
+          Deliverable
+        </p>
+        {documentHref ? (
+          <Link
+            href={documentHref}
+            onClick={onClose}
+            className="mt-3 flex items-center gap-2 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+          >
+            {documentTitle}
+            <ChevronRightIcon className="size-3.5" aria-hidden />
+          </Link>
+        ) : (
+          <p className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-100">
+            {documentTitle}
+          </p>
+        )}
+        <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+          Review the deliverable and discuss any changes with your teammate
+          before signing off.
+        </p>
+      </div>
+
+      {task.outputCompletionSummary ? (
+        <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            <CheckCircleIcon
+              className="size-4 shrink-0 text-emerald-500 dark:text-emerald-400"
+              aria-hidden
+            />
+            How this completes the task
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
+            {task.outputCompletionSummary}
+          </p>
+        </div>
+      ) : null}
+
+      {onMarkComplete ? (
+        <Button
+          type="button"
+          onClick={onMarkComplete}
+          disabled={isMarkingComplete}
+          className="w-full"
+        >
+          {isMarkingComplete ? "Marking complete..." : "Mark task complete"}
+        </Button>
+      ) : null}
     </div>
   );
 }
@@ -434,6 +551,15 @@ export default function AgentTaskDetailModal({
   const [selectedModelId, setSelectedModelId] =
     useState<ChatModelId>(DEFAULT_CHAT_MODEL_ID);
   const previousTaskStatusRef = useRef<AgentTaskDecisionStatus | null>(null);
+
+  const acceptDocumentMutation = useAcceptAgentDocument({
+    onSuccess: () => {
+      toast.success("Task marked complete.");
+    },
+    onError: (mutationError) => {
+      toast.error(mutationError.message);
+    },
+  });
 
   useEffect(() => {
     if (!open) {
@@ -475,12 +601,13 @@ export default function AgentTaskDetailModal({
     return null;
   }
 
-  const taskStatus = getAgentTaskStatus(task);
-  const taskDecisionStatus = getAgentTaskDecisionStatus(task);
-  const taskProjectName = getAgentTaskProjectName(task, projectName);
+  const activeTask = task;
+  const taskStatus = getAgentTaskStatus(activeTask);
+  const taskDecisionStatus = getAgentTaskDecisionStatus(activeTask);
+  const taskProjectName = getAgentTaskProjectName(activeTask, projectName);
   const isAccepted = taskDecisionStatus === "accepted";
-  const outputStatus = getAgentTaskOutputStatus(task);
-  const outputTabsEnabled = canAccessAgentTaskOutputTabs(task);
+  const outputStatus = getAgentTaskOutputStatus(activeTask);
+  const outputTabsEnabled = canAccessAgentTaskOutputTabs(activeTask);
   const showOverviewActions =
     activeTab === "overview" && Boolean(onAccept || onReject);
   const showOutputRedoAction =
@@ -489,8 +616,29 @@ export default function AgentTaskDetailModal({
     outputStatus === "completed" &&
     !isStartingOutput &&
     Boolean(onStartOutput);
+  const canMarkComplete = canMarkAgentTaskComplete(activeTask);
+  const showReviewMarkCompleteAction =
+    activeTab === "review" &&
+    canMarkComplete &&
+    Boolean(activeTask.outputDocumentId);
   const acceptDisabled = isUpdating || (taskDecisionStatus !== "accepted" && !canAccept);
-  const redoDocumentTitle = task.outputDocumentTitle || "Untitled document";
+  const redoDocumentTitle = activeTask.outputDocumentTitle || "Untitled document";
+
+  function handleMarkComplete() {
+    if (
+      !activeTask.outputDocumentId ||
+      !teammateId ||
+      acceptDocumentMutation.isPending
+    ) {
+      return;
+    }
+
+    acceptDocumentMutation.mutate({
+      teammateId,
+      documentId: activeTask.outputDocumentId,
+      projectId: profileProjectId,
+    });
+  }
 
   function handleRequestRedo() {
     setIsRedoConfirmOpen(true);
@@ -534,7 +682,7 @@ export default function AgentTaskDetailModal({
       <Modal
         open={open}
         onClose={onClose}
-        title={task.title}
+        title={activeTask.title}
         size="wide"
         secondaryAction={
           showOverviewActions && onReject
@@ -556,7 +704,14 @@ export default function AgentTaskDetailModal({
                 pendingLabel: "Saving...",
                 disabled: acceptDisabled,
               }
-            : showOutputRedoAction
+            : showReviewMarkCompleteAction
+              ? {
+                  label: "Mark task complete",
+                  onClick: handleMarkComplete,
+                  isPending: acceptDocumentMutation.isPending,
+                  pendingLabel: "Marking complete...",
+                }
+              : showOutputRedoAction
               ? {
                   label: "Ask teammate to redo",
                   onClick: handleRequestRedo,
@@ -635,7 +790,17 @@ export default function AgentTaskDetailModal({
           </TabsPanel>
 
           <TabsPanel value="review">
-            <AgentTaskReviewPlaceholder />
+            <AgentTaskReviewContent
+              task={task}
+              teammateId={teammateId}
+              profileFrom={profileFrom}
+              profileProjectId={profileProjectId}
+              onClose={onClose}
+              onMarkComplete={
+                canMarkComplete ? handleMarkComplete : undefined
+              }
+              isMarkingComplete={acceptDocumentMutation.isPending}
+            />
           </TabsPanel>
         </Tabs>
       </div>

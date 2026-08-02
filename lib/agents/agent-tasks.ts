@@ -1,5 +1,8 @@
 import { AGENT_TASK_COUNT } from "@/lib/agents/agent-tasks-json";
-import { isAgentDocumentInReviewStage } from "@/lib/agents/agent-documents";
+import {
+  isAgentDocumentAccepted,
+  isAgentDocumentInReviewStage,
+} from "@/lib/agents/agent-documents";
 import {
   normalizeChatModelId,
   type ChatModelId,
@@ -15,6 +18,7 @@ export const AGENT_TASK_STATUS_OPTIONS = [
   { value: "pending", label: "Pending" },
   { value: "accepted", label: "Accepted" },
   { value: "in_review", label: "In Review" },
+  { value: "completed", label: "Completed" },
   { value: "rejected", label: "Rejected" },
 ] as const;
 
@@ -36,6 +40,14 @@ export function getAgentTaskDecisionStatus(
 
 export function getAgentTaskStatus(task: AgentTask): AgentTaskStatus {
   const decision = getAgentTaskDecisionStatus(task);
+
+  if (
+    decision === "accepted" &&
+    task.outputDocumentStatus &&
+    isAgentDocumentAccepted(task.outputDocumentStatus)
+  ) {
+    return "completed";
+  }
 
   if (
     decision === "accepted" &&
@@ -70,6 +82,8 @@ export function getAgentTaskStatusBadgeClassName(
     case "rejected":
       return "bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200";
     case "accepted":
+      return "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200";
+    case "completed":
       return "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200";
   }
 }
@@ -145,6 +159,21 @@ export function getAgentTaskOutputModelId(task: AgentTask): ChatModelId {
 
 export function hasAgentTaskOutput(task: AgentTask): boolean {
   return getAgentTaskOutputStatus(task) === "completed";
+}
+
+export function canMarkAgentTaskComplete(task: AgentTask): boolean {
+  const documentStatus = task.outputDocumentStatus;
+
+  if (!documentStatus) {
+    return false;
+  }
+
+  return (
+    getAgentTaskDecisionStatus(task) === "accepted" &&
+    hasAgentTaskOutput(task) &&
+    Boolean(task.outputDocumentId) &&
+    isAgentDocumentInReviewStage(documentStatus)
+  );
 }
 
 export function mergeGeneratedAgentTasks(

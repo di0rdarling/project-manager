@@ -309,7 +309,7 @@ export type UserMemoryResponse = {
 
 export type AgentTaskDecisionStatus = "pending" | "accepted" | "rejected";
 
-export type AgentTaskStatus = AgentTaskDecisionStatus | "in_review";
+export type AgentTaskStatus = AgentTaskDecisionStatus | "in_review" | "completed";
 
 /**
  * Lifecycle of the agent actually carrying out an accepted task.

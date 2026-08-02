@@ -144,6 +144,7 @@ function ReviewLayout({
           teammateId={teammateId}
           documentId={document._id}
           projectId={document.projectId}
+          documentStatus={document.status}
         />
       </div>
     </div>

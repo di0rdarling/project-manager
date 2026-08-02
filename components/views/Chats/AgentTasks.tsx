@@ -197,6 +197,21 @@ export default function AgentTasks({
   const isInitialLoading = Boolean(projectId) && isFetching && !agentTasks;
 
   useEffect(() => {
+    if (!selectedTask) {
+      return;
+    }
+
+    const updatedTask = tasks.find((item) => item.title === selectedTask.title);
+
+    if (
+      updatedTask &&
+      updatedTask.outputDocumentStatus !== selectedTask.outputDocumentStatus
+    ) {
+      setSelectedTask(updatedTask);
+    }
+  }, [tasks, selectedTask]);
+
+  useEffect(() => {
     if (!openTaskTitle || !projectId || isFetching) {
       return;
     }
