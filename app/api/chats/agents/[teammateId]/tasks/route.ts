@@ -1,5 +1,5 @@
 import { getChatTeammate } from "@/lib/chats/chat-teammates";
-import { loadAgentNotesContext } from "@/lib/agents/agent-notes-store";
+import { loadAgentTaskPromptContext } from "@/lib/agents/load-agent-task-prompt-context";
 import { parseAgentTasksJson } from "@/lib/agents/agent-tasks-json";
 import {
   canAcceptAgentTask,
@@ -26,12 +26,6 @@ import {
   parseTeammateId,
   serializeAgentTasksResponse,
 } from "@/lib/agents/agent-tasks-route-helpers";
-import { serializeUserMemoryForPrompt } from "@/lib/agents/user-memory-json";
-import { getUserMemory } from "@/lib/agents/user-memory-store";
-import {
-  getTeammateChatSummaries,
-  RECENT_CHAT_SUMMARY_LIMIT,
-} from "@/lib/chats/chat-summaries";
 import { requireUserId } from "@/lib/current-user";
 import { generateAgentTasks } from "@/lib/agent-task-generation";
 import { getChatProviderConfigError } from "@/lib/chat-generation";
@@ -194,28 +188,19 @@ export async function POST(request: Request, context: RouteContext) {
           .map((task) => ({ title: task.title, detail: task.detail }))
       : [];
 
-    const chatSummaries = await getTeammateChatSummaries(
+    const {
+      chatSummaries,
+      agentNotesContext,
+      existingOverviewContext,
+      agentTasksDocumentsContext,
+    } = await loadAgentTaskPromptContext(
       db,
       auth.userId,
       parsedTeammate.teammateId,
-      {
-        projectId: parsedProject.projectId,
-        limit: RECENT_CHAT_SUMMARY_LIMIT,
-      },
+      parsedProject.projectId,
     );
 
-    // Same standing notes and structured Overview a live chat reply from
-    // this teammate would have available — kept identical here so task
-    // suggestions never miss context the agent would otherwise know.
-    const [agentNotesContext, existingUserMemory, currentUser] = await Promise.all([
-      loadAgentNotesContext(db, auth.userId, parsedTeammate.teammateId),
-      getUserMemory(db, auth.userId, parsedTeammate.teammateId),
-      findUserById(db, auth.userId),
-    ]);
-    const existingOverviewContext = existingUserMemory
-      ? serializeUserMemoryForPrompt(existingUserMemory)
-      : undefined;
-
+    const currentUser = await findUserById(db, auth.userId);
     const userName = currentUser?.name ?? null;
     const agentTaskGenerationModelId =
       getUserAgentTaskGenerationModelId(currentUser);
@@ -243,6 +228,7 @@ export async function POST(request: Request, context: RouteContext) {
           chatSummaries,
           agentNotesContext,
           existingOverviewContext,
+          agentTasksDocumentsContext,
           userName,
           generatedAt,
           taskCount,

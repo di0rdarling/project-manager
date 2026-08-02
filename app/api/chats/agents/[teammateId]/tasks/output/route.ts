@@ -1,9 +1,9 @@
 import { ObjectId } from "mongodb";
 import { getChatTeammate } from "@/lib/chats/chat-teammates";
 import { canAccessAgentTaskOutputTabs } from "@/lib/agents/agent-tasks";
+import { loadAgentTaskPromptContext } from "@/lib/agents/load-agent-task-prompt-context";
 import {
   executeCreateAgentDocumentTool,
-  parseCreateAgentDocumentToolArgs,
 } from "@/lib/agents/agent-document-tool";
 import { deleteAgentDocument } from "@/lib/agents/agent-documents-store";
 import {
@@ -18,10 +18,12 @@ import {
   serializeAgentTasksResponse,
 } from "@/lib/agents/agent-tasks-route-helpers";
 import { requireUserId } from "@/lib/current-user";
-import { generateAgentTaskOutput } from "@/lib/gemini";
+import { generateAgentTaskOutput } from "@/lib/agent-task-output-generation";
+import { getChatProviderConfigError } from "@/lib/chat-generation";
 import getClientPromise from "@/lib/mongodb";
 import { getProjectContext } from "@/lib/project-context";
 import { buildAgentTaskOutputPrompt } from "@/lib/prompts/agent-task-output-prompt";
+import { KimiApiError } from "@/lib/kimi";
 import { findUserById } from "@/lib/users";
 
 type RouteContext = {
@@ -120,7 +122,28 @@ export async function POST(request: Request, context: RouteContext) {
     const generatedAt = new Date();
     const teammate = getChatTeammate(parsedTeammate.teammateId);
 
-    const toolCall = await generateAgentTaskOutput(
+    const {
+      chatSummaries,
+      agentNotesContext,
+      existingOverviewContext,
+      agentTasksDocumentsContext,
+    } = await loadAgentTaskPromptContext(
+      db,
+      auth.userId,
+      parsedTeammate.teammateId,
+      parsedProject.projectId,
+    );
+
+    const providerConfigError = getChatProviderConfigError(modelId);
+
+    if (providerConfigError) {
+      return Response.json(
+        { error: "AI task output generation is not configured" },
+        { status: 503 },
+      );
+    }
+
+    const toolArgs = await generateAgentTaskOutput(
       buildAgentTaskOutputPrompt({
         teammateId: parsedTeammate.teammateId,
         agentName: teammate.name,
@@ -128,13 +151,16 @@ export async function POST(request: Request, context: RouteContext) {
         projectName: project.name,
         projectContext,
         task,
+        chatSummaries,
+        agentNotesContext,
+        existingOverviewContext,
+        agentTasksDocumentsContext,
         userName,
         isRegenerate: regenerate,
         generatedAt,
       }),
       modelId,
     );
-    const toolArgs = parseCreateAgentDocumentToolArgs(toolCall.args);
 
     const document = await executeCreateAgentDocumentTool({
       db,
@@ -182,6 +208,10 @@ export async function POST(request: Request, context: RouteContext) {
       ),
     );
   } catch (error) {
+    if (error instanceof KimiApiError) {
+      return Response.json({ error: error.message }, { status: error.status });
+    }
+
     if (
       error instanceof Error &&
       error.message === "GEMINI_API_KEY is not configured"
@@ -192,8 +222,23 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
 
+    if (
+      error instanceof Error &&
+      (error.message.includes("create_document") ||
+        error.message.includes("JSON"))
+    ) {
+      return Response.json({ error: error.message }, { status: 502 });
+    }
+
+    console.error("Failed to generate task output:", error);
+
     return Response.json(
-      { error: "Failed to generate task output" },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to generate task output",
+      },
       { status: 500 },
     );
   }

@@ -1,8 +1,5 @@
 import { isChatTeammateId } from "@/lib/chats/chat-teammates";
-import {
-  getAllAgentTasksForTeammate,
-  type StoredAgentTasks,
-} from "@/lib/agents/agent-tasks-store";
+import { getAllAgentTasksForTeammate } from "@/lib/agents/agent-tasks-store";
 import {
   attachDocumentStatusToAgentTasks,
   getProjectNameForUser,
@@ -10,7 +7,6 @@ import {
 } from "@/lib/agents/agent-tasks-route-helpers";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
-import { AGENT_TASKS_COLLECTION } from "@/lib/agents/agent-tasks-store";
 import type { AgentTasksAllProjectsResponse } from "@/lib/types";
 
 type RouteContext = {

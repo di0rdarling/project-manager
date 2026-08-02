@@ -2,6 +2,10 @@ import { buildAiTeammatesMemoryRosterPrompt } from "@/lib/prompts/ai-teammates-r
 import { buildAiDateTimeContext } from "@/lib/prompts/ai-datetime-context";
 import { buildChatUserContextPrompt } from "@/lib/prompts/chat-user-context-prompt";
 import {
+  appendAgentTaskConversationHistorySection,
+  appendAgentTaskSupplementalContextSections,
+} from "@/lib/prompts/agent-task-shared-context-sections";
+import {
   CONCISE_RESPONSE_STYLE_GUIDE,
   CONTEXT_GROUNDING_STYLE_GUIDE,
   PLAIN_ENGLISH_STYLE_GUIDE,
@@ -10,6 +14,7 @@ import {
   getChatTeammatePersonalityTraits,
   type ChatTeammateId,
 } from "@/lib/chats/chat-teammates";
+import type { TeammateChatSummary } from "@/lib/chats/chat-summaries";
 import type { AgentTask } from "@/lib/types";
 
 type BuildAgentTaskOutputPromptInput = {
@@ -19,6 +24,10 @@ type BuildAgentTaskOutputPromptInput = {
   projectName: string;
   projectContext: string;
   task: AgentTask;
+  chatSummaries: TeammateChatSummary[];
+  agentNotesContext?: string | null;
+  existingOverviewContext?: string | null;
+  agentTasksDocumentsContext?: string | null;
   userName?: string | null;
   /** When true, the user asked for a fresh attempt — produce a new document. */
   isRegenerate?: boolean;
@@ -28,9 +37,10 @@ type BuildAgentTaskOutputPromptInput = {
 /**
  * Builds the prompt for actually producing the deliverable behind an
  * accepted agent task (the "Output" tab on the task detail modal). Reuses
- * the same identity/roster guardrails and personality traits as live chat
- * and task-suggestion prompts, so the produced content reads consistently
- * as this teammate's voice and work.
+ * the same identity/roster guardrails, personality traits, user notes,
+ * profile Overview, prior conversation history, and other tasks and
+ * deliverables as task-suggestion and live chat prompts, so the produced
+ * content reads consistently as this teammate's voice and work.
  */
 export function buildAgentTaskOutputPrompt({
   teammateId,
@@ -39,6 +49,10 @@ export function buildAgentTaskOutputPrompt({
   projectName,
   projectContext,
   task,
+  chatSummaries,
+  agentNotesContext,
+  existingOverviewContext,
+  agentTasksDocumentsContext,
   userName,
   isRegenerate = false,
   generatedAt,
@@ -73,6 +87,17 @@ export function buildAgentTaskOutputPrompt({
     `What you said you'd do: ${task.detail}`,
     `Why you suggested it: ${task.rationale}`,
     `What you said you'd produce: ${task.outputDescription}`,
+  );
+
+  appendAgentTaskSupplementalContextSections(sections, {
+    agentNotesContext,
+    existingOverviewContext,
+    agentTasksDocumentsContext,
+    overviewIntro:
+      "What you already know about your shared work with this user, from your profile Overview (most recently and stable context) — stay consistent with this while completing this task:",
+  });
+
+  sections.push(
     "",
     "---",
     "",
@@ -80,6 +105,14 @@ export function buildAgentTaskOutputPrompt({
     "",
     "Use this context to ground the deliverable in real specifics from the project — names, decisions, gaps — rather than generic content:",
     projectContext.trim(),
+  );
+
+  appendAgentTaskConversationHistorySection(sections, {
+    chatSummaries,
+    generatedAt,
+  });
+
+  sections.push(
     "",
     "---",
     "",

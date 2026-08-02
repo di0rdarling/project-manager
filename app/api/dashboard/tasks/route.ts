@@ -1,16 +1,10 @@
 import { CHAT_TEAMMATES } from "@/lib/chats/chat-teammates";
-import {
-  getAllAgentTasksForUser,
-  type StoredAgentTasks,
-} from "@/lib/agents/agent-tasks-store";
+import { getAllAgentTasksForUser } from "@/lib/agents/agent-tasks-store";
 import {
   attachDocumentStatusToAgentTasks,
   getProjectNameForUser,
 } from "@/lib/agents/agent-tasks-route-helpers";
-import {
-  getAgentTaskStatus,
-  getAgentTaskDecisionStatus,
-} from "@/lib/agents/agent-tasks";
+import { getAgentTaskStatus } from "@/lib/agents/agent-tasks";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";

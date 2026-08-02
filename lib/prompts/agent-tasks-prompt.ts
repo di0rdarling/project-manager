@@ -2,9 +2,12 @@ import {
   buildAiDateTimeContext,
   getAiRequestDateTime,
 } from "@/lib/prompts/ai-datetime-context";
-import { formatChatSummaries } from "@/lib/prompts/agent-memory-prompt";
 import { buildAiTeammatesMemoryRosterPrompt } from "@/lib/prompts/ai-teammates-roster";
 import { buildChatUserContextPrompt } from "@/lib/prompts/chat-user-context-prompt";
+import {
+  appendAgentTaskSupplementalContextSections,
+  buildAgentTaskConversationHistorySection,
+} from "@/lib/prompts/agent-task-shared-context-sections";
 import {
   CONCISE_RESPONSE_STYLE_GUIDE,
   CONTEXT_GROUNDING_STYLE_GUIDE,
@@ -52,6 +55,8 @@ type BuildAgentTasksPromptInput = {
    * about the user's setup.
    */
   existingOverviewContext?: string | null;
+  /** Tasks and deliverables across projects for this teammate, with statuses. */
+  agentTasksDocumentsContext?: string | null;
   userName?: string | null;
   generatedAt?: Date;
   taskCount?: number;
@@ -65,9 +70,10 @@ type BuildAgentTasksPromptInput = {
  * an agent's profile page. This intentionally mirrors every context source
  * fed into a live chat reply (see buildChatSystemPrompt in chat-prompt.ts) —
  * identity/roster guardrails, personality traits, user notes, project
- * context, and prior conversation history — so the agent reasons about
- * what it could do next as itself, with nothing missing that it would
- * otherwise have available mid-conversation.
+ * context, prior conversation history, profile Overview, and other tasks
+ * and deliverables — so the agent reasons about what it could do next as
+ * itself, with nothing missing that it would otherwise have available
+ * mid-conversation.
  */
 export function buildAgentTasksPrompt({
   teammateId,
@@ -78,6 +84,7 @@ export function buildAgentTasksPrompt({
   chatSummaries,
   agentNotesContext,
   existingOverviewContext,
+  agentTasksDocumentsContext,
   userName,
   generatedAt,
   taskCount = AGENT_TASK_COUNT,
@@ -87,14 +94,6 @@ export function buildAgentTasksPrompt({
 }: BuildAgentTasksPromptInput): string {
   const requestedAt = getAiRequestDateTime(generatedAt);
   const resolvedUserName = userName?.trim() || "the user";
-
-  const conversationSection =
-    chatSummaries.length > 0
-      ? [
-          "Recent conversations with this teammate about this project:",
-          formatChatSummaries(chatSummaries, requestedAt),
-        ].join("\n")
-      : "No prior conversations with this teammate about this project yet.";
 
   const sections = [
     buildAiTeammatesMemoryRosterPrompt(teammateId),
@@ -119,7 +118,7 @@ export function buildAgentTasksPrompt({
     "",
     "### How to choose what to suggest",
     "",
-    `Before writing tasks, read the project context, conversation history, Overview, and agent notes together to understand what ${resolvedUserName} is actually focused on right now — the area they're actively working in, the decisions they've made, and the direction they've committed to. Your job is not to list everything that could theoretically be done; it is to help them make progress on what matters now, from within your own lane.`,
+    `Before writing tasks, read the project context, conversation history, Overview, agent notes, and your existing tasks and deliverables together to understand what ${resolvedUserName} is actually focused on right now — the area they're actively working in, the decisions they've made, and the direction they've committed to. Your job is not to list everything that could theoretically be done; it is to help them make progress on what matters now, from within your own lane.`,
     "",
     "From that picture, each task should do one of two things (or both), always filtered through what you specifically are responsible for:",
     "1. **Fill a gap within their current focus, in your area** — something missing, incomplete, or unvalidated in the area they're already concentrating on, but only if closing it is your job (e.g. a business analyst finds requirements with no linked pain point; a solution architect finds a design with no failure-mode analysis; a marketing strategist finds positioning with no ICP). Name the gap explicitly in `rationale`.",
@@ -164,17 +163,13 @@ export function buildAgentTasksPrompt({
     );
   }
 
-  if (agentNotesContext?.trim()) {
-    sections.push("", agentNotesContext.trim());
-  }
-
-  if (existingOverviewContext?.trim()) {
-    sections.push(
-      "",
+  appendAgentTaskSupplementalContextSections(sections, {
+    agentNotesContext,
+    existingOverviewContext,
+    agentTasksDocumentsContext,
+    overviewIntro:
       "What you already know about your shared work with this user, from your profile Overview (most recently and stable context) — stay consistent with this, do not suggest tasks that contradict or repeat it:",
-      existingOverviewContext.trim(),
-    );
-  }
+  });
 
   sections.push(
     "",
@@ -189,7 +184,10 @@ export function buildAgentTasksPrompt({
     "",
     "### Conversation history",
     "",
-    conversationSection,
+    buildAgentTaskConversationHistorySection({
+      chatSummaries,
+      generatedAt: requestedAt,
+    }),
     "",
     "---",
     "",
