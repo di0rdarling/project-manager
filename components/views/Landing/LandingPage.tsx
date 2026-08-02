@@ -751,7 +751,7 @@ function AIChatsDetailMockupMobile() {
             Report generation approach
           </p>
           <p className="truncate text-[11px] text-zinc-500 dark:text-zinc-400">
-            Arlo · {MOCK_PROJECT_NAME}
+            Arlo · Solution Architect · {MOCK_PROJECT_NAME}
           </p>
         </div>
       </div>
@@ -932,12 +932,6 @@ export default function LandingPage() {
             </h2>
             <p className="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl lg:text-balance dark:text-white">
               All your project intelligence, in one place.
-            </p>
-            <p className="mt-6 text-lg/8 text-gray-600 dark:text-gray-300">
-              No more scattered notes and overwhelming information. Your
-              project&apos;s requirements, features, tools, and AI
-              conversations stay connected, so you always have the clarity
-              you need.
             </p>
           </div>
           <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
