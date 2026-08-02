@@ -195,3 +195,33 @@ export function mergeGeneratedAgentTasks(
     ...generatedTasks.map((task) => ({ ...task, status: "pending" as const })),
   ];
 }
+
+export function canReplaceAgentTask(
+  tasks: AgentTask[],
+  taskTitle: string,
+): boolean {
+  const task = tasks.find((item) => item.title === taskTitle);
+
+  if (!task) {
+    return false;
+  }
+
+  return getAgentTaskDecisionStatus(task) !== "accepted";
+}
+
+export function replaceGeneratedAgentTask(
+  existingTasks: AgentTask[],
+  taskTitle: string,
+  generatedTask: AgentTask,
+): AgentTask[] {
+  const taskIndex = existingTasks.findIndex((item) => item.title === taskTitle);
+
+  if (taskIndex === -1) {
+    throw new Error("Task not found");
+  }
+
+  const updatedTasks = [...existingTasks];
+  updatedTasks[taskIndex] = { ...generatedTask, status: "pending" as const };
+
+  return updatedTasks;
+}

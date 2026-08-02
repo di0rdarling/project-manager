@@ -8,6 +8,10 @@ export type AgentTasksRequest = {
   projectId: string;
 };
 
+export type GenerateAgentTasksRequest = AgentTasksRequest & {
+  replaceTaskTitle?: string;
+};
+
 export type UpdateAgentTaskStatusRequest = AgentTasksRequest & {
   taskTitle: string;
   status: "accepted" | "rejected";
@@ -45,10 +49,17 @@ export async function fetchAgentTasks(
 }
 
 export async function generateAgentTasksRequest(
-  input: AgentTasksRequest,
+  input: GenerateAgentTasksRequest,
 ): Promise<AgentTasksResponse> {
-  const response = await fetch(getAgentTasksUrl(input), {
+  const { replaceTaskTitle, ...request } = input;
+  const response = await fetch(getAgentTasksUrl(request), {
     method: "POST",
+    headers: replaceTaskTitle
+      ? { "Content-Type": "application/json" }
+      : undefined,
+    body: replaceTaskTitle
+      ? JSON.stringify({ replaceTaskTitle })
+      : undefined,
   });
 
   return parseResponse<AgentTasksResponse>(response);

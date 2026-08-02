@@ -7,13 +7,13 @@ import {
 } from "@tanstack/react-query";
 import {
   generateAgentTasksRequest,
-  type AgentTasksRequest,
+  type GenerateAgentTasksRequest,
 } from "@/lib/api/agent-tasks";
 import { agentTasksKeys } from "@/lib/query-keys";
 import type { AgentTasksResponse } from "@/lib/types";
 
 type UseGenerateAgentTasksOptions = Omit<
-  UseMutationOptions<AgentTasksResponse, Error, AgentTasksRequest>,
+  UseMutationOptions<AgentTasksResponse, Error, GenerateAgentTasksRequest>,
   "mutationFn"
 >;
 

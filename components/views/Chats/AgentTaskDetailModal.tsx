@@ -64,6 +64,8 @@ type AgentTaskDetailModalProps = {
   onStartOutput?: (input: StartAgentTaskOutputInput) => void;
   isStartingOutput?: boolean;
   isRegeneratingOutput?: boolean;
+  onGenerateAlternative?: () => void;
+  isGeneratingAlternative?: boolean;
 };
 
 type DetailBlock = {
@@ -74,13 +76,54 @@ type DetailBlock = {
   iconClassName: string;
 };
 
+function AgentTaskOverviewSkeleton() {
+  return (
+    <div className="space-y-5 animate-pulse" aria-hidden>
+      <div className="space-y-2">
+        <div className="h-4 w-full rounded bg-zinc-200 dark:bg-zinc-700" />
+        <div className="h-4 w-5/6 rounded bg-zinc-200 dark:bg-zinc-700" />
+      </div>
+      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="h-3 w-28 rounded bg-zinc-200 dark:bg-zinc-700" />
+        <div className="mt-3 space-y-2">
+          <div className="h-3 w-full rounded bg-zinc-200 dark:bg-zinc-700" />
+          <div className="h-3 w-4/5 rounded bg-zinc-200 dark:bg-zinc-700" />
+        </div>
+      </div>
+      <div className="space-y-4">
+        {[0, 1, 2].map((index) => (
+          <div
+            key={index}
+            className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900"
+          >
+            <div className="h-3 w-40 rounded bg-zinc-200 dark:bg-zinc-700" />
+            <div className="mt-3 space-y-2">
+              <div className="h-3 w-full rounded bg-zinc-200 dark:bg-zinc-700" />
+              <div className="h-3 w-full rounded bg-zinc-200 dark:bg-zinc-700" />
+              <div className="h-3 w-3/4 rounded bg-zinc-200 dark:bg-zinc-700" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AgentTaskOverviewContent({
   task,
   blocks,
+  onGenerateAlternative,
+  isGeneratingAlternative = false,
 }: Readonly<{
   task: AgentTask;
   blocks: DetailBlock[];
+  onGenerateAlternative?: () => void;
+  isGeneratingAlternative?: boolean;
 }>) {
+  if (isGeneratingAlternative) {
+    return <AgentTaskOverviewSkeleton />;
+  }
+
   return (
     <div className="space-y-5">
       <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
@@ -123,6 +166,19 @@ function AgentTaskOverviewContent({
           ) : null,
         )}
       </div>
+
+      {onGenerateAlternative ? (
+        <div className="flex justify-end border-t border-zinc-200 pt-4 dark:border-zinc-800">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onGenerateAlternative}
+            disabled={isGeneratingAlternative}
+          >
+            Generate alternative
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -567,6 +623,8 @@ export default function AgentTaskDetailModal({
   onStartOutput,
   isStartingOutput = false,
   isRegeneratingOutput = false,
+  onGenerateAlternative,
+  isGeneratingAlternative = false,
 }: Readonly<AgentTaskDetailModalProps>) {
   const [activeTab, setActiveTab] = useState("overview");
   const [isRedoConfirmOpen, setIsRedoConfirmOpen] = useState(false);
@@ -644,7 +702,9 @@ export default function AgentTaskDetailModal({
   const outputStatus = getAgentTaskOutputStatus(activeTask);
   const outputTabsEnabled = canAccessAgentTaskOutputTabs(activeTask);
   const showOverviewActions =
-    activeTab === "overview" && Boolean(onAccept || onReject);
+    activeTab === "overview" &&
+    Boolean(onAccept || onReject) &&
+    !isGeneratingAlternative;
   const showOutputRedoAction =
     activeTab === "output" &&
     isAccepted &&
@@ -844,7 +904,12 @@ export default function AgentTaskDetailModal({
           </TabsList>
 
           <TabsPanel value="overview">
-            <AgentTaskOverviewContent task={task} blocks={blocks} />
+            <AgentTaskOverviewContent
+              task={task}
+              blocks={blocks}
+              onGenerateAlternative={onGenerateAlternative}
+              isGeneratingAlternative={isGeneratingAlternative}
+            />
           </TabsPanel>
 
           <TabsPanel value="output">

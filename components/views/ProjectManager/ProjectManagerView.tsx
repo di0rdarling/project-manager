@@ -11,6 +11,8 @@ import PageContent from "@/components/layout/PageContent";
 import CreateProjectModal from "./modals/CreateProjectModal";
 import CrossProjectAIDigest from "./CrossProjectAIDigest";
 import DashboardStats from "./DashboardStats";
+import HomepageRecentChatsSection from "./HomepageRecentChatsSection";
+import HomepageTeammatesSection from "./HomepageTeammatesSection";
 import ProjectManagerList from "./ProjectManagerList";
 
 function getGreeting(): string {
@@ -56,6 +58,10 @@ export default function ProjectManagerView() {
       <DashboardStats />
 
       <CrossProjectAIDigest />
+
+      <HomepageTeammatesSection />
+
+      <HomepageRecentChatsSection />
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">

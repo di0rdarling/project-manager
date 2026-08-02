@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { LightBulbIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { useQuery } from "@tanstack/react-query";
 import { Avatar } from "@/components/ui/Avatar";
@@ -8,6 +9,7 @@ import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useGenerateDashboardDigest } from "@/hooks/mutations/dashboard/useGenerateDashboardDigest";
 import { getChatTeammate } from "@/lib/chats/chat-teammates";
+import { getTeammateProfileHref } from "@/lib/chats/agent-profile-navigation";
 import { dashboardKeys } from "@/lib/query-keys";
 import type { DashboardDigestResponse } from "@/lib/types";
 
@@ -43,21 +45,30 @@ export default function CrossProjectAIDigest() {
     <section className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Avatar
-            initials={jordan.avatarInitials}
-            src={jordan.avatarImageSrc}
-            alt={jordan.name}
-            colorClassName={jordan.avatarColorClassName}
-            size="md"
-          />
+          <Link
+            href={getTeammateProfileHref(jordan.id)}
+            className="shrink-0 transition hover:opacity-80"
+            aria-label={`View ${jordan.name}'s profile`}
+          >
+            <Avatar
+              initials={jordan.avatarInitials}
+              src={jordan.avatarImageSrc}
+              alt={jordan.name}
+              colorClassName={jordan.avatarColorClassName}
+              size="md"
+            />
+          </Link>
           <div>
-            <h2 className="inline-flex items-center gap-2 text-lg font-semibold">
+            <Link
+              href={getTeammateProfileHref(jordan.id)}
+              className="inline-flex items-center gap-2 text-lg font-semibold transition hover:text-zinc-700 dark:hover:text-zinc-300"
+            >
               {jordan.name}&apos;s update
               <SparklesIcon
                 className="size-5 text-zinc-500 dark:text-zinc-400"
                 aria-hidden
               />
-            </h2>
+            </Link>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               {jordan.role}
             </p>

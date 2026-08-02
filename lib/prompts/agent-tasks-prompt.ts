@@ -56,6 +56,8 @@ type BuildAgentTasksPromptInput = {
   generatedAt?: Date;
   taskCount?: number;
   acceptedTasks?: Array<Pick<AgentTask, "title" | "detail">>;
+  replaceTask?: Pick<AgentTask, "title" | "detail">;
+  otherTasks?: Array<Pick<AgentTask, "title" | "detail">>;
 };
 
 /**
@@ -80,6 +82,8 @@ export function buildAgentTasksPrompt({
   generatedAt,
   taskCount = AGENT_TASK_COUNT,
   acceptedTasks = [],
+  replaceTask,
+  otherTasks = [],
 }: BuildAgentTasksPromptInput): string {
   const requestedAt = getAiRequestDateTime(generatedAt);
   const resolvedUserName = userName?.trim() || "the user";
@@ -124,6 +128,16 @@ export function buildAgentTasksPrompt({
     "Do not suggest tasks in areas the user has explicitly deprioritised, paused, or not yet started unless the context shows a critical blocker that will stall their current focus if left unaddressed. When in doubt, stay close to where the energy and attention already are — and within your lane.",
   ];
 
+  if (replaceTask) {
+    sections.push(
+      "",
+      "### Task to replace with an alternative",
+      "",
+      `${resolvedUserName} wants a different suggestion in place of this task. Do not repeat, lightly rephrase, or supersede it — propose something genuinely different that still fits your role and the project's current focus:`,
+      `1. ${replaceTask.title}\n   ${replaceTask.detail}`,
+    );
+  }
+
   if (acceptedTasks.length > 0) {
     sections.push(
       "",
@@ -131,6 +145,19 @@ export function buildAgentTasksPrompt({
       "",
       `${resolvedUserName} has already accepted the following tasks. These are locked in — do not suggest overlapping, duplicate, or superseding work. Your new suggestions must fill the remaining open slots only:`,
       ...acceptedTasks.map(
+        (task, index) =>
+          `${index + 1}. ${task.title}\n   ${task.detail}`,
+      ),
+    );
+  }
+
+  if (otherTasks.length > 0) {
+    sections.push(
+      "",
+      "### Other current tasks",
+      "",
+      "These tasks are already on the list. Do not suggest overlapping, duplicate, or superseding work:",
+      ...otherTasks.map(
         (task, index) =>
           `${index + 1}. ${task.title}\n   ${task.detail}`,
       ),

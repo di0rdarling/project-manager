@@ -4,11 +4,13 @@ import { parseAgentTasksJson } from "@/lib/agents/agent-tasks-json";
 import {
   canAcceptAgentTask,
   canGenerateAgentTasks,
+  canReplaceAgentTask,
   getAcceptedAgentTasks,
   getAgentTaskGenerationSlots,
   mergeGeneratedAgentTasks,
   normalizeAgentTasksProjectName,
   parseAgentTaskStatus,
+  replaceGeneratedAgentTask,
 } from "@/lib/agents/agent-tasks";
 import { AGENT_TASK_COUNT } from "@/lib/agents/agent-tasks-json";
 import {
@@ -140,7 +142,36 @@ export async function POST(request: Request, context: RouteContext) {
     );
     const existingTasks = existingRecord?.tasks ?? [];
 
-    if (!canGenerateAgentTasks(existingTasks)) {
+    let replaceTaskTitle = "";
+    const contentType = request.headers.get("content-type");
+
+    if (contentType?.includes("application/json")) {
+      const body = (await request.json()) as { replaceTaskTitle?: unknown };
+      replaceTaskTitle =
+        typeof body.replaceTaskTitle === "string"
+          ? body.replaceTaskTitle.trim()
+          : "";
+    }
+
+    if (replaceTaskTitle) {
+      const taskToReplace = existingTasks.find(
+        (task) => task.title === replaceTaskTitle,
+      );
+
+      if (!taskToReplace) {
+        return Response.json({ error: "Task not found" }, { status: 404 });
+      }
+
+      if (!canReplaceAgentTask(existingTasks, replaceTaskTitle)) {
+        return Response.json(
+          {
+            error:
+              "Accepted tasks cannot be replaced. Generate an alternative for a pending task instead.",
+          },
+          { status: 409 },
+        );
+      }
+    } else if (!canGenerateAgentTasks(existingTasks)) {
       return Response.json(
         {
           error:
@@ -151,7 +182,17 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const acceptedTasks = getAcceptedAgentTasks(existingTasks);
-    const taskCount = getAgentTaskGenerationSlots(existingTasks);
+    const taskCount = replaceTaskTitle
+      ? 1
+      : getAgentTaskGenerationSlots(existingTasks);
+    const taskToReplace = replaceTaskTitle
+      ? existingTasks.find((task) => task.title === replaceTaskTitle)
+      : undefined;
+    const otherTasks = replaceTaskTitle
+      ? existingTasks
+          .filter((task) => task.title !== replaceTaskTitle)
+          .map((task) => ({ title: task.title, detail: task.detail }))
+      : [];
 
     const chatSummaries = await getTeammateChatSummaries(
       db,
@@ -206,6 +247,10 @@ export async function POST(request: Request, context: RouteContext) {
           generatedAt,
           taskCount,
           acceptedTasks,
+          replaceTask: taskToReplace
+            ? { title: taskToReplace.title, detail: taskToReplace.detail }
+            : undefined,
+          otherTasks,
         }),
         agentTaskGenerationModelId,
       ),
@@ -213,10 +258,17 @@ export async function POST(request: Request, context: RouteContext) {
       project.name,
     );
     const now = generatedAt.toISOString();
-    const mergedTasks = mergeGeneratedAgentTasks(
-      existingTasks,
-      normalizeAgentTasksProjectName(draft.tasks, project.name),
+    const normalizedGeneratedTasks = normalizeAgentTasksProjectName(
+      draft.tasks,
+      project.name,
     );
+    const mergedTasks = replaceTaskTitle
+      ? replaceGeneratedAgentTask(
+          existingTasks,
+          replaceTaskTitle,
+          normalizedGeneratedTasks[0],
+        )
+      : mergeGeneratedAgentTasks(existingTasks, normalizedGeneratedTasks);
     const stored = await upsertAgentTasks(
       db,
       auth.userId,

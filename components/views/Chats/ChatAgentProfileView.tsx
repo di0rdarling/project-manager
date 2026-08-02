@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import PageContent from "@/components/layout/PageContent";
 import { Avatar } from "@/components/ui/Avatar";
+import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import {
   getChatTeammateById,
@@ -13,11 +15,14 @@ import {
 } from "@/lib/chats/chat-teammates";
 import {
   getAgentProfileBackNavigation,
+  getChatDetailHref,
   parseAgentProfileNavigationContext,
 } from "@/lib/chats/agent-profile-navigation";
 import AIAgentDocumentsSection from "@/components/views/Chats/AIAgentDocumentsSection";
 import AIAgentNotesSection from "@/components/views/Chats/AIAgentNotesSection";
 import AgentUserMemoryOverview from "@/components/views/Chats/AgentUserMemoryOverview";
+import CreateChatModal from "@/components/views/Chats/modals/CreateChatModal";
+import ProjectSelectModal from "@/components/views/Chats/modals/ProjectSelectModal";
 
 interface ChatAgentProfileViewProps {
   teammateId: string;
@@ -26,9 +31,38 @@ interface ChatAgentProfileViewProps {
 export default function ChatAgentProfileView({
   teammateId,
 }: Readonly<ChatAgentProfileViewProps>) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const navigationContext = parseAgentProfileNavigationContext(searchParams);
   const backNavigation = getAgentProfileBackNavigation(navigationContext);
+  const [isProjectSelectOpen, setIsProjectSelectOpen] = useState(false);
+  const [isCreateChatOpen, setIsCreateChatOpen] = useState(false);
+  const [chatProjectId, setChatProjectId] = useState<string | null>(
+    navigationContext.projectId ?? null,
+  );
+
+  function handleStartChat() {
+    if (navigationContext.projectId) {
+      setChatProjectId(navigationContext.projectId);
+      setIsCreateChatOpen(true);
+    } else {
+      setIsProjectSelectOpen(true);
+    }
+  }
+
+  function handleProjectSelected(projectId: string) {
+    setChatProjectId(projectId);
+    setIsProjectSelectOpen(false);
+    setIsCreateChatOpen(true);
+  }
+
+  function handleChatCreated(chatId: string) {
+    if (chatProjectId) {
+      router.push(getChatDetailHref(chatId, chatProjectId));
+    } else {
+      router.push(`/chats/${chatId}`);
+    }
+  }
 
   if (!isChatTeammateId(teammateId)) {
     return (
@@ -68,7 +102,7 @@ export default function ChatAgentProfileView({
           size="md"
           className="size-20 text-xl"
         />
-        <div className="space-y-2">
+        <div className="min-w-0 flex-1 space-y-2">
           <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
             AI Teammate
           </p>
@@ -80,6 +114,9 @@ export default function ChatAgentProfileView({
             {teammate.description}
           </p>
         </div>
+        <Button type="button" onClick={handleStartChat} className="shrink-0">
+          Start chat
+        </Button>
       </div>
 
       <AgentUserMemoryOverview
@@ -114,6 +151,23 @@ export default function ChatAgentProfileView({
           ))}
         </ul>
       </section>
+
+      <ProjectSelectModal
+        open={isProjectSelectOpen}
+        onClose={() => setIsProjectSelectOpen(false)}
+        onSelect={handleProjectSelected}
+        title={`Start a chat with ${teammate.name}`}
+      />
+
+      {chatProjectId ? (
+        <CreateChatModal
+          open={isCreateChatOpen}
+          onClose={() => setIsCreateChatOpen(false)}
+          onSuccess={handleChatCreated}
+          projectId={chatProjectId}
+          defaultTeammateId={teammateId}
+        />
+      ) : null}
     </PageContent>
   );
 }

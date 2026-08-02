@@ -21,7 +21,7 @@ import { useStartAgentTaskOutput } from "@/hooks/mutations/chats/useStartAgentTa
 import { useUpdateAgentTaskStatus } from "@/hooks/mutations/chats/useUpdateAgentTaskStatus";
 import { useFetchAgentTasks } from "@/hooks/queries/useFetchAgentTasks";
 import { agentDocumentKeys } from "@/lib/query-keys";
-import { getAgentTaskStatus, getAgentTaskStatusBadgeClassName, getAgentTaskStatusLabel, getAgentTaskProjectBadgeClassName, getAgentTaskProjectName, canGenerateAgentTasks, canAcceptAgentTask, getAcceptedAgentTasks, getAgentTaskDecisionStatus } from "@/lib/agents/agent-tasks";
+import { getAgentTaskStatus, getAgentTaskStatusBadgeClassName, getAgentTaskStatusLabel, getAgentTaskProjectBadgeClassName, getAgentTaskProjectName, canGenerateAgentTasks, canAcceptAgentTask, canReplaceAgentTask, getAcceptedAgentTasks, getAgentTaskDecisionStatus } from "@/lib/agents/agent-tasks";
 import { parseAgentProfileNavigationContext, AGENT_PROFILE_TASK_TITLE_PARAM, AGENT_TASKS_SECTION_ID } from "@/lib/chats/agent-profile-navigation";
 import type { StartAgentTaskOutputInput } from "@/lib/api/agent-tasks";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
@@ -31,6 +31,26 @@ type AgentTasksProps = {
   teammateId: ChatTeammateId;
   projectId: string | null | undefined;
 };
+
+function AgentTaskListItemSkeleton() {
+  return (
+    <li className="px-4 py-3" aria-hidden>
+      <div className="flex items-start gap-3 animate-pulse">
+        <div className="mt-0.5 size-4 shrink-0 rounded bg-zinc-200 dark:bg-zinc-700" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="h-4 w-48 max-w-full rounded bg-zinc-200 dark:bg-zinc-700" />
+            <div className="h-5 w-16 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+          </div>
+          <div className="space-y-1.5">
+            <div className="h-3 w-full rounded bg-zinc-200 dark:bg-zinc-700" />
+            <div className="h-3 w-4/5 rounded bg-zinc-200 dark:bg-zinc-700" />
+          </div>
+        </div>
+      </div>
+    </li>
+  );
+}
 
 export default function AgentTasks({
   teammateId,
@@ -46,6 +66,8 @@ export default function AgentTasks({
   const [selectedTask, setSelectedTask] = useState<AgentTask | null>(null);
   const isRegeneratingRef = useRef(false);
   const isRegeneratingOutputRef = useRef(false);
+  const replacingTaskIndexRef = useRef<number | null>(null);
+  const openTaskForAlternativeRef = useRef<string | null>(null);
 
   const {
     data: agentTasks,
@@ -60,8 +82,26 @@ export default function AgentTasks({
     isError: isGenerateError,
     error: generateError,
     reset: resetGenerate,
+    variables: generateTasksVariables,
   } = useGenerateAgentTasks({
-    onSuccess: (response) => {
+    onSuccess: (response, input) => {
+      if (input.replaceTaskTitle) {
+        const replacedTaskIndex = replacingTaskIndexRef.current;
+
+        if (
+          replacedTaskIndex !== null &&
+          replacedTaskIndex >= 0 &&
+          openTaskForAlternativeRef.current === input.replaceTaskTitle
+        ) {
+          setSelectedTask(response.tasks[replacedTaskIndex] ?? null);
+        }
+
+        replacingTaskIndexRef.current = null;
+        openTaskForAlternativeRef.current = null;
+        toast.success("Alternative task generated.");
+        return;
+      }
+
       const acceptedCount = getAcceptedAgentTasks(response.tasks).length;
 
       if (isRegeneratingRef.current) {
@@ -188,6 +228,21 @@ export default function AgentTasks({
     generateTasks({ teammateId, projectId });
   }
 
+  function handleGenerateAlternative(taskTitle: string) {
+    if (!projectId) {
+      return;
+    }
+
+    replacingTaskIndexRef.current = tasks.findIndex(
+      (task) => task.title === taskTitle,
+    );
+    openTaskForAlternativeRef.current =
+      selectedTask?.title === taskTitle ? taskTitle : null;
+    isRegeneratingRef.current = false;
+    resetGenerate();
+    generateTasks({ teammateId, projectId, replaceTaskTitle: taskTitle });
+  }
+
   function handleDeleteModalClose() {
     if (deleteTasksMutation.isPending) {
       return;
@@ -203,6 +258,9 @@ export default function AgentTasks({
   const acceptedTaskCount = getAcceptedAgentTasks(tasks).length;
   const canGenerateMoreTasks = canGenerateAgentTasks(tasks);
   const isInitialLoading = Boolean(projectId) && isFetching && !agentTasks;
+  const replacingTaskTitle = generateTasksVariables?.replaceTaskTitle;
+  const isReplacingTask = isGenerating && Boolean(replacingTaskTitle);
+  const isBulkGenerating = isGenerating && !replacingTaskTitle;
 
   useEffect(() => {
     if (!selectedTask) {
@@ -291,7 +349,7 @@ export default function AgentTasks({
 
         {isInitialLoading ? (
           <LoadingMessage>Loading tasks...</LoadingMessage>
-        ) : isGenerating ? (
+        ) : isBulkGenerating ? (
           <LoadingMessage>
             {isRegeneratingRef.current
               ? acceptedTaskCount > 0
@@ -320,69 +378,91 @@ export default function AgentTasks({
                 const taskStatus = getAgentTaskStatus(task);
                 const isRejected = taskStatus === "rejected";
                 const taskProjectName = getAgentTaskProjectName(task, projectName);
+                const isGeneratingAlternative =
+                  isReplacingTask && replacingTaskTitle === task.title;
+                const canGenerateAlternative =
+                  canReplaceAgentTask(tasks, task.title) && !isGenerating;
+
+                if (isGeneratingAlternative) {
+                  return <AgentTaskListItemSkeleton key={task.title} />;
+                }
 
                 return (
                   <li key={task.title}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTask(task)}
-                      className={`flex w-full items-start gap-3 px-4 py-3 text-left transition ${
-                        isRejected
-                          ? "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30"
-                          : "hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
-                      }`}
-                    >
-                      <ClipboardDocumentCheckIcon
-                        className={`mt-0.5 size-4 shrink-0 ${
+                    <div className="flex items-start gap-2 px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTask(task)}
+                        className={`flex min-w-0 flex-1 items-start gap-3 text-left transition ${
                           isRejected
-                            ? "text-zinc-300 dark:text-zinc-600"
-                            : "text-zinc-400 dark:text-zinc-500"
-                        }`}
-                        aria-hidden
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
+                            ? "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30"
+                            : "hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
+                        } -mx-2 rounded-xl px-2 py-1`}
+                      >
+                        <ClipboardDocumentCheckIcon
+                          className={`mt-0.5 size-4 shrink-0 ${
+                            isRejected
+                              ? "text-zinc-300 dark:text-zinc-600"
+                              : "text-zinc-400 dark:text-zinc-500"
+                          }`}
+                          aria-hidden
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p
+                              className={`text-sm font-medium ${
+                                isRejected
+                                  ? "text-zinc-400 dark:text-zinc-500"
+                                  : "text-zinc-800 dark:text-zinc-100"
+                              }`}
+                            >
+                              {task.title}
+                            </p>
+                            <span
+                              className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentTaskStatusBadgeClassName(taskStatus)}`}
+                            >
+                              {getAgentTaskStatusLabel(taskStatus)}
+                            </span>
+                            {taskProjectName ? (
+                              <span
+                                className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentTaskProjectBadgeClassName()}`}
+                              >
+                                {taskProjectName}
+                              </span>
+                            ) : null}
+                          </div>
                           <p
-                            className={`text-sm font-medium ${
+                            className={`mt-1 text-sm leading-relaxed ${
                               isRejected
                                 ? "text-zinc-400 dark:text-zinc-500"
-                                : "text-zinc-800 dark:text-zinc-100"
+                                : "text-zinc-600 dark:text-zinc-300"
                             }`}
                           >
-                            {task.title}
+                            {task.detail}
                           </p>
-                          <span
-                            className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentTaskStatusBadgeClassName(taskStatus)}`}
-                          >
-                            {getAgentTaskStatusLabel(taskStatus)}
-                          </span>
-                          {taskProjectName ? (
-                            <span
-                              className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentTaskProjectBadgeClassName()}`}
-                            >
-                              {taskProjectName}
-                            </span>
-                          ) : null}
                         </div>
-                        <p
-                          className={`mt-1 text-sm leading-relaxed ${
+                        <ChevronRightIcon
+                          className={`mt-0.5 size-4 shrink-0 ${
                             isRejected
-                              ? "text-zinc-400 dark:text-zinc-500"
-                              : "text-zinc-600 dark:text-zinc-300"
+                              ? "text-zinc-300 dark:text-zinc-600"
+                              : "text-zinc-400 dark:text-zinc-500"
                           }`}
-                        >
-                          {task.detail}
-                        </p>
-                      </div>
-                      <ChevronRightIcon
-                        className={`mt-0.5 size-4 shrink-0 ${
-                          isRejected
-                            ? "text-zinc-300 dark:text-zinc-600"
-                            : "text-zinc-400 dark:text-zinc-500"
-                        }`}
-                        aria-hidden
-                      />
-                    </button>
+                          aria-hidden
+                        />
+                      </button>
+                      {canGenerateAlternative ? (
+                        <ItemActionsMenu
+                          menuLabel={`Actions for ${task.title}`}
+                          actions={[
+                            regenerateItemAction(
+                              "Generate alternative",
+                              () => handleGenerateAlternative(task.title),
+                              isGenerating,
+                            ),
+                          ]}
+                        />
+                      ) : null}
+                    </div>
                   </li>
                 );
               })}
@@ -459,6 +539,14 @@ export default function AgentTasks({
         isStartingOutput={startTaskOutputMutation.isPending}
         isRegeneratingOutput={
           startTaskOutputMutation.variables?.regenerate === true
+        }
+        onGenerateAlternative={
+          selectedTask && canReplaceAgentTask(tasks, selectedTask.title)
+            ? () => handleGenerateAlternative(selectedTask.title)
+            : undefined
+        }
+        isGeneratingAlternative={
+          isReplacingTask && replacingTaskTitle === selectedTask?.title
         }
       />
     </>
