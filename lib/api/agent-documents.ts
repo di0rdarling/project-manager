@@ -1,4 +1,7 @@
-import type { AgentDocumentResponse } from "@/lib/types";
+import type {
+  AgentDocumentResponse,
+  RejectAgentDocumentResponse,
+} from "@/lib/types";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import { parseResponse } from "@/lib/api/response";
 
@@ -47,6 +50,15 @@ export async function acceptAgentDocument(input: {
 export async function rejectAgentDocument(input: {
   teammateId: ChatTeammateId;
   documentId: string;
-}): Promise<AgentDocumentResponse> {
-  return updateAgentDocumentReviewStatus({ ...input, status: "rejected" });
+}): Promise<RejectAgentDocumentResponse> {
+  const { teammateId, documentId } = input;
+  const response = await fetch(
+    `/api/chats/agents/${teammateId}/documents/${documentId}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "rejected" }),
+    },
+  );
+  return parseResponse<RejectAgentDocumentResponse>(response);
 }

@@ -9,10 +9,11 @@ import {
   getAgentDocumentById,
   updateAgentDocumentStatus,
 } from "@/lib/agents/agent-documents-store";
+import { rejectAndDeleteAgentTaskByDocumentId } from "@/lib/agents/reject-agent-task";
 import {
-  findAgentTaskByDocumentId,
-  updateAgentTaskStatus,
-} from "@/lib/agents/agent-tasks-store";
+  getProjectNameForUser,
+  serializeAgentTasksResponse,
+} from "@/lib/agents/agent-tasks-route-helpers";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 
@@ -128,39 +129,51 @@ export async function PATCH(request: Request, context: RouteContext) {
       );
     }
 
-    const document = await updateAgentDocumentStatus(
-      db,
-      auth.userId,
-      parsed.teammateId,
-      documentObjectId,
-      status,
-    );
+    if (status === "accepted") {
+      const document = await updateAgentDocumentStatus(
+        db,
+        auth.userId,
+        parsed.teammateId,
+        documentObjectId,
+        status,
+      );
 
-    if (!document) {
-      return Response.json({ error: "Document not found" }, { status: 404 });
+      if (!document) {
+        return Response.json({ error: "Document not found" }, { status: 404 });
+      }
+
+      return Response.json(document);
     }
 
-    if (status === "rejected") {
-      const linkedTask = await findAgentTaskByDocumentId(
+    const { removedTask, record, projectId } =
+      await rejectAndDeleteAgentTaskByDocumentId(
         db,
         auth.userId,
         parsed.teammateId,
         parsed.documentId,
       );
 
-      if (linkedTask) {
-        await updateAgentTaskStatus(
-          db,
-          auth.userId,
-          parsed.teammateId,
-          linkedTask.projectId,
-          linkedTask.task.title,
-          "rejected",
-        );
-      }
-    }
+    const resolvedProjectId =
+      projectId ?? new ObjectId(existing.projectId);
+    const projectName = await getProjectNameForUser(
+      db,
+      auth.userId,
+      resolvedProjectId,
+    );
+    const tasks = await serializeAgentTasksResponse(
+      db,
+      auth.userId,
+      parsed.teammateId,
+      resolvedProjectId.toString(),
+      record,
+      projectName,
+    );
 
-    return Response.json(document);
+    return Response.json({
+      documentId: parsed.documentId,
+      taskTitle: removedTask?.title ?? null,
+      tasks,
+    });
   } catch {
     return Response.json(
       { error: "Failed to update agent document" },

@@ -22,6 +22,7 @@ import { useRejectAgentDocument } from "@/hooks/mutations/agent-documents/useRej
 import {
   getAgentDocumentDetailPath,
 } from "@/lib/agents/agent-documents";
+import { REJECT_AGENT_TASK_CONFIRMATION } from "@/lib/agents/agent-task-reject-copy";
 import {
   canAccessAgentTaskOutputTabs,
   canMarkAgentTaskComplete,
@@ -437,24 +438,6 @@ function AgentTaskReviewCompleted() {
   );
 }
 
-function AgentTaskReviewRejected() {
-  return (
-    <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-10 text-center dark:border-zinc-800 dark:bg-zinc-900">
-      <ExclamationTriangleIcon
-        className="mx-auto size-8 text-zinc-400 dark:text-zinc-500"
-        aria-hidden
-      />
-      <p className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-100">
-        Task rejected
-      </p>
-      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-        You rejected this deliverable. The task slot is free for a new
-        suggestion when you generate more tasks.
-      </p>
-    </div>
-  );
-}
-
 function AgentTaskReviewContent({
   task,
   teammateId,
@@ -486,10 +469,6 @@ function AgentTaskReviewContent({
       : null;
   const documentTitle = task.outputDocumentTitle || "Untitled document";
   const taskStatus = getAgentTaskStatus(task);
-
-  if (taskStatus === "rejected") {
-    return <AgentTaskReviewRejected />;
-  }
 
   if (taskStatus === "completed") {
     return <AgentTaskReviewCompleted />;
@@ -609,6 +588,7 @@ export default function AgentTaskDetailModal({
     onSuccess: () => {
       toast.success("Task rejected.");
       setIsRejectConfirmOpen(false);
+      onClose?.();
     },
     onError: (mutationError) => {
       toast.error(mutationError.message);
@@ -722,6 +702,19 @@ export default function AgentTaskDetailModal({
     setIsRejectConfirmOpen(true);
   }
 
+  function handleConfirmReject() {
+    if (
+      activeTab === "review" &&
+      activeTask.outputDocumentId &&
+      teammateId
+    ) {
+      handleRejectDeliverable();
+      return;
+    }
+
+    onReject?.();
+  }
+
   function handleRequestRedo() {
     setIsRedoConfirmOpen(true);
   }
@@ -770,9 +763,9 @@ export default function AgentTaskDetailModal({
           showOverviewActions && onReject
             ? {
                 label: "Reject",
-                onClick: onReject,
+                onClick: handleRequestReject,
                 isPending: isUpdating,
-                pendingLabel: "Saving...",
+                pendingLabel: "Rejecting...",
                 variant: "secondary",
               }
             : showReviewRejectAction
@@ -914,17 +907,17 @@ export default function AgentTaskDetailModal({
       <DeleteAISummaryModal
         open={isRejectConfirmOpen}
         title="Reject this task?"
-        description={`The deliverable "${redoDocumentTitle}" will be marked rejected and this task slot will be freed up. You can generate a new task to replace it.`}
+        description={REJECT_AGENT_TASK_CONFIRMATION}
         confirmLabel="Reject task"
         pendingLabel="Rejecting..."
-        isPending={rejectDocumentMutation.isPending}
-        error={rejectDocumentMutation.error}
+        isPending={rejectDocumentMutation.isPending || isUpdating}
+        error={rejectDocumentMutation.error ?? null}
         onClose={() => {
-          if (!rejectDocumentMutation.isPending) {
+          if (!rejectDocumentMutation.isPending && !isUpdating) {
             setIsRejectConfirmOpen(false);
           }
         }}
-        onConfirm={handleRejectDeliverable}
+        onConfirm={handleConfirmReject}
       />
     </>
   );

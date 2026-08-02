@@ -17,6 +17,7 @@ import {
   updateAgentTaskStatus,
   upsertAgentTasks,
 } from "@/lib/agents/agent-tasks-store";
+import { rejectAndDeleteAgentTaskByTitle } from "@/lib/agents/reject-agent-task";
 import {
   getProjectNameForUser,
   parseProjectId,
@@ -365,17 +366,32 @@ export async function PATCH(request: Request, context: RouteContext) {
       );
     }
 
-    const stored = await updateAgentTaskStatus(
-      db,
-      auth.userId,
-      parsedTeammate.teammateId,
-      parsedProject.projectId,
-      taskTitle,
-      status,
-    );
+    const rejectResult =
+      status === "rejected"
+        ? await rejectAndDeleteAgentTaskByTitle(
+            db,
+            auth.userId,
+            parsedTeammate.teammateId,
+            parsedProject.projectId,
+            taskTitle,
+          )
+        : null;
+    const stored =
+      status === "rejected"
+        ? rejectResult?.removedTask
+          ? rejectResult.record
+          : null
+        : await updateAgentTaskStatus(
+            db,
+            auth.userId,
+            parsedTeammate.teammateId,
+            parsedProject.projectId,
+            taskTitle,
+            status,
+          );
 
     if (!stored) {
-      return Response.json({ error: "Tasks not found" }, { status: 404 });
+      return Response.json({ error: "Task not found" }, { status: 404 });
     }
 
     const projectName = await getProjectNameForUser(

@@ -364,6 +364,12 @@ export type AgentTasksResponse = {
   updatedAt: string | null;
 };
 
+export type RejectAgentDocumentResponse = {
+  documentId: string;
+  taskTitle: string | null;
+  tasks: AgentTasksResponse;
+};
+
 export type DashboardStatsResponse = {
   totalProjects: number;
   openChats: number;

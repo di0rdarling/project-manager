@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChevronRightIcon, ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
 import { DeleteAISummaryModal } from "@/components/ui/DeleteAISummaryModal";
@@ -19,6 +20,7 @@ import { useGenerateAgentTasks } from "@/hooks/mutations/chats/useGenerateAgentT
 import { useStartAgentTaskOutput } from "@/hooks/mutations/chats/useStartAgentTaskOutput";
 import { useUpdateAgentTaskStatus } from "@/hooks/mutations/chats/useUpdateAgentTaskStatus";
 import { useFetchAgentTasks } from "@/hooks/queries/useFetchAgentTasks";
+import { agentDocumentKeys } from "@/lib/query-keys";
 import { getAgentTaskStatus, getAgentTaskStatusBadgeClassName, getAgentTaskStatusLabel, getAgentTaskProjectBadgeClassName, getAgentTaskProjectName, canGenerateAgentTasks, canAcceptAgentTask, getAcceptedAgentTasks, getAgentTaskDecisionStatus } from "@/lib/agents/agent-tasks";
 import { parseAgentProfileNavigationContext, AGENT_PROFILE_TASK_TITLE_PARAM, AGENT_TASKS_SECTION_ID } from "@/lib/chats/agent-profile-navigation";
 import type { StartAgentTaskOutputInput } from "@/lib/api/agent-tasks";
@@ -37,6 +39,7 @@ export default function AgentTasks({
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const navigationContext = parseAgentProfileNavigationContext(searchParams);
   const openTaskTitle = searchParams.get(AGENT_PROFILE_TASK_TITLE_PARAM);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -83,6 +86,15 @@ export default function AgentTasks({
 
   const updateTaskStatusMutation = useUpdateAgentTaskStatus({
     onSuccess: (response, input) => {
+      if (input.status === "rejected") {
+        setSelectedTask(null);
+        void queryClient.invalidateQueries({
+          queryKey: agentDocumentKeys.list(teammateId),
+        });
+        toast.success("Task rejected.");
+        return;
+      }
+
       const updatedTask = response.tasks.find(
         (task) => task.title === input.taskTitle,
       );
@@ -91,11 +103,7 @@ export default function AgentTasks({
         setSelectedTask(updatedTask);
       }
 
-      toast.success(
-        input.status === "accepted"
-          ? "Task accepted."
-          : "Task rejected.",
-      );
+      toast.success("Task accepted.");
     },
     onError: (error) => {
       toast.error(

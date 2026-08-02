@@ -36,6 +36,7 @@ import {
 import { formatDisplayDateTime } from "@/lib/dates";
 import { shouldShowAssistantTypingIndicator } from "@/lib/chats/should-show-assistant-typing-indicator";
 import { canAcceptAgentDocument, canRejectAgentDocument } from "@/lib/agents/agent-documents";
+import { REJECT_AGENT_TASK_CONFIRMATION } from "@/lib/agents/agent-task-reject-copy";
 import type {
   AgentDocumentReviewMessageResponse,
   AgentDocumentStatus,
@@ -46,6 +47,7 @@ type DocumentReviewChatPanelProps = {
   documentId: string;
   projectId?: string | null;
   documentStatus?: AgentDocumentStatus;
+  onTaskRejected?: () => void;
 };
 
 function ReviewChatMessageBubble({
@@ -142,6 +144,7 @@ export function DocumentReviewChatPanel({
   documentId,
   projectId = null,
   documentStatus: initialDocumentStatus,
+  onTaskRejected,
 }: Readonly<DocumentReviewChatPanelProps>) {
   const [message, setMessage] = useState("");
   const [isRejectConfirmOpen, setIsRejectConfirmOpen] = useState(false);
@@ -175,6 +178,7 @@ export function DocumentReviewChatPanel({
     onSuccess: () => {
       toast.success("Task rejected.");
       setIsRejectConfirmOpen(false);
+      onTaskRejected?.();
     },
     onError: (mutationError) => {
       toast.error(mutationError.message);
@@ -509,7 +513,7 @@ export function DocumentReviewChatPanel({
     <DeleteAISummaryModal
       open={isRejectConfirmOpen}
       title="Reject this task?"
-      description="The deliverable will be marked rejected and this task slot will be freed up. You can generate a new task to replace it."
+      description={REJECT_AGENT_TASK_CONFIRMATION}
       confirmLabel="Reject task"
       pendingLabel="Rejecting..."
       isPending={isRejecting}

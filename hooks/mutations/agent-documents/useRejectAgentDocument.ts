@@ -12,8 +12,7 @@ import {
 } from "@/lib/query-keys";
 import type {
   AgentDocumentResponse,
-  AgentDocumentReviewChatResponse,
-  AgentTasksResponse,
+  RejectAgentDocumentResponse,
 } from "@/lib/types";
 
 type RejectAgentDocumentInput = Parameters<typeof rejectAgentDocument>[0] & {
@@ -21,7 +20,11 @@ type RejectAgentDocumentInput = Parameters<typeof rejectAgentDocument>[0] & {
 };
 
 type UseRejectAgentDocumentOptions = Omit<
-  UseMutationOptions<AgentDocumentResponse, Error, RejectAgentDocumentInput>,
+  UseMutationOptions<
+    RejectAgentDocumentResponse,
+    Error,
+    RejectAgentDocumentInput
+  >,
   "mutationFn"
 >;
 
@@ -34,54 +37,32 @@ export function useRejectAgentDocument(
   return useMutation({
     mutationFn: rejectAgentDocument,
     ...restOptions,
-    onSuccess: (document, variables, onMutateResult, context) => {
-      queryClient.setQueryData(
-        agentDocumentKeys.detail(variables.teammateId, variables.documentId),
-        document,
-      );
-
-      queryClient.setQueryData<AgentDocumentReviewChatResponse>(
-        agentDocumentKeys.reviewChat(
+    onSuccess: (data, variables, onMutateResult, context) => {
+      queryClient.removeQueries({
+        queryKey: agentDocumentKeys.detail(
           variables.teammateId,
           variables.documentId,
         ),
-        (current) =>
-          current ? { ...current, document } : current,
-      );
+      });
+      queryClient.removeQueries({
+        queryKey: agentDocumentKeys.reviewChat(
+          variables.teammateId,
+          variables.documentId,
+        ),
+      });
 
       queryClient.setQueryData<AgentDocumentResponse[]>(
         agentDocumentKeys.list(variables.teammateId),
         (current) =>
-          current?.map((entry) =>
-            entry._id === document._id ? document : entry,
-          ) ?? current,
+          current?.filter((entry) => entry._id !== data.documentId) ?? current,
       );
 
-      if (variables.projectId) {
-        queryClient.setQueryData<AgentTasksResponse>(
-          agentTasksKeys.detail(variables.teammateId, variables.projectId),
-          (current) => {
-            if (!current) {
-              return current;
-            }
+      queryClient.setQueryData(
+        agentTasksKeys.detail(data.tasks.teammateId, data.tasks.projectId),
+        data.tasks,
+      );
 
-            return {
-              ...current,
-              tasks: current.tasks.map((task) =>
-                task.outputDocumentId === document._id
-                  ? {
-                      ...task,
-                      status: "rejected",
-                      outputDocumentStatus: document.status,
-                    }
-                  : task,
-              ),
-            };
-          },
-        );
-      }
-
-      onSuccess?.(document, variables, onMutateResult, context);
+      onSuccess?.(data, variables, onMutateResult, context);
     },
   });
 }

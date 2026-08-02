@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, type RefObject } from "react";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import PageContent from "@/components/layout/PageContent";
@@ -105,6 +105,7 @@ function ReviewLayout({
   headingsKey,
   contentElement,
   contentPanelRef,
+  onTaskRejected,
 }: Readonly<{
   document: AgentDocumentResponse;
   teammateId: ChatTeammateId;
@@ -115,6 +116,7 @@ function ReviewLayout({
   headingsKey: string;
   contentElement: HTMLElement | null;
   contentPanelRef: RefObject<HTMLDivElement | null>;
+  onTaskRejected: () => void;
 }>) {
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -145,6 +147,7 @@ function ReviewLayout({
           documentId={document._id}
           projectId={document.projectId}
           documentStatus={document.status}
+          onTaskRejected={onTaskRejected}
         />
       </div>
     </div>
@@ -155,6 +158,7 @@ export default function AgentDocumentDetailView({
   teammateId: rawTeammateId,
   documentId,
 }: Readonly<AgentDocumentDetailViewProps>) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const navigationContext = parseAgentProfileNavigationContext(searchParams);
   const teammateId = isChatTeammateId(rawTeammateId) ? rawTeammateId : null;
@@ -239,6 +243,7 @@ export default function AgentDocumentDetailView({
         headingsKey={headingsKey}
         contentElement={contentElement}
         contentPanelRef={contentPanelRef}
+        onTaskRejected={() => router.push(backHref)}
       />
     );
   }
