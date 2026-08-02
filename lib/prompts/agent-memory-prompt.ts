@@ -1,4 +1,8 @@
 import {
+  buildAiDateTimeContext,
+  getAiRequestDateTime,
+} from "@/lib/prompts/ai-datetime-context";
+import {
   formatDisplayDateTime,
   getRelativeDayLabel,
 } from "@/lib/dates";
@@ -139,13 +143,13 @@ export function buildAgentMemoryPrompt({
   chatSummaries,
   agentNotesContext,
   userName,
-  generatedAt = new Date(),
+  generatedAt,
 }: BuildAgentMemoryPromptInput): string {
-  const currentDateTime = formatDisplayDateTime(generatedAt.toISOString());
+  const requestedAt = getAiRequestDateTime(generatedAt);
 
   const sections = [
     ...buildSharedMemoryInstructions(agentName, agentRole),
-    `You are writing this memory at: ${currentDateTime}.`,
+    buildAiDateTimeContext(requestedAt),
     "",
     buildChatUserContextPrompt(userName),
     "",
@@ -164,7 +168,7 @@ export function buildAgentMemoryPrompt({
     "When chats compete for space, weight recent conversations and still-open items above older, fully resolved material.",
     "",
     "Past conversations:",
-    formatChatSummaries(chatSummaries, generatedAt),
+    formatChatSummaries(chatSummaries, requestedAt),
     "",
     "Return only the compact memory note. No preamble, no sign-off, no self-introduction.",
   );
@@ -187,9 +191,9 @@ export function buildAgentMemoryMergePrompt({
   projectName,
   agentNotesContext,
   userName,
-  generatedAt = new Date(),
+  generatedAt,
 }: BuildAgentMemoryMergePromptInput): string {
-  const currentDateTime = formatDisplayDateTime(generatedAt.toISOString());
+  const requestedAt = getAiRequestDateTime(generatedAt);
   const trimmedExisting = existingMemory?.trim() || null;
   const projectLine = projectName?.trim()
     ? `Project: ${projectName.trim()}`
@@ -197,7 +201,7 @@ export function buildAgentMemoryMergePrompt({
 
   const sections = [
     ...buildSharedMemoryInstructions(agentName, agentRole),
-    `You are updating this memory at: ${currentDateTime}.`,
+    buildAiDateTimeContext(requestedAt),
     "",
     buildChatUserContextPrompt(userName),
     "",

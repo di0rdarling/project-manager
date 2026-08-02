@@ -1,4 +1,5 @@
 import { buildAiTeammatesMemoryRosterPrompt } from "@/lib/prompts/ai-teammates-roster";
+import { buildAiDateTimeContext } from "@/lib/prompts/ai-datetime-context";
 import { buildChatUserContextPrompt } from "@/lib/prompts/chat-user-context-prompt";
 import {
   CONCISE_RESPONSE_STYLE_GUIDE,
@@ -21,6 +22,7 @@ type BuildAgentTaskOutputPromptInput = {
   userName?: string | null;
   /** When true, the user asked for a fresh attempt — produce a new document. */
   isRegenerate?: boolean;
+  generatedAt?: Date;
 };
 
 /**
@@ -39,6 +41,7 @@ export function buildAgentTaskOutputPrompt({
   task,
   userName,
   isRegenerate = false,
+  generatedAt,
 }: BuildAgentTaskOutputPromptInput): string {
   const resolvedUserName = userName?.trim() || "the user";
 
@@ -46,6 +49,7 @@ export function buildAgentTaskOutputPrompt({
     buildAiTeammatesMemoryRosterPrompt(teammateId),
     "",
     buildChatUserContextPrompt(userName),
+    buildAiDateTimeContext(generatedAt),
     ...getChatTeammatePersonalityTraits(teammateId),
     ...PLAIN_ENGLISH_STYLE_GUIDE,
     ...CONCISE_RESPONSE_STYLE_GUIDE,

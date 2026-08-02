@@ -1,4 +1,5 @@
 import { stripRichText } from "@/lib/rich-text";
+import { buildAiDateTimeContext } from "@/lib/prompts/ai-datetime-context";
 import { PLAIN_ENGLISH_STYLE_GUIDE } from "@/lib/prompts/style-guide";
 
 export type RichTextEnhanceAction = "shorten" | "polish" | "expand";
@@ -21,11 +22,13 @@ const HTML_FORMAT_INSTRUCTIONS = [
 export function buildRichTextEnhancePrompt(
   html: string,
   action: RichTextEnhanceAction,
+  generatedAt?: Date,
 ): string {
   const plainText = stripRichText(html);
 
   const sections = [
     "You are a writing assistant that edits rich text content.",
+    buildAiDateTimeContext(generatedAt),
     ACTION_INSTRUCTIONS[action],
     ...PLAIN_ENGLISH_STYLE_GUIDE,
     ...HTML_FORMAT_INSTRUCTIONS,

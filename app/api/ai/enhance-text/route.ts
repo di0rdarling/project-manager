@@ -30,9 +30,11 @@ export async function POST(request: Request) {
       return Response.json({ error: "Invalid action" }, { status: 400 });
     }
 
+    const generatedAt = new Date();
     const prompt = buildRichTextEnhancePrompt(
       html,
       action as RichTextEnhanceAction,
+      generatedAt,
     );
     const response = await generateText(prompt);
     const enhancedHtml = parseRichTextEnhanceResponse(response);

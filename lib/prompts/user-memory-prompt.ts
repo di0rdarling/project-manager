@@ -1,4 +1,7 @@
-import { formatDisplayDateTime } from "@/lib/dates";
+import {
+  buildAiDateTimeContext,
+  getAiRequestDateTime,
+} from "@/lib/prompts/ai-datetime-context";
 import { formatChatSummaries } from "@/lib/prompts/agent-memory-prompt";
 import { buildAiTeammatesMemoryRosterPrompt } from "@/lib/prompts/ai-teammates-roster";
 import { buildChatUserContextPrompt } from "@/lib/prompts/chat-user-context-prompt";
@@ -47,13 +50,14 @@ export function buildUserMemoryPrompt({
   chatSummaries,
   agentNotesContext,
   userName,
-  generatedAt = new Date(),
+  generatedAt,
 }: BuildUserMemoryPromptInput): string {
-  const currentDateTime = formatDisplayDateTime(generatedAt.toISOString());
+  const requestedAt = getAiRequestDateTime(generatedAt);
   const resolvedUserName = userName?.trim() || "the user";
 
   const sections = [
     `You are ${agentName}, the ${agentRole}.`,
+    buildAiDateTimeContext(requestedAt),
     "",
     `You are generating a structured summary of your shared work with ${resolvedUserName} — not for yourself, but for them. They will read this on your profile page to quickly remember where things stand and what still needs their attention. Write it as if you are briefing them, not as if you are writing notes for yourself.`,
     "",
@@ -85,9 +89,7 @@ export function buildUserMemoryPrompt({
     "### Source material",
     "",
     "Most recent conversations (by last activity):",
-    formatChatSummaries(chatSummaries, generatedAt),
-    "",
-    `You are generating this at: ${currentDateTime}.`,
+    formatChatSummaries(chatSummaries, requestedAt),
     "",
     buildAiTeammatesMemoryRosterPrompt(teammateId),
     "",
@@ -125,9 +127,9 @@ export function buildUserMemoryMergePrompt({
   projectName,
   agentNotesContext,
   userName,
-  generatedAt = new Date(),
+  generatedAt,
 }: BuildUserMemoryMergePromptInput): string {
-  const currentDateTime = formatDisplayDateTime(generatedAt.toISOString());
+  const requestedAt = getAiRequestDateTime(generatedAt);
   const resolvedUserName = userName?.trim() || "the user";
   const projectLine = projectName?.trim()
     ? `Project: ${projectName.trim()}`
@@ -135,6 +137,7 @@ export function buildUserMemoryMergePrompt({
 
   const sections = [
     `You are ${agentName}, the ${agentRole}.`,
+    buildAiDateTimeContext(requestedAt),
     "",
     `You are updating a structured user-facing summary after a new conversation. ${resolvedUserName} uses this to track what needs their attention across all their projects.`,
     "",
@@ -161,8 +164,6 @@ export function buildUserMemoryMergePrompt({
     projectLine,
     "Summary:",
     conversationSummary.trim(),
-    "",
-    `Generated at: ${currentDateTime}`,
     "",
     "Return only the updated JSON object. No preamble, no explanation, no markdown fencing.",
   );

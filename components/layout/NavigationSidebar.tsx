@@ -8,10 +8,13 @@ import { clearAuthQueryCache } from "@/lib/auth/auth-query-cache";
 import {
   ArrowLeftIcon,
   ArrowRightOnRectangleIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   HomeIcon,
   UserCircleIcon,
 } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
 import { ProjectManagerLogo } from "@/components/ui/ProjectManagerLogo";
 import { useProjectSectionNav } from "@/components/views/ProjectDetail/ProjectSectionNavContext";
 import { useFetchCurrentUser } from "@/hooks/queries/useFetchCurrentUser";
@@ -45,12 +48,16 @@ const navItems = [
 type NavigationSidebarProps = {
   id?: string;
   isOpen?: boolean;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
   onNavigate?: () => void;
 };
 
 export default function NavigationSidebar({
   id,
   isOpen = true,
+  isCollapsed = false,
+  onToggleCollapse,
   onNavigate,
 }: NavigationSidebarProps) {
   const pathname = usePathname();
@@ -128,28 +135,60 @@ export default function NavigationSidebar({
   const FeatureNotesIcon = FEATURE_NOTES_NAV.icon;
 
   const navLinkClassName = (isActive: boolean) =>
-    `cursor-pointer flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+    `cursor-pointer flex items-center rounded-lg text-sm font-medium transition ${
+      isCollapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2"
+    } ${
       isActive
         ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50"
         : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
     }`;
 
+  const navPaddingClassName = isCollapsed ? "p-2" : "p-3";
+
   return (
     <aside
       id={id}
       aria-hidden={!isOpen}
-      className={`fixed inset-y-0 left-0 z-40 flex w-56 flex-col border-r border-zinc-200 bg-white transition-transform duration-200 ease-out dark:border-zinc-800 dark:bg-zinc-950 md:relative md:z-auto md:shrink-0 md:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-zinc-200 bg-white transition-[width,transform] duration-200 ease-out dark:border-zinc-800 dark:bg-zinc-950 md:relative md:z-auto md:shrink-0 md:translate-x-0 ${
         isOpen ? "translate-x-0" : "-translate-x-full"
-      }`}
+      } ${isCollapsed ? "w-16 md:w-16" : "w-56 md:w-56"}`}
     >
-      <div className="border-b border-zinc-200 px-4 py-5 dark:border-zinc-800">
-        <ProjectManagerLogo className="h-9 w-auto" />
-        {showContextSidebar && project?.name ? (
+      <div
+        className={`border-b border-zinc-200 dark:border-zinc-800 ${
+          isCollapsed ? "px-2 py-3" : "px-4 py-5"
+        }`}
+      >
+        <div
+          className={`flex items-center ${
+            isCollapsed ? "flex-col gap-2" : "justify-between gap-2"
+          }`}
+        >
+          <ProjectManagerLogo
+            variant={isCollapsed ? "icon" : "full"}
+            className={isCollapsed ? "size-9" : "h-9 w-auto"}
+          />
+          {onToggleCollapse ? (
+            <IconButton
+              type="button"
+              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-expanded={!isCollapsed}
+              onClick={onToggleCollapse}
+              className="hidden shrink-0 md:inline-flex"
+            >
+              {isCollapsed ? (
+                <ChevronRightIcon className="size-5" aria-hidden />
+              ) : (
+                <ChevronLeftIcon className="size-5" aria-hidden />
+              )}
+            </IconButton>
+          ) : null}
+        </div>
+        {!isCollapsed && showContextSidebar && project?.name ? (
           <p className="mt-1 truncate text-xs text-zinc-500 dark:text-zinc-400">
             {project.name}
           </p>
         ) : null}
-        {showFeatureSidebar && feature?.title ? (
+        {!isCollapsed && showFeatureSidebar && feature?.title ? (
           <p className="mt-0.5 truncate text-xs font-medium text-zinc-700 dark:text-zinc-300">
             {feature.title}
           </p>
@@ -160,7 +199,7 @@ export default function NavigationSidebar({
       <div className="relative min-h-0 flex-1 overflow-hidden">
         <nav
           aria-hidden={showContextSidebar}
-          className={`absolute inset-0 flex flex-col gap-1 overflow-y-auto p-3 transition-all duration-200 ease-out ${
+          className={`absolute inset-0 flex flex-col gap-1 overflow-y-auto transition-all duration-200 ease-out ${navPaddingClassName} ${
             showContextSidebar
               ? "pointer-events-none -translate-x-3 opacity-0"
               : "translate-x-0 opacity-100"
@@ -176,11 +215,16 @@ export default function NavigationSidebar({
               <Link
                 key={href}
                 href={href}
+                title={isCollapsed ? label : undefined}
                 onClick={onNavigate}
                 className={navLinkClassName(isActive)}
               >
                 <Icon className="size-5 shrink-0" aria-hidden />
-                {label}
+                {isCollapsed ? (
+                  <span className="sr-only">{label}</span>
+                ) : (
+                  label
+                )}
               </Link>
             );
           })}
@@ -190,7 +234,7 @@ export default function NavigationSidebar({
 
         <nav
           aria-hidden={!showProjectSidebar}
-          className={`absolute inset-0 flex flex-col gap-1 overflow-y-auto p-3 transition-all duration-200 ease-out ${
+          className={`absolute inset-0 flex flex-col gap-1 overflow-y-auto transition-all duration-200 ease-out ${navPaddingClassName} ${
             showProjectSidebar
               ? "translate-x-0 opacity-100"
               : "pointer-events-none translate-x-3 opacity-0"
@@ -198,34 +242,55 @@ export default function NavigationSidebar({
         >
           <Link
             href="/home"
+            title={isCollapsed ? "All projects" : undefined}
             onClick={onNavigate}
-            className="cursor-pointer mb-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
+            className={`cursor-pointer mb-1 flex items-center rounded-lg text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50 ${
+              isCollapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2"
+            }`}
           >
             <ArrowLeftIcon className="size-5 shrink-0" aria-hidden />
-            All projects
+            {isCollapsed ? (
+              <span className="sr-only">All projects</span>
+            ) : (
+              "All projects"
+            )}
           </Link>
 
-          <div className="my-1 border-t border-zinc-200 dark:border-zinc-800" />
+          {!isCollapsed ? (
+            <div className="my-1 border-t border-zinc-200 dark:border-zinc-800" />
+          ) : null}
 
           <Link
             href={agentsHref}
+            title={isCollapsed ? PROJECT_AGENTS_NAV.title : undefined}
             onClick={onNavigate}
             className={navLinkClassName(projectPathInfo?.isAgentsRoute ?? false)}
           >
             <AgentsIcon className="size-5 shrink-0" aria-hidden />
-            {PROJECT_AGENTS_NAV.title}
+            {isCollapsed ? (
+              <span className="sr-only">{PROJECT_AGENTS_NAV.title}</span>
+            ) : (
+              PROJECT_AGENTS_NAV.title
+            )}
           </Link>
 
           <Link
             href={chatsHref}
+            title={isCollapsed ? PROJECT_CHATS_NAV.title : undefined}
             onClick={onNavigate}
             className={navLinkClassName(projectPathInfo?.isChatsRoute ?? false)}
           >
             <ChatsIcon className="size-5 shrink-0" aria-hidden />
-            {PROJECT_CHATS_NAV.title}
+            {isCollapsed ? (
+              <span className="sr-only">{PROJECT_CHATS_NAV.title}</span>
+            ) : (
+              PROJECT_CHATS_NAV.title
+            )}
           </Link>
 
-          <div className="my-1 border-t border-zinc-200 dark:border-zinc-800" />
+          {!isCollapsed ? (
+            <div className="my-1 border-t border-zinc-200 dark:border-zinc-800" />
+          ) : null}
 
           {PROJECT_DETAIL_SECTIONS.map(({ id, title, icon: Icon }) => {
             const isActive =
@@ -237,6 +302,7 @@ export default function NavigationSidebar({
                 <button
                   key={id}
                   type="button"
+                  title={isCollapsed ? title : undefined}
                   onClick={() => {
                     projectSectionNav?.navigateToSection(id);
                     onNavigate?.();
@@ -244,7 +310,11 @@ export default function NavigationSidebar({
                   className={`${navLinkClassName(isActive)} text-left`}
                 >
                   <Icon className="size-5 shrink-0" aria-hidden />
-                  {title}
+                  {isCollapsed ? (
+                    <span className="sr-only">{title}</span>
+                  ) : (
+                    title
+                  )}
                 </button>
               );
             }
@@ -253,28 +323,38 @@ export default function NavigationSidebar({
               <Link
                 key={id}
                 href={projectHref}
+                title={isCollapsed ? title : undefined}
                 onClick={onNavigate}
                 className={navLinkClassName(false)}
               >
                 <Icon className="size-5 shrink-0" aria-hidden />
-                {title}
+                {isCollapsed ? (
+                  <span className="sr-only">{title}</span>
+                ) : (
+                  title
+                )}
               </Link>
             );
           })}
 
           <Link
             href={notesHref}
+            title={isCollapsed ? PROJECT_NOTES_NAV.title : undefined}
             onClick={onNavigate}
             className={navLinkClassName(projectPathInfo?.isNotesRoute ?? false)}
           >
             <NotesIcon className="size-5 shrink-0" aria-hidden />
-            {PROJECT_NOTES_NAV.title}
+            {isCollapsed ? (
+              <span className="sr-only">{PROJECT_NOTES_NAV.title}</span>
+            ) : (
+              PROJECT_NOTES_NAV.title
+            )}
           </Link>
         </nav>
 
         <nav
           aria-hidden={!showFeatureSidebar}
-          className={`absolute inset-0 flex flex-col gap-1 overflow-y-auto p-3 transition-all duration-200 ease-out ${
+          className={`absolute inset-0 flex flex-col gap-1 overflow-y-auto transition-all duration-200 ease-out ${navPaddingClassName} ${
             showFeatureSidebar
               ? "translate-x-0 opacity-100"
               : "pointer-events-none translate-x-3 opacity-0"
@@ -282,14 +362,33 @@ export default function NavigationSidebar({
         >
           <Link
             href={projectHref}
+            title={
+              isCollapsed
+                ? project
+                  ? `Back to ${project.name}`
+                  : "Back to project"
+                : undefined
+            }
             onClick={onNavigate}
-            className="cursor-pointer mb-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
+            className={`cursor-pointer mb-1 flex items-center rounded-lg text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50 ${
+              isCollapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2"
+            }`}
           >
             <ArrowLeftIcon className="size-5 shrink-0" aria-hidden />
-            {project ? `Back to ${project.name}` : "Back to project"}
+            {isCollapsed ? (
+              <span className="sr-only">
+                {project ? `Back to ${project.name}` : "Back to project"}
+              </span>
+            ) : project ? (
+              `Back to ${project.name}`
+            ) : (
+              "Back to project"
+            )}
           </Link>
 
-          <div className="my-1 border-t border-zinc-200 dark:border-zinc-800" />
+          {!isCollapsed ? (
+            <div className="my-1 border-t border-zinc-200 dark:border-zinc-800" />
+          ) : null}
 
           {FEATURE_DETAIL_SECTIONS.map(({ id, title, icon: Icon }) => {
             const isActive =
@@ -301,6 +400,7 @@ export default function NavigationSidebar({
                 <button
                   key={id}
                   type="button"
+                  title={isCollapsed ? title : undefined}
                   onClick={() => {
                     projectSectionNav?.navigateToSection(id);
                     onNavigate?.();
@@ -308,7 +408,11 @@ export default function NavigationSidebar({
                   className={`${navLinkClassName(isActive)} text-left`}
                 >
                   <Icon className="size-5 shrink-0" aria-hidden />
-                  {title}
+                  {isCollapsed ? (
+                    <span className="sr-only">{title}</span>
+                  ) : (
+                    title
+                  )}
                 </button>
               );
             }
@@ -317,28 +421,42 @@ export default function NavigationSidebar({
               <Link
                 key={id}
                 href={featureHref}
+                title={isCollapsed ? title : undefined}
                 onClick={onNavigate}
                 className={navLinkClassName(false)}
               >
                 <Icon className="size-5 shrink-0" aria-hidden />
-                {title}
+                {isCollapsed ? (
+                  <span className="sr-only">{title}</span>
+                ) : (
+                  title
+                )}
               </Link>
             );
           })}
 
           <Link
             href={featureNotesHref}
+            title={isCollapsed ? FEATURE_NOTES_NAV.title : undefined}
             onClick={onNavigate}
             className={navLinkClassName(isFeatureNotesRoute)}
           >
             <FeatureNotesIcon className="size-5 shrink-0" aria-hidden />
-            {FEATURE_NOTES_NAV.title}
+            {isCollapsed ? (
+              <span className="sr-only">{FEATURE_NOTES_NAV.title}</span>
+            ) : (
+              FEATURE_NOTES_NAV.title
+            )}
           </Link>
         </nav>
       </div>
 
-      <div className="mt-auto border-t border-zinc-200 p-3 dark:border-zinc-800">
-        {currentUser ? (
+      <div
+        className={`mt-auto border-t border-zinc-200 dark:border-zinc-800 ${
+          isCollapsed ? "p-2" : "p-3"
+        }`}
+      >
+        {currentUser && !isCollapsed ? (
           <Link
             href="/account"
             onClick={onNavigate}
@@ -347,14 +465,32 @@ export default function NavigationSidebar({
             {currentUser.name || currentUser.email}
           </Link>
         ) : null}
+        {currentUser && isCollapsed ? (
+          <Link
+            href="/account"
+            title={currentUser.name || currentUser.email}
+            onClick={onNavigate}
+            className="mb-2 flex justify-center rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+          >
+            <UserCircleIcon className="size-5 shrink-0" aria-hidden />
+            <span className="sr-only">{currentUser.name || currentUser.email}</span>
+          </Link>
+        ) : null}
         <Button
           type="button"
           variant="secondary"
-          className="flex w-full items-center justify-center gap-2"
+          aria-label="Sign out"
+          className={`flex w-full items-center ${
+            isCollapsed ? "justify-center px-2" : "justify-center gap-2"
+          }`}
           onClick={handleLogout}
         >
           <ArrowRightOnRectangleIcon className="size-4" aria-hidden />
-          Sign out
+          {isCollapsed ? (
+            <span className="sr-only">Sign out</span>
+          ) : (
+            "Sign out"
+          )}
         </Button>
       </div>
     </aside>

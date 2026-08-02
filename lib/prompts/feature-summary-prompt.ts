@@ -1,6 +1,7 @@
 import { stripRichText } from "@/lib/rich-text";
 import { formatChallengeItems } from "@/lib/challenges";
 import { formatDomainKnowledgeItems } from "@/lib/domain-knowledge";
+import { buildAiDateTimeContext } from "@/lib/prompts/ai-datetime-context";
 import { PLAIN_ENGLISH_STYLE_GUIDE } from "@/lib/prompts/style-guide";
 import type {
   ChallengeStatus,
@@ -39,6 +40,7 @@ type BuildFeatureSummaryPromptInput = {
   domainKnowledge: SummaryDomainKnowledgeItem[];
   challenges: SummaryChallengeItem[];
   notes: SummaryContentItem[];
+  generatedAt?: Date;
 };
 
 function formatContentItems(
@@ -87,9 +89,11 @@ export function buildFeatureSummaryPrompt({
   domainKnowledge,
   challenges,
   notes,
+  generatedAt,
 }: BuildFeatureSummaryPromptInput): string {
   const sections = [
     "You are a project management assistant.",
+    buildAiDateTimeContext(generatedAt),
     "Write a concise 2-3 paragraph overview of the feature below.",
     "Synthesize the feature's purpose, linked requirements, domain knowledge, current challenges, and important notes.",
     "Use the project context only as background when it helps explain the feature.",

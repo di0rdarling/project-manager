@@ -1,13 +1,18 @@
 /**
  * Shared writing-style instructions for AI-generated text across the app.
  *
- * Every prompt builder in `lib/prompts/` should spread this into its prompt
- * so that generated content (summaries, and any future AI features) stays
- * consistent, approachable, and easy to read for all users.
+ * Every prompt builder in `lib/prompts/` should:
+ * 1. Include `buildAiDateTimeContext()` from `lib/prompts/ai-datetime-context.ts`
+ *    so the model always knows the live request date and time.
+ * 2. Spread the style guides below so generated content stays consistent,
+ *    approachable, and easy to read for all users.
  *
  * Usage:
+ *   import { buildAiDateTimeContext } from "@/lib/prompts/ai-datetime-context";
+ *
  *   const sections = [
  *     "You are a <role> assistant.",
+ *     buildAiDateTimeContext(),
  *     "Do <task-specific instruction>.",
  *     ...PLAIN_ENGLISH_STYLE_GUIDE,
  *     "",

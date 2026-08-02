@@ -8,6 +8,8 @@ import { IconButton } from "@/components/ui/IconButton";
 import { ProjectManagerLogo } from "@/components/ui/ProjectManagerLogo";
 import { ProjectSectionNavProvider } from "@/components/views/ProjectDetail/ProjectSectionNavContext";
 
+const SIDEBAR_COLLAPSED_STORAGE_KEY = "navigation-sidebar-collapsed";
+
 function useIsMdUp() {
   const [isMdUp, setIsMdUp] = useState(false);
 
@@ -26,6 +28,30 @@ function useIsMdUp() {
   return isMdUp;
 }
 
+function useSidebarCollapsed() {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    const storedValue = window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY);
+    if (storedValue === "true") {
+      setIsCollapsed(true);
+    }
+  }, []);
+
+  function toggleCollapsed() {
+    setIsCollapsed((collapsed) => {
+      const nextValue = !collapsed;
+      window.localStorage.setItem(
+        SIDEBAR_COLLAPSED_STORAGE_KEY,
+        String(nextValue),
+      );
+      return nextValue;
+    });
+  }
+
+  return { isCollapsed, toggleCollapsed };
+}
+
 export default function MainLayoutShell({
   children,
 }: Readonly<{
@@ -33,6 +59,7 @@ export default function MainLayoutShell({
 }>) {
   const pathname = usePathname();
   const isMdUp = useIsMdUp();
+  const { isCollapsed, toggleCollapsed } = useSidebarCollapsed();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const isMobileSidebarVisible = isMdUp || isSidebarOpen;
 
@@ -70,6 +97,8 @@ export default function MainLayoutShell({
         <NavigationSidebar
           id="navigation-sidebar"
           isOpen={isMobileSidebarVisible}
+          isCollapsed={isMdUp && isCollapsed}
+          onToggleCollapse={toggleCollapsed}
           onNavigate={() => setIsSidebarOpen(false)}
         />
 

@@ -1,4 +1,7 @@
-import { formatDisplayDateTime } from "@/lib/dates";
+import {
+  buildAiDateTimeContext,
+  getAiRequestDateTime,
+} from "@/lib/prompts/ai-datetime-context";
 import { formatChatSummaries } from "@/lib/prompts/agent-memory-prompt";
 import { buildAiTeammatesMemoryRosterPrompt } from "@/lib/prompts/ai-teammates-roster";
 import { buildChatUserContextPrompt } from "@/lib/prompts/chat-user-context-prompt";
@@ -74,18 +77,18 @@ export function buildAgentTasksPrompt({
   agentNotesContext,
   existingOverviewContext,
   userName,
-  generatedAt = new Date(),
+  generatedAt,
   taskCount = AGENT_TASK_COUNT,
   acceptedTasks = [],
 }: BuildAgentTasksPromptInput): string {
-  const currentDateTime = formatDisplayDateTime(generatedAt.toISOString());
+  const requestedAt = getAiRequestDateTime(generatedAt);
   const resolvedUserName = userName?.trim() || "the user";
 
   const conversationSection =
     chatSummaries.length > 0
       ? [
           "Recent conversations with this teammate about this project:",
-          formatChatSummaries(chatSummaries, generatedAt),
+          formatChatSummaries(chatSummaries, requestedAt),
         ].join("\n")
       : "No prior conversations with this teammate about this project yet.";
 
@@ -93,6 +96,7 @@ export function buildAgentTasksPrompt({
     buildAiTeammatesMemoryRosterPrompt(teammateId),
     "",
     buildChatUserContextPrompt(userName),
+    buildAiDateTimeContext(requestedAt),
     ...getChatTeammatePersonalityTraits(teammateId),
     ...PLAIN_ENGLISH_STYLE_GUIDE,
     ...CONCISE_RESPONSE_STYLE_GUIDE,
@@ -159,8 +163,6 @@ export function buildAgentTasksPrompt({
     "### Conversation history",
     "",
     conversationSection,
-    "",
-    `Generated at: ${currentDateTime}.`,
     "",
     "---",
     "",

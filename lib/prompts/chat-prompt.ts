@@ -1,4 +1,5 @@
 import { CONCISE_RESPONSE_STYLE_GUIDE, CONTEXT_GROUNDING_STYLE_GUIDE, PLAIN_ENGLISH_STYLE_GUIDE } from "@/lib/prompts/style-guide";
+import { buildAiDateTimeContext } from "@/lib/prompts/ai-datetime-context";
 import { buildAiTeammatesRosterPrompt } from "@/lib/prompts/ai-teammates-roster";
 import { buildChatUserContextPrompt } from "@/lib/prompts/chat-user-context-prompt";
 import {
@@ -15,11 +16,13 @@ export function buildChatSystemPrompt(
   otherTeammatesContext?: string,
   agentNotesContext?: string,
   userName?: string | null,
+  generatedAt?: Date,
 ): string {
   const sections = [
     buildAiTeammatesRosterPrompt(teammateId),
     "",
     buildChatUserContextPrompt(userName),
+    buildAiDateTimeContext(generatedAt),
     ...getChatTeammatePersonalityTraits(teammateId),
     ...PLAIN_ENGLISH_STYLE_GUIDE,
     ...CONCISE_RESPONSE_STYLE_GUIDE,

@@ -52,6 +52,7 @@ export async function refreshUserMemoryFromChatSummary(input: {
         projectName,
         agentNotesContext,
         userName: input.userName,
+        generatedAt: new Date(input.updatedAt),
       }),
     ),
   );

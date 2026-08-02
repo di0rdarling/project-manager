@@ -177,6 +177,8 @@ export async function POST(_request: Request, context: RouteContext) {
       ]),
     );
 
+    const generatedAt = new Date();
+
     const prompt = buildProjectSummaryPrompt({
       name: project.name,
       description: project.description,
@@ -221,10 +223,11 @@ export async function POST(_request: Request, context: RouteContext) {
         title: note.title,
         content: note.content,
       })),
+      generatedAt,
     });
 
     const aiSummary = await generateProjectSummary(prompt);
-    const updatedAt = new Date().toISOString();
+    const updatedAt = generatedAt.toISOString();
 
     const updateResult = await db.collection<StoredProject>("projects").updateOne(
       { _id: projectObjectId, userId: auth.userId },

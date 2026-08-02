@@ -70,6 +70,7 @@ export async function POST(_request: Request, context: RouteContext) {
 
     const existingSummary = result.chat.conversationSummary?.trim() || null;
     let condensedSummary = existingSummary;
+    const generatedAt = new Date();
 
     if (existingSummary) {
       const currentUser = await findUserById(result.client.db(), auth.userId);
@@ -82,12 +83,13 @@ export async function POST(_request: Request, context: RouteContext) {
             chatTitle: result.chat.title,
             conversationSummary: existingSummary,
             userName,
+            generatedAt,
           }),
         ),
       );
     }
 
-    const now = new Date().toISOString();
+    const now = generatedAt.toISOString();
     const updateResult = await result.client
       .db()
       .collection<StoredChat>("chats")

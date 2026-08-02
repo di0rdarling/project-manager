@@ -1,5 +1,6 @@
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import { buildAiTeammatesConversationSummaryRosterPrompt } from "@/lib/prompts/ai-teammates-roster";
+import { buildAiDateTimeContext } from "@/lib/prompts/ai-datetime-context";
 import { buildChatUserContextPrompt } from "@/lib/prompts/chat-user-context-prompt";
 import {
   INTERNAL_ARTIFACT_STYLE_GUIDE,
@@ -18,6 +19,7 @@ type BuildChatArchiveSummaryPromptInput = {
   chatTitle: string;
   conversationSummary: string;
   userName?: string | null;
+  generatedAt?: Date;
 };
 
 export function buildChatArchiveSummaryPrompt({
@@ -25,12 +27,13 @@ export function buildChatArchiveSummaryPrompt({
   chatTitle,
   conversationSummary,
   userName,
+  generatedAt,
 }: BuildChatArchiveSummaryPromptInput): string {
   return [
     buildAiTeammatesConversationSummaryRosterPrompt(teammateId),
     "",
     buildChatUserContextPrompt(userName),
-    "",
+    buildAiDateTimeContext(generatedAt),
     "The user is archiving this chat. It will stay saved, but its running summary must be compressed into a compact archived memory for future AI context.",
     "You are not deleting anything — you are distilling what still matters after the conversation is done.",
     "",

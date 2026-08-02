@@ -152,6 +152,8 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
 
+    const generatedAt = new Date();
+
     const assistantReply = await generateChatReply(
       history,
       content,
@@ -163,8 +165,9 @@ export async function POST(request: Request, context: RouteContext) {
       generationContext.userName,
       generationContext.modelId,
       generationContext.reasoningEffort,
+      generatedAt,
     );
-    const now = new Date().toISOString();
+    const now = generatedAt.toISOString();
     const userMessage: Omit<ChatMessage, "_id"> = {
       userId: auth.userId,
       chatId: result.chatObjectId,
@@ -219,7 +222,7 @@ export async function POST(request: Request, context: RouteContext) {
         // replace the placeholder title with an AI-generated summary.
         try {
           nextTitle = await generateChatTitle(
-            buildChatTitlePrompt(fullTranscript),
+            buildChatTitlePrompt(fullTranscript, generatedAt),
           );
           nextAiTitleGenerated = true;
         } catch {
@@ -245,6 +248,7 @@ export async function POST(request: Request, context: RouteContext) {
             : null,
           recentMessages,
           userName,
+          generatedAt,
         }),
       );
       conversationSummaryUpdated = true;

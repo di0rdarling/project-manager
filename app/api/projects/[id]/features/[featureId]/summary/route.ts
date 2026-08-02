@@ -135,6 +135,8 @@ export async function POST(_request: Request, context: RouteContext) {
         .toArray(),
     ]);
 
+    const generatedAt = new Date();
+
     const prompt = buildFeatureSummaryPrompt({
       projectName: project.name,
       projectDescription: project.description,
@@ -159,10 +161,11 @@ export async function POST(_request: Request, context: RouteContext) {
         title: note.title,
         content: note.content,
       })),
+      generatedAt,
     });
 
     const aiSummary = await generateProjectSummary(prompt);
-    const updatedAt = new Date().toISOString();
+    const updatedAt = generatedAt.toISOString();
 
     const updateResult = await db.collection<StoredFeature>("features").updateOne(
       { _id: featureObjectId, projectId: projectObjectId, userId: auth.userId },

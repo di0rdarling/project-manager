@@ -40,6 +40,7 @@ export async function generateChatReply(
   userName?: string | null,
   modelName?: string,
   reasoningEffort?: KimiReasoningEffort,
+  generatedAt?: Date,
 ): Promise<GenerateChatReplyResult> {
   const modelId = resolveModelId(modelName);
 
@@ -55,6 +56,7 @@ export async function generateChatReply(
       userName,
       modelId,
       reasoningEffort,
+      generatedAt,
     );
   }
 
@@ -68,6 +70,7 @@ export async function generateChatReply(
     agentNotesContext,
     userName,
     modelId,
+    generatedAt,
   );
 }
 

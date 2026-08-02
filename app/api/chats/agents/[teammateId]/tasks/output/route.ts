@@ -117,6 +117,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     const currentUser = await findUserById(db, auth.userId);
     const userName = currentUser?.name ?? null;
+    const generatedAt = new Date();
     const teammate = getChatTeammate(parsedTeammate.teammateId);
 
     const toolCall = await generateAgentTaskOutput(
@@ -129,6 +130,7 @@ export async function POST(request: Request, context: RouteContext) {
         task,
         userName,
         isRegenerate: regenerate,
+        generatedAt,
       }),
       modelId,
     );

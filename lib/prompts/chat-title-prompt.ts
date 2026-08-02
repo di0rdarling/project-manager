@@ -2,6 +2,7 @@ import {
   formatTranscript,
   type ConversationSummaryMessage,
 } from "@/lib/prompts/chat-conversation-summary-prompt";
+import { buildAiDateTimeContext } from "@/lib/prompts/ai-datetime-context";
 
 /**
  * Number of completed user/assistant turns after which a chat with no
@@ -12,9 +13,11 @@ export const CHAT_TITLE_GENERATION_TURN_THRESHOLD = 2;
 
 export function buildChatTitlePrompt(
   messages: ConversationSummaryMessage[],
+  generatedAt?: Date,
 ): string {
   return [
     "You write short, descriptive titles for AI chat conversations.",
+    buildAiDateTimeContext(generatedAt),
     "Read the conversation below and write a title that captures what it is actually about.",
     "The title must be plain text with no quotation marks, markdown, or trailing punctuation.",
     "Keep it concise: ideally 3 to 7 words, and no longer than 60 characters.",

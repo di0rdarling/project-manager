@@ -134,6 +134,7 @@ export async function generateKimiChatReply(
   userName?: string | null,
   modelId?: string,
   reasoningEffort?: KimiReasoningEffort,
+  generatedAt?: Date,
 ): Promise<GenerateChatReplyResult> {
   try {
     const client = getKimiClient();
@@ -144,6 +145,7 @@ export async function generateKimiChatReply(
       otherTeammatesContext,
       agentNotesContext,
       userName,
+      generatedAt,
     );
 
     const completion = await client.chat.completions.create({
