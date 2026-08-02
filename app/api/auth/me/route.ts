@@ -12,6 +12,7 @@ const MAX_NAME_LENGTH = 100;
 type PatchBody = {
   name?: unknown;
   agentTaskGenerationModelId?: unknown;
+  dashboardDigestModelId?: unknown;
 };
 
 export async function GET() {
@@ -47,8 +48,9 @@ export async function PATCH(request: Request) {
     const body = (await request.json()) as PatchBody;
     const hasName = "name" in body;
     const hasAgentTaskGenerationModelId = "agentTaskGenerationModelId" in body;
+    const hasDashboardDigestModelId = "dashboardDigestModelId" in body;
 
-    if (!hasName && !hasAgentTaskGenerationModelId) {
+    if (!hasName && !hasAgentTaskGenerationModelId && !hasDashboardDigestModelId) {
       return Response.json(
         { error: "No valid fields to update" },
         { status: 400 },
@@ -61,6 +63,7 @@ export async function PATCH(request: Request) {
     const updates: {
       name?: string | null;
       agentTaskGenerationModelId?: ChatModelId | null;
+      dashboardDigestModelId?: ChatModelId | null;
     } = {};
 
     if (hasName) {
@@ -90,6 +93,19 @@ export async function PATCH(request: Request) {
       }
 
       updates.agentTaskGenerationModelId = modelId;
+    }
+
+    if (hasDashboardDigestModelId) {
+      const modelId = body.dashboardDigestModelId;
+
+      if (modelId !== null && !isChatModelId(modelId)) {
+        return Response.json(
+          { error: "dashboardDigestModelId must be a valid model id" },
+          { status: 400 },
+        );
+      }
+
+      updates.dashboardDigestModelId = modelId;
     }
 
     const user = await updateUserFields(db, auth.userId, updates);

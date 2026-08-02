@@ -10,6 +10,8 @@ type UserBase<TId> = {
   name: string | null;
   /** Preferred model for generating agent task suggestions. */
   agentTaskGenerationModelId?: ChatModelId | null;
+  /** Preferred model for generating the cross-project dashboard digest. */
+  dashboardDigestModelId?: ChatModelId | null;
   createdAt: string;
   updatedAt: string;
 };

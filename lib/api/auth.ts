@@ -10,6 +10,7 @@ export async function fetchCurrentUser(): Promise<UserResponse> {
 export type UpdateCurrentUserInput = {
   name?: string;
   agentTaskGenerationModelId?: ChatModelId | null;
+  dashboardDigestModelId?: ChatModelId | null;
 };
 
 export async function updateCurrentUser(

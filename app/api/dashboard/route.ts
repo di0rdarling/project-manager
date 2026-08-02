@@ -1,9 +1,13 @@
 import { requireUserId } from "@/lib/current-user";
+import { getChatProviderConfigError } from "@/lib/chat-generation";
 import { generateJordanDashboardDigest } from "@/lib/dashboard/generate-jordan-digest";
 import getClientPromise from "@/lib/mongodb";
 import type { StoredProject } from "@/lib/serialize/serialize-project";
 import type { StoredChat } from "@/lib/serialize/serialize-chat";
-import { findUserById } from "@/lib/users";
+import {
+  findUserById,
+  getUserDashboardDigestModelId,
+} from "@/lib/users";
 
 function getStartOfWeek(date: Date): Date {
   const result = new Date(date);
@@ -65,8 +69,24 @@ export async function POST() {
 
     const user = await findUserById(db, userId);
     const userName = user?.name ?? null;
+    const dashboardDigestModelId = getUserDashboardDigestModelId(user);
+    const providerConfigError = getChatProviderConfigError(
+      dashboardDigestModelId,
+    );
 
-    const digest = await generateJordanDashboardDigest(db, userId, userName);
+    if (providerConfigError) {
+      return Response.json(
+        { error: "AI digest generation is not configured" },
+        { status: 503 },
+      );
+    }
+
+    const digest = await generateJordanDashboardDigest(
+      db,
+      userId,
+      userName,
+      dashboardDigestModelId,
+    );
 
     return Response.json(digest);
   } catch (error) {

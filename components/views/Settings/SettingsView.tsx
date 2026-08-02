@@ -39,18 +39,23 @@ export default function SettingsView() {
     isError,
     error,
   } = useFetchCurrentUser();
-  const [selectedModelId, setSelectedModelId] = useState<ChatModelId>(
+  const [agentTaskModelId, setAgentTaskModelId] = useState<ChatModelId>(
     DEFAULT_CHAT_MODEL_ID,
   );
+  const [dashboardDigestModelId, setDashboardDigestModelId] =
+    useState<ChatModelId>(DEFAULT_CHAT_MODEL_ID);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const savedModelId =
+  const savedAgentTaskModelId =
     currentUser?.agentTaskGenerationModelId ?? DEFAULT_CHAT_MODEL_ID;
+  const savedDashboardDigestModelId =
+    currentUser?.dashboardDigestModelId ?? DEFAULT_CHAT_MODEL_ID;
 
   useEffect(() => {
-    setSelectedModelId(savedModelId);
+    setAgentTaskModelId(savedAgentTaskModelId);
+    setDashboardDigestModelId(savedDashboardDigestModelId);
     setSaveError(null);
-  }, [savedModelId]);
+  }, [savedAgentTaskModelId, savedDashboardDigestModelId]);
 
   const updateCurrentUserMutation = useUpdateCurrentUser({
     onError: (mutationError) => {
@@ -59,17 +64,24 @@ export default function SettingsView() {
           ? mutationError.message
           : "Unable to save settings",
       );
-      setSelectedModelId(savedModelId);
+      setAgentTaskModelId(savedAgentTaskModelId);
+      setDashboardDigestModelId(savedDashboardDigestModelId);
     },
     onSuccess: () => {
       setSaveError(null);
     },
   });
 
-  function handleModelChange(modelId: ChatModelId) {
-    setSelectedModelId(modelId);
+  function handleAgentTaskModelChange(modelId: ChatModelId) {
+    setAgentTaskModelId(modelId);
     setSaveError(null);
     updateCurrentUserMutation.mutate({ agentTaskGenerationModelId: modelId });
+  }
+
+  function handleDashboardDigestModelChange(modelId: ChatModelId) {
+    setDashboardDigestModelId(modelId);
+    setSaveError(null);
+    updateCurrentUserMutation.mutate({ dashboardDigestModelId: modelId });
   }
 
   return (
@@ -103,8 +115,21 @@ export default function SettingsView() {
             >
               <ChatModelSelect
                 id="agent-task-generation-model"
-                value={selectedModelId}
-                onChange={handleModelChange}
+                value={agentTaskModelId}
+                onChange={handleAgentTaskModelChange}
+                disabled={updateCurrentUserMutation.isPending}
+                showLabel
+                compact={false}
+              />
+            </SettingsRow>
+            <SettingsRow
+              title="Dashboard digest model"
+              description="Choose which model generates Jordan's cross-project update on the homepage. This applies whenever you ask for or regenerate the digest."
+            >
+              <ChatModelSelect
+                id="dashboard-digest-model"
+                value={dashboardDigestModelId}
+                onChange={handleDashboardDigestModelChange}
                 disabled={updateCurrentUserMutation.isPending}
                 showLabel
                 compact={false}

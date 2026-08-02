@@ -24,6 +24,7 @@ export function serializeUser(user: StoredUser): UserResponse {
     email: user.email,
     name: user.name,
     agentTaskGenerationModelId: user.agentTaskGenerationModelId ?? null,
+    dashboardDigestModelId: user.dashboardDigestModelId ?? null,
     createdAt: toIsoString(user.createdAt),
     updatedAt: toIsoString(user.updatedAt),
   };
@@ -35,6 +36,19 @@ export function getUserAgentTaskGenerationModelId(
   return normalizeChatModelId(
     user?.agentTaskGenerationModelId ?? DEFAULT_CHAT_MODEL_ID,
   );
+}
+
+export function getUserDashboardDigestModelId(
+  user: Pick<StoredUser, "dashboardDigestModelId"> | null | undefined,
+): ChatModelId {
+  if (user?.dashboardDigestModelId) {
+    return normalizeChatModelId(user.dashboardDigestModelId);
+  }
+
+  const envModel =
+    process.env.GEMINI_DASHBOARD_MODEL ?? process.env.GEMINI_MODEL;
+
+  return normalizeChatModelId(envModel ?? DEFAULT_CHAT_MODEL_ID);
 }
 
 export async function ensureUserIndexes(db: Db): Promise<void> {
@@ -90,6 +104,7 @@ export async function updateUserName(
 type UserFieldUpdates = {
   name?: string | null;
   agentTaskGenerationModelId?: ChatModelId | null;
+  dashboardDigestModelId?: ChatModelId | null;
 };
 
 export async function updateUserFields(
@@ -108,6 +123,10 @@ export async function updateUserFields(
   if ("agentTaskGenerationModelId" in updates) {
     setUpdates.agentTaskGenerationModelId =
       updates.agentTaskGenerationModelId ?? null;
+  }
+
+  if ("dashboardDigestModelId" in updates) {
+    setUpdates.dashboardDigestModelId = updates.dashboardDigestModelId ?? null;
   }
 
   const result = await db

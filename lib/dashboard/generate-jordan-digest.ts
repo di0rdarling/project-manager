@@ -9,7 +9,8 @@ import {
   getOtherTeammatesRecentChatSummaries,
   getTeammateChatSummaries,
 } from "@/lib/chats/chat-summaries";
-import { generateChatReply, getDashboardModelName } from "@/lib/gemini";
+import type { ChatModelId } from "@/lib/chats/chat-models";
+import { generateChatReply } from "@/lib/chat-generation";
 import { getAllProjectsContext } from "@/lib/project-context";
 import { buildChatOtherConversationsContext } from "@/lib/prompts/chat-other-conversations-prompt";
 import { buildOtherTeammatesContext } from "@/lib/prompts/chat-other-teammates-context-prompt";
@@ -256,6 +257,7 @@ export async function generateJordanDashboardDigest(
   db: Db,
   userId: ObjectId,
   userName: string | null,
+  modelId: ChatModelId,
 ): Promise<DashboardDigestResponse> {
   const teammateId = "jordan";
 
@@ -292,7 +294,7 @@ export async function generateJordanDashboardDigest(
     otherTeammatesContext,
     agentNotesContext,
     userName,
-    getDashboardModelName(),
+    modelId,
     new Date(),
   );
 
