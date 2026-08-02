@@ -20,6 +20,7 @@ import AgentStableContext from "@/components/views/Chats/AgentStableContext";
 import AIAgentMemory from "@/components/views/Chats/AIAgentMemory";
 import { useDeleteUserMemory } from "@/hooks/mutations/chats/useDeleteUserMemory";
 import { useGenerateUserMemory } from "@/hooks/mutations/chats/useGenerateUserMemory";
+import { useAgentChats } from "@/hooks/queries/useAgentChats";
 import { useFetchAgentTasks } from "@/hooks/queries/useFetchAgentTasks";
 import { useFetchUserMemory } from "@/hooks/queries/useFetchUserMemory";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
@@ -37,6 +38,10 @@ export default function AgentUserMemoryOverview({
   const isRegeneratingRef = useRef(false);
   const { data: userMemory, isFetching } = useFetchUserMemory(teammateId);
   const { data: agentTasks } = useFetchAgentTasks(teammateId, projectId);
+  const { agentChats, chatsCount, isPending: isChatsPending } = useAgentChats(
+    teammateId,
+    projectId,
+  );
 
   const {
     mutate: generateMemory,
@@ -132,9 +137,13 @@ export default function AgentUserMemoryOverview({
               <AIAgentMemory teammateId={teammateId} />
             </div>
             <div className="space-y-6">
-              <AgentAtAGlance chatsCount={null} tasksCount={tasksCount} />
+              <AgentAtAGlance chatsCount={chatsCount} tasksCount={tasksCount} />
               <AgentStableContext items={stableContext} />
-              <AgentConversations />
+              <AgentConversations
+                conversations={agentChats}
+                isPending={isChatsPending}
+                projectId={projectId}
+              />
             </div>
           </div>
         </div>
@@ -169,8 +178,12 @@ export default function AgentUserMemoryOverview({
               <AIAgentMemory teammateId={teammateId} />
             </div>
             <div className="space-y-6">
-              <AgentAtAGlance chatsCount={null} tasksCount={tasksCount} />
-              <AgentConversations />
+              <AgentAtAGlance chatsCount={chatsCount} tasksCount={tasksCount} />
+              <AgentConversations
+                conversations={agentChats}
+                isPending={isChatsPending}
+                projectId={projectId}
+              />
             </div>
           </div>
         </div>
