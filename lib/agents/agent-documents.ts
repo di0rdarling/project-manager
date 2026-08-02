@@ -5,6 +5,7 @@ export const AGENT_DOCUMENT_STATUS_OPTIONS = [
   { value: "ready_for_review", label: "Ready for review" },
   { value: "in_review", label: "In review" },
   { value: "accepted", label: "Accepted" },
+  { value: "rejected", label: "Rejected" },
 ] as const;
 
 export function parseAgentDocumentStatus(
@@ -13,7 +14,8 @@ export function parseAgentDocumentStatus(
   if (
     value === "ready_for_review" ||
     value === "in_review" ||
-    value === "accepted"
+    value === "accepted" ||
+    value === "rejected"
   ) {
     return value;
   }
@@ -48,6 +50,12 @@ export function canAcceptAgentDocument(
   return isAgentDocumentInReviewStage(status);
 }
 
+export function canRejectAgentDocument(
+  status: AgentDocumentStatus,
+): boolean {
+  return isAgentDocumentInReviewStage(status);
+}
+
 export function getAgentDocumentStatusBadgeClassName(
   status: AgentDocumentStatus,
 ): string {
@@ -58,6 +66,8 @@ export function getAgentDocumentStatusBadgeClassName(
       return "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200";
     case "accepted":
       return "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200";
+    case "rejected":
+      return "bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200";
   }
 }
 

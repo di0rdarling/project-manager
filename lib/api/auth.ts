@@ -1,3 +1,4 @@
+import type { ChatModelId } from "@/lib/chats/chat-models";
 import type { UserResponse } from "@/lib/types";
 import { parseResponse } from "@/lib/api/response";
 
@@ -6,9 +7,14 @@ export async function fetchCurrentUser(): Promise<UserResponse> {
   return parseResponse<UserResponse>(response);
 }
 
-export async function updateCurrentUser(input: {
-  name: string;
-}): Promise<UserResponse> {
+export type UpdateCurrentUserInput = {
+  name?: string;
+  agentTaskGenerationModelId?: ChatModelId | null;
+};
+
+export async function updateCurrentUser(
+  input: UpdateCurrentUserInput,
+): Promise<UserResponse> {
   const response = await fetch("/api/auth/me", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },

@@ -18,12 +18,14 @@ import { Modal } from "@/components/ui/Modal";
 import { Tabs, TabsList, TabsPanel, TabsTrigger } from "@/components/ui/Tabs";
 import { ChatModelSelect } from "@/components/views/Chats/ChatModelSelect";
 import { useAcceptAgentDocument } from "@/hooks/mutations/agent-documents/useAcceptAgentDocument";
+import { useRejectAgentDocument } from "@/hooks/mutations/agent-documents/useRejectAgentDocument";
 import {
   getAgentDocumentDetailPath,
 } from "@/lib/agents/agent-documents";
 import {
   canAccessAgentTaskOutputTabs,
   canMarkAgentTaskComplete,
+  canRejectAgentTaskDeliverable,
   getAgentTaskDecisionStatus,
   getAgentTaskOutputModelId,
   getAgentTaskOutputStatus,
@@ -435,6 +437,24 @@ function AgentTaskReviewCompleted() {
   );
 }
 
+function AgentTaskReviewRejected() {
+  return (
+    <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-10 text-center dark:border-zinc-800 dark:bg-zinc-900">
+      <ExclamationTriangleIcon
+        className="mx-auto size-8 text-zinc-400 dark:text-zinc-500"
+        aria-hidden
+      />
+      <p className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-100">
+        Task rejected
+      </p>
+      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+        You rejected this deliverable. The task slot is free for a new
+        suggestion when you generate more tasks.
+      </p>
+    </div>
+  );
+}
+
 function AgentTaskReviewContent({
   task,
   teammateId,
@@ -442,7 +462,9 @@ function AgentTaskReviewContent({
   profileProjectId,
   onClose,
   onMarkComplete,
+  onReject,
   isMarkingComplete,
+  isRejecting,
 }: Readonly<{
   task: AgentTask;
   teammateId?: ChatTeammateId;
@@ -450,7 +472,9 @@ function AgentTaskReviewContent({
   profileProjectId?: string | null;
   onClose?: () => void;
   onMarkComplete?: () => void;
+  onReject?: () => void;
   isMarkingComplete?: boolean;
+  isRejecting?: boolean;
 }>) {
   const documentHref =
     task.outputDocumentId && teammateId
@@ -462,6 +486,10 @@ function AgentTaskReviewContent({
       : null;
   const documentTitle = task.outputDocumentTitle || "Untitled document";
   const taskStatus = getAgentTaskStatus(task);
+
+  if (taskStatus === "rejected") {
+    return <AgentTaskReviewRejected />;
+  }
 
   if (taskStatus === "completed") {
     return <AgentTaskReviewCompleted />;
@@ -516,15 +544,30 @@ function AgentTaskReviewContent({
         </div>
       ) : null}
 
-      {onMarkComplete ? (
-        <Button
-          type="button"
-          onClick={onMarkComplete}
-          disabled={isMarkingComplete}
-          className="w-full"
-        >
-          {isMarkingComplete ? "Marking complete..." : "Mark task complete"}
-        </Button>
+      {onMarkComplete || onReject ? (
+        <div className="flex flex-col gap-2 sm:flex-row">
+          {onReject ? (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onReject}
+              disabled={isMarkingComplete || isRejecting}
+              className="w-full sm:flex-1"
+            >
+              Reject task
+            </Button>
+          ) : null}
+          {onMarkComplete ? (
+            <Button
+              type="button"
+              onClick={onMarkComplete}
+              disabled={isMarkingComplete || isRejecting}
+              className="w-full sm:flex-1"
+            >
+              {isMarkingComplete ? "Marking complete..." : "Mark task complete"}
+            </Button>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
@@ -548,6 +591,7 @@ export default function AgentTaskDetailModal({
 }: Readonly<AgentTaskDetailModalProps>) {
   const [activeTab, setActiveTab] = useState("overview");
   const [isRedoConfirmOpen, setIsRedoConfirmOpen] = useState(false);
+  const [isRejectConfirmOpen, setIsRejectConfirmOpen] = useState(false);
   const [selectedModelId, setSelectedModelId] =
     useState<ChatModelId>(DEFAULT_CHAT_MODEL_ID);
   const previousTaskStatusRef = useRef<AgentTaskDecisionStatus | null>(null);
@@ -561,9 +605,20 @@ export default function AgentTaskDetailModal({
     },
   });
 
+  const rejectDocumentMutation = useRejectAgentDocument({
+    onSuccess: () => {
+      toast.success("Task rejected.");
+      setIsRejectConfirmOpen(false);
+    },
+    onError: (mutationError) => {
+      toast.error(mutationError.message);
+    },
+  });
+
   useEffect(() => {
     if (!open) {
       setIsRedoConfirmOpen(false);
+      setIsRejectConfirmOpen(false);
     }
   }, [open]);
 
@@ -617,18 +672,25 @@ export default function AgentTaskDetailModal({
     !isStartingOutput &&
     Boolean(onStartOutput);
   const canMarkComplete = canMarkAgentTaskComplete(activeTask);
+  const canRejectDeliverable = canRejectAgentTaskDeliverable(activeTask);
   const showReviewMarkCompleteAction =
     activeTab === "review" &&
     canMarkComplete &&
     Boolean(activeTask.outputDocumentId);
+  const showReviewRejectAction =
+    activeTab === "review" &&
+    canRejectDeliverable &&
+    Boolean(activeTask.outputDocumentId);
   const acceptDisabled = isUpdating || (taskDecisionStatus !== "accepted" && !canAccept);
   const redoDocumentTitle = activeTask.outputDocumentTitle || "Untitled document";
+  const reviewActionPending =
+    acceptDocumentMutation.isPending || rejectDocumentMutation.isPending;
 
   function handleMarkComplete() {
     if (
       !activeTask.outputDocumentId ||
       !teammateId ||
-      acceptDocumentMutation.isPending
+      reviewActionPending
     ) {
       return;
     }
@@ -638,6 +700,26 @@ export default function AgentTaskDetailModal({
       documentId: activeTask.outputDocumentId,
       projectId: profileProjectId,
     });
+  }
+
+  function handleRejectDeliverable() {
+    if (
+      !activeTask.outputDocumentId ||
+      !teammateId ||
+      reviewActionPending
+    ) {
+      return;
+    }
+
+    rejectDocumentMutation.mutate({
+      teammateId,
+      documentId: activeTask.outputDocumentId,
+      projectId: profileProjectId,
+    });
+  }
+
+  function handleRequestReject() {
+    setIsRejectConfirmOpen(true);
   }
 
   function handleRequestRedo() {
@@ -693,7 +775,15 @@ export default function AgentTaskDetailModal({
                 pendingLabel: "Saving...",
                 variant: "secondary",
               }
-            : undefined
+            : showReviewRejectAction
+              ? {
+                  label: "Reject task",
+                  onClick: handleRequestReject,
+                  isPending: rejectDocumentMutation.isPending,
+                  pendingLabel: "Rejecting...",
+                  variant: "secondary",
+                }
+              : undefined
         }
         primaryAction={
           showOverviewActions && onAccept
@@ -791,7 +881,7 @@ export default function AgentTaskDetailModal({
 
           <TabsPanel value="review">
             <AgentTaskReviewContent
-              task={task}
+              task={activeTask}
               teammateId={teammateId}
               profileFrom={profileFrom}
               profileProjectId={profileProjectId}
@@ -799,7 +889,11 @@ export default function AgentTaskDetailModal({
               onMarkComplete={
                 canMarkComplete ? handleMarkComplete : undefined
               }
+              onReject={
+                canRejectDeliverable ? handleRequestReject : undefined
+              }
               isMarkingComplete={acceptDocumentMutation.isPending}
+              isRejecting={rejectDocumentMutation.isPending}
             />
           </TabsPanel>
         </Tabs>
@@ -816,6 +910,21 @@ export default function AgentTaskDetailModal({
         error={null}
         onClose={() => setIsRedoConfirmOpen(false)}
         onConfirm={handleConfirmRedo}
+      />
+      <DeleteAISummaryModal
+        open={isRejectConfirmOpen}
+        title="Reject this task?"
+        description={`The deliverable "${redoDocumentTitle}" will be marked rejected and this task slot will be freed up. You can generate a new task to replace it.`}
+        confirmLabel="Reject task"
+        pendingLabel="Rejecting..."
+        isPending={rejectDocumentMutation.isPending}
+        error={rejectDocumentMutation.error}
+        onClose={() => {
+          if (!rejectDocumentMutation.isPending) {
+            setIsRejectConfirmOpen(false);
+          }
+        }}
+        onConfirm={handleRejectDeliverable}
       />
     </>
   );

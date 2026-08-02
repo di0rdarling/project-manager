@@ -311,8 +311,11 @@ export async function generateUserMemory(prompt: string): Promise<string> {
   return generateJsonText(prompt, getMemoryModelName());
 }
 
-export async function generateAgentTasks(prompt: string): Promise<string> {
-  return generateJsonText(prompt, getMemoryModelName());
+export async function generateAgentTasks(
+  prompt: string,
+  modelName?: string,
+): Promise<string> {
+  return generateJsonText(prompt, modelName ?? getMemoryModelName());
 }
 
 /**

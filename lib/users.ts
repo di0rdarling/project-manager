@@ -1,4 +1,9 @@
 import { ObjectId, type Db } from "mongodb";
+import {
+  DEFAULT_CHAT_MODEL_ID,
+  normalizeChatModelId,
+  type ChatModelId,
+} from "@/lib/chats/chat-models";
 import { toIsoString } from "@/lib/dates";
 import type { User, UserResponse } from "@/lib/types";
 
@@ -18,9 +23,18 @@ export function serializeUser(user: StoredUser): UserResponse {
     _id: user._id.toString(),
     email: user.email,
     name: user.name,
+    agentTaskGenerationModelId: user.agentTaskGenerationModelId ?? null,
     createdAt: toIsoString(user.createdAt),
     updatedAt: toIsoString(user.updatedAt),
   };
+}
+
+export function getUserAgentTaskGenerationModelId(
+  user: Pick<StoredUser, "agentTaskGenerationModelId"> | null | undefined,
+): ChatModelId {
+  return normalizeChatModelId(
+    user?.agentTaskGenerationModelId ?? DEFAULT_CHAT_MODEL_ID,
+  );
 }
 
 export async function ensureUserIndexes(db: Db): Promise<void> {
@@ -70,14 +84,35 @@ export async function updateUserName(
   userId: ObjectId,
   name: string | null,
 ): Promise<StoredUser | null> {
-  const updatedAt = new Date().toISOString();
+  return updateUserFields(db, userId, { name });
+}
+
+type UserFieldUpdates = {
+  name?: string | null;
+  agentTaskGenerationModelId?: ChatModelId | null;
+};
+
+export async function updateUserFields(
+  db: Db,
+  userId: ObjectId,
+  updates: UserFieldUpdates,
+): Promise<StoredUser | null> {
+  const setUpdates: Partial<StoredUser> = {
+    updatedAt: new Date().toISOString(),
+  };
+
+  if ("name" in updates) {
+    setUpdates.name = updates.name ?? null;
+  }
+
+  if ("agentTaskGenerationModelId" in updates) {
+    setUpdates.agentTaskGenerationModelId =
+      updates.agentTaskGenerationModelId ?? null;
+  }
+
   const result = await db
     .collection<StoredUser>(USERS_COLLECTION)
-    .findOneAndUpdate(
-      { _id: userId },
-      { $set: { name, updatedAt } },
-      { returnDocument: "after" },
-    );
+    .findOneAndUpdate({ _id: userId }, { $set: setUpdates }, { returnDocument: "after" });
 
   return result ?? null;
 }

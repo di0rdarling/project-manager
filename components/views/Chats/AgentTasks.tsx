@@ -19,7 +19,7 @@ import { useGenerateAgentTasks } from "@/hooks/mutations/chats/useGenerateAgentT
 import { useStartAgentTaskOutput } from "@/hooks/mutations/chats/useStartAgentTaskOutput";
 import { useUpdateAgentTaskStatus } from "@/hooks/mutations/chats/useUpdateAgentTaskStatus";
 import { useFetchAgentTasks } from "@/hooks/queries/useFetchAgentTasks";
-import { getAgentTaskStatus, getAgentTaskStatusBadgeClassName, getAgentTaskStatusLabel, getAgentTaskProjectBadgeClassName, getAgentTaskProjectName, canGenerateAgentTasks, canAcceptAgentTask, getAcceptedAgentTasks } from "@/lib/agents/agent-tasks";
+import { getAgentTaskStatus, getAgentTaskStatusBadgeClassName, getAgentTaskStatusLabel, getAgentTaskProjectBadgeClassName, getAgentTaskProjectName, canGenerateAgentTasks, canAcceptAgentTask, getAcceptedAgentTasks, getAgentTaskDecisionStatus } from "@/lib/agents/agent-tasks";
 import { parseAgentProfileNavigationContext, AGENT_PROFILE_TASK_TITLE_PARAM, AGENT_TASKS_SECTION_ID } from "@/lib/chats/agent-profile-navigation";
 import type { StartAgentTaskOutputInput } from "@/lib/api/agent-tasks";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
@@ -205,7 +205,9 @@ export default function AgentTasks({
 
     if (
       updatedTask &&
-      updatedTask.outputDocumentStatus !== selectedTask.outputDocumentStatus
+      (updatedTask.outputDocumentStatus !== selectedTask.outputDocumentStatus ||
+        getAgentTaskDecisionStatus(updatedTask) !==
+          getAgentTaskDecisionStatus(selectedTask))
     ) {
       setSelectedTask(updatedTask);
     }

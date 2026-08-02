@@ -236,3 +236,30 @@ export async function countKimiChatContextTokens(
 export async function countKimiTextTokens(text: string): Promise<number> {
   return estimateTextTokens(text);
 }
+
+export async function generateKimiJsonText(
+  prompt: string,
+  modelId?: ChatModelId,
+): Promise<string> {
+  try {
+    const client = getKimiClient();
+    const completion = await client.chat.completions.create({
+      model: resolveKimiModelName(modelId),
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+    });
+
+    const assistantMessage = completion.choices[0]?.message;
+    const content = assistantMessage
+      ? extractKimiMessageContent(assistantMessage)
+      : "";
+
+    if (!content) {
+      throw new KimiApiError("Kimi returned an empty response.", 502);
+    }
+
+    return content;
+  } catch (error) {
+    throw toKimiApiError(error);
+  }
+}

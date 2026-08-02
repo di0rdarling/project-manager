@@ -2,12 +2,17 @@ import { ObjectId } from "mongodb";
 import { isChatTeammateId } from "@/lib/chats/chat-teammates";
 import {
   canAcceptAgentDocument,
+  canRejectAgentDocument,
   parseAgentDocumentStatus,
 } from "@/lib/agents/agent-documents";
 import {
   getAgentDocumentById,
   updateAgentDocumentStatus,
 } from "@/lib/agents/agent-documents-store";
+import {
+  findAgentTaskByDocumentId,
+  updateAgentTaskStatus,
+} from "@/lib/agents/agent-tasks-store";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 
@@ -85,9 +90,9 @@ export async function PATCH(request: Request, context: RouteContext) {
     const body = (await request.json()) as { status?: unknown };
     const status = parseAgentDocumentStatus(body.status);
 
-    if (status !== "accepted") {
+    if (status !== "accepted" && status !== "rejected") {
       return Response.json(
-        { error: "status must be accepted" },
+        { error: "status must be accepted or rejected" },
         { status: 400 },
       );
     }
@@ -107,9 +112,18 @@ export async function PATCH(request: Request, context: RouteContext) {
       return Response.json({ error: "Document not found" }, { status: 404 });
     }
 
-    if (!canAcceptAgentDocument(existing.status)) {
+    if (
+      status === "accepted"
+        ? !canAcceptAgentDocument(existing.status)
+        : !canRejectAgentDocument(existing.status)
+    ) {
       return Response.json(
-        { error: "Document is not ready to be marked complete" },
+        {
+          error:
+            status === "accepted"
+              ? "Document is not ready to be marked complete"
+              : "Document is not ready to be rejected",
+        },
         { status: 400 },
       );
     }
@@ -124,6 +138,26 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     if (!document) {
       return Response.json({ error: "Document not found" }, { status: 404 });
+    }
+
+    if (status === "rejected") {
+      const linkedTask = await findAgentTaskByDocumentId(
+        db,
+        auth.userId,
+        parsed.teammateId,
+        parsed.documentId,
+      );
+
+      if (linkedTask) {
+        await updateAgentTaskStatus(
+          db,
+          auth.userId,
+          parsed.teammateId,
+          linkedTask.projectId,
+          linkedTask.task.title,
+          "rejected",
+        );
+      }
     }
 
     return Response.json(document);

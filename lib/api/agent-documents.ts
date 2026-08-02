@@ -20,18 +20,33 @@ export async function fetchAgentDocument(input: {
   return parseResponse<AgentDocumentResponse>(response);
 }
 
-export async function acceptAgentDocument(input: {
+async function updateAgentDocumentReviewStatus(input: {
   teammateId: ChatTeammateId;
   documentId: string;
+  status: "accepted" | "rejected";
 }): Promise<AgentDocumentResponse> {
-  const { teammateId, documentId } = input;
+  const { teammateId, documentId, status } = input;
   const response = await fetch(
     `/api/chats/agents/${teammateId}/documents/${documentId}`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "accepted" }),
+      body: JSON.stringify({ status }),
     },
   );
   return parseResponse<AgentDocumentResponse>(response);
+}
+
+export async function acceptAgentDocument(input: {
+  teammateId: ChatTeammateId;
+  documentId: string;
+}): Promise<AgentDocumentResponse> {
+  return updateAgentDocumentReviewStatus({ ...input, status: "accepted" });
+}
+
+export async function rejectAgentDocument(input: {
+  teammateId: ChatTeammateId;
+  documentId: string;
+}): Promise<AgentDocumentResponse> {
+  return updateAgentDocumentReviewStatus({ ...input, status: "rejected" });
 }

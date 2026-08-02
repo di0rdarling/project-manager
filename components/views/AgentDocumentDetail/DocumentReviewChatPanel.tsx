@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
+import { DeleteAISummaryModal } from "@/components/ui/DeleteAISummaryModal";
 import { CopyToClipboardButton } from "@/components/ui/CopyToClipboardButton";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
@@ -16,6 +17,7 @@ import {
 } from "@/components/views/Chats/TeammateProfileLink";
 import { useSendDocumentReviewMessage } from "@/hooks/mutations/agent-documents/useSendDocumentReviewMessage";
 import { useAcceptAgentDocument } from "@/hooks/mutations/agent-documents/useAcceptAgentDocument";
+import { useRejectAgentDocument } from "@/hooks/mutations/agent-documents/useRejectAgentDocument";
 import { useUpdateDocumentReviewChat } from "@/hooks/mutations/agent-documents/useUpdateDocumentReviewChat";
 import { useFetchDocumentReviewChat } from "@/hooks/queries/useFetchDocumentReviewChat";
 import {
@@ -33,7 +35,7 @@ import {
 } from "@/lib/chats/kimi-reasoning-effort";
 import { formatDisplayDateTime } from "@/lib/dates";
 import { shouldShowAssistantTypingIndicator } from "@/lib/chats/should-show-assistant-typing-indicator";
-import { canAcceptAgentDocument } from "@/lib/agents/agent-documents";
+import { canAcceptAgentDocument, canRejectAgentDocument } from "@/lib/agents/agent-documents";
 import type {
   AgentDocumentReviewMessageResponse,
   AgentDocumentStatus,
@@ -142,6 +144,7 @@ export function DocumentReviewChatPanel({
   documentStatus: initialDocumentStatus,
 }: Readonly<DocumentReviewChatPanelProps>) {
   const [message, setMessage] = useState("");
+  const [isRejectConfirmOpen, setIsRejectConfirmOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isSendingRef = useRef(false);
   const teammate = getChatTeammate(teammateId);
@@ -162,6 +165,16 @@ export function DocumentReviewChatPanel({
   const acceptDocumentMutation = useAcceptAgentDocument({
     onSuccess: () => {
       toast.success("Task marked complete.");
+    },
+    onError: (mutationError) => {
+      toast.error(mutationError.message);
+    },
+  });
+
+  const rejectDocumentMutation = useRejectAgentDocument({
+    onSuccess: () => {
+      toast.success("Task rejected.");
+      setIsRejectConfirmOpen(false);
     },
     onError: (mutationError) => {
       toast.error(mutationError.message);
@@ -207,14 +220,32 @@ export function DocumentReviewChatPanel({
   const canMarkComplete = documentStatus
     ? canAcceptAgentDocument(documentStatus)
     : false;
+  const canReject = documentStatus
+    ? canRejectAgentDocument(documentStatus)
+    : false;
   const isMarkingComplete = acceptDocumentMutation.isPending;
+  const isRejecting = rejectDocumentMutation.isPending;
+  const reviewActionDisabled =
+    isMarkingComplete || isRejecting || isPending || isError;
 
   function handleMarkComplete() {
-    if (!canMarkComplete || isMarkingComplete) {
+    if (!canMarkComplete || reviewActionDisabled) {
       return;
     }
 
     acceptDocumentMutation.mutate({
+      teammateId,
+      documentId,
+      projectId,
+    });
+  }
+
+  function handleReject() {
+    if (!canReject || reviewActionDisabled) {
+      return;
+    }
+
+    rejectDocumentMutation.mutate({
       teammateId,
       documentId,
       projectId,
@@ -304,6 +335,7 @@ export function DocumentReviewChatPanel({
   }
 
   return (
+    <>
     <aside className="flex min-h-[420px] w-full shrink-0 flex-col overflow-hidden border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 xl:min-h-0 xl:w-[min(100%,28rem)] xl:flex-none xl:border-l xl:border-t-0 2xl:w-[min(100%,32rem)]">
       <div className="shrink-0 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
         <div className="flex items-start gap-3">
@@ -328,15 +360,30 @@ export function DocumentReviewChatPanel({
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               Discuss this deliverable
             </p>
-            {canMarkComplete ? (
-              <Button
-                type="button"
-                onClick={handleMarkComplete}
-                disabled={isMarkingComplete || isPending || isError}
-                className="mt-3 w-full"
-              >
-                {isMarkingComplete ? "Marking complete..." : "Mark task complete"}
-              </Button>
+            {canMarkComplete || canReject ? (
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                {canReject ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setIsRejectConfirmOpen(true)}
+                    disabled={reviewActionDisabled}
+                    className="w-full sm:flex-1"
+                  >
+                    Reject task
+                  </Button>
+                ) : null}
+                {canMarkComplete ? (
+                  <Button
+                    type="button"
+                    onClick={handleMarkComplete}
+                    disabled={reviewActionDisabled}
+                    className="w-full sm:flex-1"
+                  >
+                    {isMarkingComplete ? "Marking complete..." : "Mark task complete"}
+                  </Button>
+                ) : null}
+              </div>
             ) : null}
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <div className="w-36 min-w-0">
@@ -458,5 +505,22 @@ export function DocumentReviewChatPanel({
         )}
       </div>
     </aside>
+
+    <DeleteAISummaryModal
+      open={isRejectConfirmOpen}
+      title="Reject this task?"
+      description="The deliverable will be marked rejected and this task slot will be freed up. You can generate a new task to replace it."
+      confirmLabel="Reject task"
+      pendingLabel="Rejecting..."
+      isPending={isRejecting}
+      error={rejectDocumentMutation.error}
+      onClose={() => {
+        if (!isRejecting) {
+          setIsRejectConfirmOpen(false);
+        }
+      }}
+      onConfirm={handleReject}
+    />
+    </>
   );
 }

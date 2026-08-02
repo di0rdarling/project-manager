@@ -1,8 +1,18 @@
 import { requireUserId } from "@/lib/current-user";
+import { isChatModelId, type ChatModelId } from "@/lib/chats/chat-models";
 import getClientPromise from "@/lib/mongodb";
-import { findUserById, serializeUser, updateUserName } from "@/lib/users";
+import {
+  findUserById,
+  serializeUser,
+  updateUserFields,
+} from "@/lib/users";
 
 const MAX_NAME_LENGTH = 100;
+
+type PatchBody = {
+  name?: unknown;
+  agentTaskGenerationModelId?: unknown;
+};
 
 export async function GET() {
   try {
@@ -34,25 +44,55 @@ export async function PATCH(request: Request) {
       return auth.error;
     }
 
-    const body = (await request.json()) as { name?: unknown };
-    if (typeof body.name !== "string") {
-      return Response.json({ error: "Name must be a string" }, { status: 400 });
-    }
+    const body = (await request.json()) as PatchBody;
+    const hasName = "name" in body;
+    const hasAgentTaskGenerationModelId = "agentTaskGenerationModelId" in body;
 
-    const trimmedName = body.name.trim();
-    if (trimmedName.length > MAX_NAME_LENGTH) {
+    if (!hasName && !hasAgentTaskGenerationModelId) {
       return Response.json(
-        { error: `Name must be ${MAX_NAME_LENGTH} characters or fewer` },
+        { error: "No valid fields to update" },
         { status: 400 },
       );
     }
 
     const client = await getClientPromise();
-    const user = await updateUserName(
-      client.db(),
-      auth.userId,
-      trimmedName || null,
-    );
+    const db = client.db();
+
+    const updates: {
+      name?: string | null;
+      agentTaskGenerationModelId?: ChatModelId | null;
+    } = {};
+
+    if (hasName) {
+      if (typeof body.name !== "string") {
+        return Response.json({ error: "Name must be a string" }, { status: 400 });
+      }
+
+      const trimmedName = body.name.trim();
+      if (trimmedName.length > MAX_NAME_LENGTH) {
+        return Response.json(
+          { error: `Name must be ${MAX_NAME_LENGTH} characters or fewer` },
+          { status: 400 },
+        );
+      }
+
+      updates.name = trimmedName || null;
+    }
+
+    if (hasAgentTaskGenerationModelId) {
+      const modelId = body.agentTaskGenerationModelId;
+
+      if (modelId !== null && !isChatModelId(modelId)) {
+        return Response.json(
+          { error: "agentTaskGenerationModelId must be a valid model id" },
+          { status: 400 },
+        );
+      }
+
+      updates.agentTaskGenerationModelId = modelId;
+    }
+
+    const user = await updateUserFields(db, auth.userId, updates);
 
     if (!user) {
       return Response.json({ error: "User not found" }, { status: 404 });

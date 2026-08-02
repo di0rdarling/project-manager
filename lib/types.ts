@@ -8,6 +8,8 @@ type UserBase<TId> = {
   email: string;
   passwordHash: string;
   name: string | null;
+  /** Preferred model for generating agent task suggestions. */
+  agentTaskGenerationModelId?: ChatModelId | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -74,7 +76,8 @@ export type AgentNoteResponse = AgentNoteBase<string>;
 export type AgentDocumentStatus =
   | "ready_for_review"
   | "in_review"
-  | "accepted";
+  | "accepted"
+  | "rejected";
 
 type AgentDocumentBase<TId> = {
   _id: TId;

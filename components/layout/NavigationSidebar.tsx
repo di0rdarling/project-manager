@@ -10,6 +10,7 @@ import {
   ArrowRightOnRectangleIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  Cog6ToothIcon,
   HomeIcon,
   UserCircleIcon,
 } from "@heroicons/react/24/outline";
@@ -42,6 +43,7 @@ import {
 
 const navItems = [
   { href: "/home", label: "Home", icon: HomeIcon },
+  { href: "/settings", label: "Settings", icon: Cog6ToothIcon },
   { href: "/account", label: "Account", icon: UserCircleIcon },
 ] as const;
 

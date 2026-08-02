@@ -30,11 +30,12 @@ import {
   RECENT_CHAT_SUMMARY_LIMIT,
 } from "@/lib/chats/chat-summaries";
 import { requireUserId } from "@/lib/current-user";
-import { generateAgentTasks } from "@/lib/gemini";
+import { generateAgentTasks } from "@/lib/agent-task-generation";
+import { getChatProviderConfigError } from "@/lib/chat-generation";
 import getClientPromise from "@/lib/mongodb";
 import { getProjectContext } from "@/lib/project-context";
 import { buildAgentTasksPrompt } from "@/lib/prompts/agent-tasks-prompt";
-import { findUserById } from "@/lib/users";
+import { findUserById, getUserAgentTaskGenerationModelId } from "@/lib/users";
 
 type RouteContext = {
   params: Promise<{ teammateId: string }>;
@@ -174,6 +175,19 @@ export async function POST(request: Request, context: RouteContext) {
       : undefined;
 
     const userName = currentUser?.name ?? null;
+    const agentTaskGenerationModelId =
+      getUserAgentTaskGenerationModelId(currentUser);
+    const providerConfigError = getChatProviderConfigError(
+      agentTaskGenerationModelId,
+    );
+
+    if (providerConfigError) {
+      return Response.json(
+        { error: "AI task generation is not configured" },
+        { status: 503 },
+      );
+    }
+
     const teammate = getChatTeammate(parsedTeammate.teammateId);
     const generatedAt = new Date();
     const draft = parseAgentTasksJson(
@@ -192,6 +206,7 @@ export async function POST(request: Request, context: RouteContext) {
           taskCount,
           acceptedTasks,
         }),
+        agentTaskGenerationModelId,
       ),
       taskCount,
       project.name,
@@ -223,7 +238,8 @@ export async function POST(request: Request, context: RouteContext) {
   } catch (error) {
     if (
       error instanceof Error &&
-      error.message === "GEMINI_API_KEY is not configured"
+      (error.message === "GEMINI_API_KEY is not configured" ||
+        error.message === "KIMI_API_KEY is not configured")
     ) {
       return Response.json(
         { error: "AI task generation is not configured" },

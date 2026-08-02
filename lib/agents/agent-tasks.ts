@@ -161,7 +161,7 @@ export function hasAgentTaskOutput(task: AgentTask): boolean {
   return getAgentTaskOutputStatus(task) === "completed";
 }
 
-export function canMarkAgentTaskComplete(task: AgentTask): boolean {
+export function canReviewAgentTaskDeliverable(task: AgentTask): boolean {
   const documentStatus = task.outputDocumentStatus;
 
   if (!documentStatus) {
@@ -174,6 +174,14 @@ export function canMarkAgentTaskComplete(task: AgentTask): boolean {
     Boolean(task.outputDocumentId) &&
     isAgentDocumentInReviewStage(documentStatus)
   );
+}
+
+export function canMarkAgentTaskComplete(task: AgentTask): boolean {
+  return canReviewAgentTaskDeliverable(task);
+}
+
+export function canRejectAgentTaskDeliverable(task: AgentTask): boolean {
+  return canReviewAgentTaskDeliverable(task);
 }
 
 export function mergeGeneratedAgentTasks(
