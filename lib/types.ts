@@ -389,6 +389,7 @@ export type DashboardTaskItem = {
 
 export type DashboardTasksResponse = {
   tasks: DashboardTaskItem[];
+  completedTasks: DashboardTaskItem[];
 };
 
 export type RejectAgentDocumentResponse = {

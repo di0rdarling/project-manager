@@ -84,8 +84,27 @@ export function getAgentTaskStatusBadgeClassName(
     case "accepted":
       return "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200";
     case "completed":
-      return "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200";
+      return "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400";
   }
+}
+
+export function isAgentTaskCompleted(task: AgentTask): boolean {
+  return getAgentTaskStatus(task) === "completed";
+}
+
+export function getCompletedAgentTasks(tasks: AgentTask[]): AgentTask[] {
+  return tasks.filter((task) => isAgentTaskCompleted(task));
+}
+
+export function getActiveAgentTasks(tasks: AgentTask[]): AgentTask[] {
+  return tasks.filter((task) => !isAgentTaskCompleted(task));
+}
+
+/** Accepted tasks that still occupy one of the three active task slots. */
+export function getSlotOccupyingAcceptedAgentTasks(
+  tasks: AgentTask[],
+): AgentTask[] {
+  return getAcceptedAgentTasks(tasks).filter((task) => !isAgentTaskCompleted(task));
 }
 
 export function getAcceptedAgentTasks(tasks: AgentTask[]): AgentTask[] {
@@ -95,7 +114,7 @@ export function getAcceptedAgentTasks(tasks: AgentTask[]): AgentTask[] {
 }
 
 export function getAgentTaskGenerationSlots(tasks: AgentTask[]): number {
-  return AGENT_TASK_COUNT - getAcceptedAgentTasks(tasks).length;
+  return AGENT_TASK_COUNT - getSlotOccupyingAcceptedAgentTasks(tasks).length;
 }
 
 export function canGenerateAgentTasks(tasks: AgentTask[]): boolean {
@@ -116,7 +135,7 @@ export function canAcceptAgentTask(
     return true;
   }
 
-  return getAcceptedAgentTasks(tasks).length < AGENT_TASK_COUNT;
+  return getSlotOccupyingAcceptedAgentTasks(tasks).length < AGENT_TASK_COUNT;
 }
 
 export function getAgentTaskProjectBadgeClassName(): string {
@@ -188,10 +207,12 @@ export function mergeGeneratedAgentTasks(
   existingTasks: AgentTask[],
   generatedTasks: AgentTask[],
 ): AgentTask[] {
-  const acceptedTasks = getAcceptedAgentTasks(existingTasks);
+  const completedTasks = getCompletedAgentTasks(existingTasks);
+  const activeAcceptedTasks = getSlotOccupyingAcceptedAgentTasks(existingTasks);
 
   return [
-    ...acceptedTasks,
+    ...completedTasks,
+    ...activeAcceptedTasks,
     ...generatedTasks.map((task) => ({ ...task, status: "pending" as const })),
   ];
 }

@@ -10,6 +10,26 @@ import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
 import type { DashboardTasksResponse, DashboardTaskItem } from "@/lib/types";
 
+const STATUS_ORDER: Record<string, number> = {
+  pending: 0,
+  in_review: 1,
+  accepted: 2,
+  completed: 3,
+};
+
+function sortDashboardTasks(items: DashboardTaskItem[]): DashboardTaskItem[] {
+  return [...items].sort((a, b) => {
+    const orderDiff = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+    if (orderDiff !== 0) return orderDiff;
+    if (a.updatedAt && b.updatedAt) {
+      return (
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      );
+    }
+    return 0;
+  });
+}
+
 export async function GET() {
   try {
     const auth = await requireUserId();
@@ -27,6 +47,7 @@ export async function GET() {
     );
 
     const tasks: DashboardTaskItem[] = [];
+    const completedTasks: DashboardTaskItem[] = [];
 
     for (const record of records) {
       const teammate = teammateById.get(record.teammateId);
@@ -47,10 +68,9 @@ export async function GET() {
 
       for (const task of tasksWithDocumentStatus) {
         const status = getAgentTaskStatus(task);
-        // Only show tasks that need attention or are in progress
         if (status === "rejected") continue;
 
-        tasks.push({
+        const item: DashboardTaskItem = {
           title: task.title,
           detail: task.detail,
           status,
@@ -64,31 +84,20 @@ export async function GET() {
           outputDocumentId: task.outputDocumentId,
           outputDocumentStatus: task.outputDocumentStatus,
           updatedAt: record.updatedAt ? toIsoString(record.updatedAt) : null,
-        });
+        };
+
+        if (status === "completed") {
+          completedTasks.push(item);
+        } else {
+          tasks.push(item);
+        }
       }
     }
 
-    // Sort: pending first, then in_review, then accepted, then completed
-    const statusOrder: Record<string, number> = {
-      pending: 0,
-      in_review: 1,
-      accepted: 2,
-      completed: 3,
+    const response: DashboardTasksResponse = {
+      tasks: sortDashboardTasks(tasks),
+      completedTasks: sortDashboardTasks(completedTasks),
     };
-
-    tasks.sort((a, b) => {
-      const orderDiff = statusOrder[a.status] - statusOrder[b.status];
-      if (orderDiff !== 0) return orderDiff;
-      // Within same status, sort by most recently updated
-      if (a.updatedAt && b.updatedAt) {
-        return (
-          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-        );
-      }
-      return 0;
-    });
-
-    const response: DashboardTasksResponse = { tasks };
 
     return Response.json(response);
   } catch {

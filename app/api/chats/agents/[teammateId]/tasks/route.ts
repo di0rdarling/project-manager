@@ -5,7 +5,7 @@ import {
   canAcceptAgentTask,
   canGenerateAgentTasks,
   canReplaceAgentTask,
-  getAcceptedAgentTasks,
+  getSlotOccupyingAcceptedAgentTasks,
   getAgentTaskGenerationSlots,
   mergeGeneratedAgentTasks,
   normalizeAgentTasksProjectName,
@@ -25,6 +25,7 @@ import {
   parseProjectId,
   parseTeammateId,
   serializeAgentTasksResponse,
+  attachDocumentStatusToAgentTasks,
 } from "@/lib/agents/agent-tasks-route-helpers";
 import { requireUserId } from "@/lib/current-user";
 import { generateAgentTasks } from "@/lib/agent-task-generation";
@@ -134,7 +135,12 @@ export async function POST(request: Request, context: RouteContext) {
       parsedTeammate.teammateId,
       parsedProject.projectId,
     );
-    const existingTasks = existingRecord?.tasks ?? [];
+    const existingTasks = await attachDocumentStatusToAgentTasks(
+      db,
+      auth.userId,
+      parsedTeammate.teammateId,
+      existingRecord?.tasks ?? [],
+    );
 
     let replaceTaskTitle = "";
     const contentType = request.headers.get("content-type");
@@ -169,13 +175,13 @@ export async function POST(request: Request, context: RouteContext) {
       return Response.json(
         {
           error:
-            "All task slots are filled with accepted tasks. Clear tasks or wait for accepted work to complete before generating more.",
+            "All active task slots are filled with accepted tasks. Clear tasks or complete accepted work before generating more.",
         },
         { status: 409 },
       );
     }
 
-    const acceptedTasks = getAcceptedAgentTasks(existingTasks);
+    const acceptedTasks = getSlotOccupyingAcceptedAgentTasks(existingTasks);
     const taskCount = replaceTaskTitle
       ? 1
       : getAgentTaskGenerationSlots(existingTasks);
@@ -392,9 +398,16 @@ export async function PATCH(request: Request, context: RouteContext) {
       return Response.json({ error: "Tasks not found" }, { status: 404 });
     }
 
+    const existingTasks = await attachDocumentStatusToAgentTasks(
+      db,
+      auth.userId,
+      parsedTeammate.teammateId,
+      existingRecord.tasks,
+    );
+
     if (
       status === "accepted" &&
-      !canAcceptAgentTask(existingRecord.tasks, taskTitle)
+      !canAcceptAgentTask(existingTasks, taskTitle)
     ) {
       return Response.json(
         {

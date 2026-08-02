@@ -21,7 +21,20 @@ import { useStartAgentTaskOutput } from "@/hooks/mutations/chats/useStartAgentTa
 import { useUpdateAgentTaskStatus } from "@/hooks/mutations/chats/useUpdateAgentTaskStatus";
 import { useFetchAgentTasks } from "@/hooks/queries/useFetchAgentTasks";
 import { agentDocumentKeys } from "@/lib/query-keys";
-import { getAgentTaskStatus, getAgentTaskStatusBadgeClassName, getAgentTaskStatusLabel, getAgentTaskProjectBadgeClassName, getAgentTaskProjectName, canGenerateAgentTasks, canAcceptAgentTask, canReplaceAgentTask, getAcceptedAgentTasks, getAgentTaskDecisionStatus } from "@/lib/agents/agent-tasks";
+import {
+  getAgentTaskStatus,
+  getAgentTaskStatusBadgeClassName,
+  getAgentTaskStatusLabel,
+  getAgentTaskProjectBadgeClassName,
+  getAgentTaskProjectName,
+  canGenerateAgentTasks,
+  canAcceptAgentTask,
+  canReplaceAgentTask,
+  getAgentTaskDecisionStatus,
+  getActiveAgentTasks,
+  getCompletedAgentTasks,
+  getSlotOccupyingAcceptedAgentTasks,
+} from "@/lib/agents/agent-tasks";
 import { parseAgentProfileNavigationContext, AGENT_PROFILE_TASK_TITLE_PARAM, AGENT_TASKS_SECTION_ID } from "@/lib/chats/agent-profile-navigation";
 import type { StartAgentTaskOutputInput } from "@/lib/api/agent-tasks";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
@@ -64,6 +77,7 @@ export default function AgentTasks({
   const openTaskTitle = searchParams.get(AGENT_PROFILE_TASK_TITLE_PARAM);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<AgentTask | null>(null);
+  const [showCompletedTasks, setShowCompletedTasks] = useState(false);
   const isRegeneratingRef = useRef(false);
   const isRegeneratingOutputRef = useRef(false);
   const replacingTaskIndexRef = useRef<number | null>(null);
@@ -102,12 +116,13 @@ export default function AgentTasks({
         return;
       }
 
-      const acceptedCount = getAcceptedAgentTasks(response.tasks).length;
+      const activeAcceptedCount =
+        getSlotOccupyingAcceptedAgentTasks(response.tasks).length;
 
       if (isRegeneratingRef.current) {
         toast.success(
-          acceptedCount > 0
-            ? "New tasks generated. Accepted tasks were kept."
+          activeAcceptedCount > 0
+            ? "New tasks generated. Active accepted tasks were kept."
             : "Tasks regenerated successfully.",
         );
         return;
@@ -254,8 +269,13 @@ export default function AgentTasks({
 
   const tasks = agentTasks?.tasks ?? [];
   const projectName = agentTasks?.projectName ?? null;
-  const hasTasks = tasks.length > 0;
-  const acceptedTaskCount = getAcceptedAgentTasks(tasks).length;
+  const activeTasks = getActiveAgentTasks(tasks);
+  const completedTasks = getCompletedAgentTasks(tasks);
+  const hasActiveTasks = activeTasks.length > 0;
+  const hasCompletedTasks = completedTasks.length > 0;
+  const hasAnyTasks = tasks.length > 0;
+  const activeAcceptedTaskCount =
+    getSlotOccupyingAcceptedAgentTasks(tasks).length;
   const canGenerateMoreTasks = canGenerateAgentTasks(tasks);
   const isInitialLoading = Boolean(projectId) && isFetching && !agentTasks;
   const replacingTaskTitle = generateTasksVariables?.replaceTaskTitle;
@@ -329,11 +349,13 @@ export default function AgentTasks({
             <ClipboardDocumentCheckIcon className="size-4" aria-hidden />
             Tasks
           </h2>
-          {hasTasks ? (
+          {hasAnyTasks ? (
             <ItemActionsMenu
               actions={[
                 regenerateItemAction(
-                  acceptedTaskCount > 0 ? "Generate more tasks" : "Regenerate tasks",
+                  activeAcceptedTaskCount > 0
+                    ? "Generate more tasks"
+                    : "Regenerate tasks",
                   () => handleGenerate(true),
                   isGenerating || !canGenerateMoreTasks,
                 ),
@@ -352,14 +374,14 @@ export default function AgentTasks({
         ) : isBulkGenerating ? (
           <LoadingMessage>
             {isRegeneratingRef.current
-              ? acceptedTaskCount > 0
+              ? activeAcceptedTaskCount > 0
                 ? "Generating more tasks..."
                 : "Regenerating tasks..."
               : "Generating tasks..."}
           </LoadingMessage>
         ) : isError ? (
           <ErrorMessage error={error} fallbackMessage="Failed to load tasks" />
-        ) : hasTasks ? (
+        ) : hasActiveTasks || hasCompletedTasks ? (
           <>
             {isGenerateError ? (
               <ErrorMessage
@@ -369,104 +391,186 @@ export default function AgentTasks({
             ) : null}
             {!canGenerateMoreTasks ? (
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                All three task slots are filled with accepted tasks. Clear tasks
-                to start a new set.
+                All three active task slots are filled with accepted tasks. Clear
+                tasks to start a new set.
               </p>
             ) : null}
-            <ul className="divide-y divide-zinc-200 rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-700 dark:border-zinc-700 dark:bg-zinc-900">
-              {tasks.map((task) => {
-                const taskStatus = getAgentTaskStatus(task);
-                const isRejected = taskStatus === "rejected";
-                const taskProjectName = getAgentTaskProjectName(task, projectName);
-                const isGeneratingAlternative =
-                  isReplacingTask && replacingTaskTitle === task.title;
-                const canGenerateAlternative =
-                  canReplaceAgentTask(tasks, task.title) && !isGenerating;
+            {hasActiveTasks ? (
+              <ul className="divide-y divide-zinc-200 rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-700 dark:border-zinc-700 dark:bg-zinc-900">
+                {activeTasks.map((task) => {
+                  const taskStatus = getAgentTaskStatus(task);
+                  const isRejected = taskStatus === "rejected";
+                  const taskProjectName = getAgentTaskProjectName(task, projectName);
+                  const isGeneratingAlternative =
+                    isReplacingTask && replacingTaskTitle === task.title;
+                  const canGenerateAlternative =
+                    canReplaceAgentTask(tasks, task.title) && !isGenerating;
 
-                if (isGeneratingAlternative) {
-                  return <AgentTaskListItemSkeleton key={task.title} />;
-                }
+                  if (isGeneratingAlternative) {
+                    return <AgentTaskListItemSkeleton key={task.title} />;
+                  }
 
-                return (
-                  <li key={task.title}>
-                    <div className="flex items-start gap-2 px-4 py-3">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedTask(task)}
-                        className={`flex min-w-0 flex-1 items-start gap-3 text-left transition ${
-                          isRejected
-                            ? "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30"
-                            : "hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
-                        } -mx-2 rounded-xl px-2 py-1`}
-                      >
-                        <ClipboardDocumentCheckIcon
-                          className={`mt-0.5 size-4 shrink-0 ${
+                  return (
+                    <li key={task.title}>
+                      <div className="flex items-start gap-2 px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTask(task)}
+                          className={`flex min-w-0 flex-1 items-start gap-3 text-left transition ${
                             isRejected
-                              ? "text-zinc-300 dark:text-zinc-600"
-                              : "text-zinc-400 dark:text-zinc-500"
-                          }`}
-                          aria-hidden
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
+                              ? "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30"
+                              : "hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
+                          } -mx-2 rounded-xl px-2 py-1`}
+                        >
+                          <ClipboardDocumentCheckIcon
+                            className={`mt-0.5 size-4 shrink-0 ${
+                              isRejected
+                                ? "text-zinc-300 dark:text-zinc-600"
+                                : "text-zinc-400 dark:text-zinc-500"
+                            }`}
+                            aria-hidden
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p
+                                className={`text-sm font-medium ${
+                                  isRejected
+                                    ? "text-zinc-400 dark:text-zinc-500"
+                                    : "text-zinc-800 dark:text-zinc-100"
+                                }`}
+                              >
+                                {task.title}
+                              </p>
+                              <span
+                                className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentTaskStatusBadgeClassName(taskStatus)}`}
+                              >
+                                {getAgentTaskStatusLabel(taskStatus)}
+                              </span>
+                              {taskProjectName ? (
+                                <span
+                                  className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentTaskProjectBadgeClassName()}`}
+                                >
+                                  {taskProjectName}
+                                </span>
+                              ) : null}
+                            </div>
                             <p
-                              className={`text-sm font-medium ${
+                              className={`mt-1 text-sm leading-relaxed ${
                                 isRejected
                                   ? "text-zinc-400 dark:text-zinc-500"
-                                  : "text-zinc-800 dark:text-zinc-100"
+                                  : "text-zinc-600 dark:text-zinc-300"
                               }`}
                             >
-                              {task.title}
+                              {task.detail}
                             </p>
-                            <span
-                              className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentTaskStatusBadgeClassName(taskStatus)}`}
-                            >
-                              {getAgentTaskStatusLabel(taskStatus)}
-                            </span>
-                            {taskProjectName ? (
-                              <span
-                                className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentTaskProjectBadgeClassName()}`}
-                              >
-                                {taskProjectName}
-                              </span>
-                            ) : null}
                           </div>
-                          <p
-                            className={`mt-1 text-sm leading-relaxed ${
+                          <ChevronRightIcon
+                            className={`mt-0.5 size-4 shrink-0 ${
                               isRejected
-                                ? "text-zinc-400 dark:text-zinc-500"
-                                : "text-zinc-600 dark:text-zinc-300"
+                                ? "text-zinc-300 dark:text-zinc-600"
+                                : "text-zinc-400 dark:text-zinc-500"
                             }`}
+                            aria-hidden
+                          />
+                        </button>
+                        {canGenerateAlternative ? (
+                          <ItemActionsMenu
+                            menuLabel={`Actions for ${task.title}`}
+                            actions={[
+                              regenerateItemAction(
+                                "Generate alternative",
+                                () => handleGenerateAlternative(task.title),
+                                isGenerating,
+                              ),
+                            ]}
+                          />
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-6 text-center dark:border-zinc-700 dark:bg-zinc-900/50">
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  No active tasks. Generate a new set or view completed tasks
+                  below.
+                </p>
+                <Button
+                  type="button"
+                  onClick={() => handleGenerate(false)}
+                  disabled={isGenerating}
+                  className="mt-4"
+                >
+                  Generate tasks
+                </Button>
+              </div>
+            )}
+            {hasCompletedTasks ? (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCompletedTasks((current) => !current)}
+                  className="text-sm font-medium text-zinc-600 transition hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                >
+                  {showCompletedTasks
+                    ? "Hide completed tasks"
+                    : `View completed tasks (${completedTasks.length})`}
+                </button>
+                {showCompletedTasks ? (
+                  <ul className="divide-y divide-zinc-200 rounded-2xl border border-zinc-200 bg-zinc-50 opacity-90 dark:divide-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/60">
+                    {completedTasks.map((task) => {
+                      const taskStatus = getAgentTaskStatus(task);
+                      const taskProjectName = getAgentTaskProjectName(
+                        task,
+                        projectName,
+                      );
+
+                      return (
+                        <li key={task.title}>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedTask(task)}
+                            className="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-zinc-100/80 dark:hover:bg-zinc-800/40"
                           >
-                            {task.detail}
-                          </p>
-                        </div>
-                        <ChevronRightIcon
-                          className={`mt-0.5 size-4 shrink-0 ${
-                            isRejected
-                              ? "text-zinc-300 dark:text-zinc-600"
-                              : "text-zinc-400 dark:text-zinc-500"
-                          }`}
-                          aria-hidden
-                        />
-                      </button>
-                      {canGenerateAlternative ? (
-                        <ItemActionsMenu
-                          menuLabel={`Actions for ${task.title}`}
-                          actions={[
-                            regenerateItemAction(
-                              "Generate alternative",
-                              () => handleGenerateAlternative(task.title),
-                              isGenerating,
-                            ),
-                          ]}
-                        />
-                      ) : null}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                            <ClipboardDocumentCheckIcon
+                              className="mt-0.5 size-4 shrink-0 text-zinc-400 dark:text-zinc-500"
+                              aria-hidden
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                                  {task.title}
+                                </p>
+                                <span
+                                  className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentTaskStatusBadgeClassName(taskStatus)}`}
+                                >
+                                  {getAgentTaskStatusLabel(taskStatus)}
+                                </span>
+                                {taskProjectName ? (
+                                  <span
+                                    className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentTaskProjectBadgeClassName()}`}
+                                  >
+                                    {taskProjectName}
+                                  </span>
+                                ) : null}
+                              </div>
+                              <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                                {task.detail}
+                              </p>
+                            </div>
+                            <ChevronRightIcon
+                              className="mt-0.5 size-4 shrink-0 text-zinc-400 dark:text-zinc-500"
+                              aria-hidden
+                            />
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : null}
+              </div>
+            ) : null}
           </>
         ) : (
           <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-900/50">

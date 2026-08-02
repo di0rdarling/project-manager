@@ -9,6 +9,7 @@ import { acceptAgentDocument } from "@/lib/api/agent-documents";
 import {
   agentDocumentKeys,
   agentTasksKeys,
+  dashboardKeys,
 } from "@/lib/query-keys";
 import type {
   AgentDocumentResponse,
@@ -76,6 +77,8 @@ export function useAcceptAgentDocument(
           },
         );
       }
+
+      void queryClient.invalidateQueries({ queryKey: dashboardKeys.tasks });
 
       onSuccess?.(document, variables, onMutateResult, context);
     },
