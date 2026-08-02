@@ -3,6 +3,10 @@ import {
   buildChatContextUsage,
   CHAT_CONTEXT_TOKEN_LIMIT,
 } from "@/lib/chats/chat-context/chat-context-usage";
+import {
+  buildProjectContextBucketText,
+  scaleContextUsageBreakdownToTotal,
+} from "@/lib/chats/chat-context/context-usage-breakdown";
 import { loadDocumentReviewGenerationContext } from "@/lib/chats/chat-context/document-review-generation-context";
 import {
   countChatContextTokens,
@@ -16,60 +20,7 @@ import type { KimiReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
 import type {
   AgentDocumentReviewMessageResponse,
   ChatContextUsage,
-  ChatContextUsageCategory,
 } from "@/lib/types";
-
-const BREAKDOWN_CATEGORY_LABELS: Record<
-  ChatContextUsageCategory["key"],
-  string
-> = {
-  systemPrompt: "System prompt",
-  agentMemory: "Agent's memory",
-  sharedMemory: "Other teammates",
-  projectContext: "Project context",
-  conversation: "Conversation",
-};
-
-function scaleBreakdownToTotal(
-  rawCounts: Record<ChatContextUsageCategory["key"], number>,
-  total: number,
-): ChatContextUsageCategory[] {
-  const keys = Object.keys(rawCounts) as ChatContextUsageCategory["key"][];
-  const rawTotal = keys.reduce((sum, key) => sum + rawCounts[key], 0);
-
-  const scaled: Record<ChatContextUsageCategory["key"], number> =
-    rawTotal > 0
-      ? keys.reduce(
-          (acc, key) => {
-            acc[key] = Math.round((rawCounts[key] / rawTotal) * total);
-            return acc;
-          },
-          {} as Record<ChatContextUsageCategory["key"], number>,
-        )
-      : keys.reduce(
-          (acc, key) => {
-            acc[key] = 0;
-            return acc;
-          },
-          {} as Record<ChatContextUsageCategory["key"], number>,
-        );
-
-  const scaledTotal = keys.reduce((sum, key) => sum + scaled[key], 0);
-  const remainder = total - scaledTotal;
-
-  if (remainder !== 0) {
-    const largestKey = keys.reduce((largest, key) =>
-      rawCounts[key] > rawCounts[largest] ? key : largest,
-    );
-    scaled[largestKey] += remainder;
-  }
-
-  return keys.map((key) => ({
-    key,
-    label: BREAKDOWN_CATEGORY_LABELS[key],
-    tokens: Math.max(0, scaled[key]),
-  }));
-}
 
 type GetDocumentReviewContextUsageInput = {
   db: Db;
@@ -112,15 +63,17 @@ export async function getDocumentReviewContextUsage(
     modelName: generationContext.modelId,
     pendingMessage: input.pendingMessage,
     documentReviewContext: generationContext.documentReviewContext,
+    agentTasksDocumentsContext: generationContext.agentTasksDocumentsContext,
   });
 
   const modelId = generationContext.modelId;
-  const combinedProjectContext = [
+
+  const projectContextBucketText = buildProjectContextBucketText(
+    generationContext.teammateId,
     generationContext.projectContext,
+    generationContext.agentTasksDocumentsContext,
     generationContext.documentReviewContext,
-  ]
-    .filter(Boolean)
-    .join("\n\n");
+  );
 
   const baseSystemPrompt = buildChatSystemPrompt(
     generationContext.teammateId,
@@ -155,11 +108,11 @@ export async function getDocumentReviewContextUsage(
     countTextTokens(baseSystemPrompt, modelId),
     countTextTokens(agentMemoryText, modelId),
     countTextTokens(generationContext.otherTeammatesContext ?? "", modelId),
-    countTextTokens(combinedProjectContext, modelId),
+    countTextTokens(projectContextBucketText, modelId),
     countTextTokens(conversationText, modelId),
   ]);
 
-  const breakdown = scaleBreakdownToTotal(
+  const breakdown = scaleContextUsageBreakdownToTotal(
     {
       systemPrompt: systemPromptTokens,
       agentMemory: agentMemoryTokens,

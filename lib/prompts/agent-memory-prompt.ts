@@ -81,12 +81,14 @@ export function formatChatSummaries(
   return chronological
     .map((chat, index) => {
       const title = chat.title.trim() || "Untitled chat";
+      const conversationLabel =
+        chat.kind === "document_review" ? "Document review" : "Chat";
       const isMostRecent = index === chronological.length - 1;
       const recencyLabel = isMostRecent
         ? " — this is the most recent conversation of them all"
         : "";
       const sections = [
-        `${index + 1}. Chat "${title}" (created ${formatDisplayDateTime(chat.createdAt)}${formatRelativeDaySuffix(chat.createdAt, generatedAt)}, last updated ${formatDisplayDateTime(chat.updatedAt)}${formatRelativeDaySuffix(chat.updatedAt, generatedAt)}${recencyLabel})`,
+        `${index + 1}. ${conversationLabel} "${title}" (created ${formatDisplayDateTime(chat.createdAt)}${formatRelativeDaySuffix(chat.createdAt, generatedAt)}, last updated ${formatDisplayDateTime(chat.updatedAt)}${formatRelativeDaySuffix(chat.updatedAt, generatedAt)}${recencyLabel})`,
       ];
 
       if (chat.project) {

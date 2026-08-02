@@ -5,13 +5,14 @@ import type { ChatModelId } from "@/lib/chats/chat-models";
 import type { KimiReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
 import { resolveChatReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
 import { loadAgentNotesContext } from "@/lib/agents/agent-notes-store";
+import { loadTeammateTasksDocumentsContext } from "@/lib/agents/load-teammate-tasks-documents-context";
 import {
   getOtherTeammatesRecentChatSummaries,
   getTeammateChatSummaries,
 } from "@/lib/chats/chat-summaries";
 import type { GeminiChatMessage } from "@/lib/gemini";
 import { getTeammateProjectContext } from "@/lib/project-context";
-import { buildDocumentReviewContext } from "@/lib/prompts/document-review-chat-prompt";
+import { buildDocumentReviewFocusContext } from "@/lib/prompts/document-review-chat-prompt";
 import { buildChatOtherConversationsContext } from "@/lib/prompts/chat-other-conversations-prompt";
 import { buildOtherTeammatesContext } from "@/lib/prompts/chat-other-teammates-context-prompt";
 import type { AgentDocumentReviewMessageResponse } from "@/lib/types";
@@ -23,6 +24,7 @@ export type DocumentReviewGenerationContext = {
   reasoningEffort?: KimiReasoningEffort;
   projectContext?: string;
   documentReviewContext?: string;
+  agentTasksDocumentsContext?: string;
   otherConversationsContext?: string;
   otherTeammatesContext?: string;
   agentNotesContext?: string;
@@ -60,7 +62,10 @@ export async function loadDocumentReviewGenerationContext(
     db,
     userId,
     teammateId,
-    { excludeArchived: true },
+    {
+      excludeArchived: true,
+      excludeDocumentReviewId: new ObjectId(document._id),
+    },
   );
   const otherConversationsContext =
     buildChatOtherConversationsContext(otherChatSummaries) ?? undefined;
@@ -76,7 +81,13 @@ export async function loadDocumentReviewGenerationContext(
     teammateId,
   );
 
-  const documentReviewContext = buildDocumentReviewContext({
+  const agentTasksDocumentsContext = await loadTeammateTasksDocumentsContext(
+    db,
+    userId,
+    teammateId,
+  );
+
+  const documentReviewContext = buildDocumentReviewFocusContext({
     document,
     task,
   });
@@ -88,6 +99,7 @@ export async function loadDocumentReviewGenerationContext(
     reasoningEffort: resolveChatReasoningEffort(modelId, reasoningEffort),
     projectContext: projectContext ?? undefined,
     documentReviewContext,
+    agentTasksDocumentsContext,
     otherConversationsContext,
     otherTeammatesContext,
     agentNotesContext,

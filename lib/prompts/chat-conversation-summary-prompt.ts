@@ -1,4 +1,5 @@
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
+import type { TeammateChatSummaryKind } from "@/lib/chats/chat-summaries";
 import { buildAiTeammatesConversationSummaryRosterPrompt } from "@/lib/prompts/ai-teammates-roster";
 import { buildAiDateTimeContext } from "@/lib/prompts/ai-datetime-context";
 import { buildChatUserContextPrompt } from "@/lib/prompts/chat-user-context-prompt";
@@ -24,6 +25,7 @@ export const RECENT_MESSAGE_WINDOW = 20;
 type BuildChatConversationSummaryPromptInput = {
   teammateId: ChatTeammateId;
   chatTitle: string;
+  conversationKind?: TeammateChatSummaryKind;
   /**
    * The existing summary covering everything before `recentMessages`.
    * Pass null when `recentMessages` already contains the entire
@@ -49,6 +51,7 @@ export function formatTranscript(
 export function buildChatConversationSummaryPrompt({
   teammateId,
   chatTitle,
+  conversationKind = "chat",
   olderSummary,
   recentMessages,
   userName,
@@ -74,6 +77,12 @@ export function buildChatConversationSummaryPrompt({
     "",
     `Chat Title: ${chatTitle.trim() || "Untitled chat"}`,
   ];
+
+  if (conversationKind === "document_review") {
+    sections.push(
+      "This is a document review conversation: the user is viewing a deliverable you produced for an autonomous task and discussing it with you before sign-off. Make it clear in the summary that this was a review of your deliverable, including any feedback, questions, requested changes, or decisions about accepting the work.",
+    );
+  }
 
   if (trimmedOlderSummary) {
     sections.push(

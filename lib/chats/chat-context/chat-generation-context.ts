@@ -2,6 +2,7 @@ import type { Db, ObjectId } from "mongodb";
 import { resolveChatReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
 import type { KimiReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
 import { loadAgentNotesContext } from "@/lib/agents/agent-notes-store";
+import { loadTeammateTasksDocumentsContext } from "@/lib/agents/load-teammate-tasks-documents-context";
 import {
   getOtherTeammatesRecentChatSummaries,
   getTeammateChatSummaries,
@@ -26,6 +27,7 @@ export type ChatGenerationContext = {
   otherConversationsContext?: string;
   otherTeammatesContext?: string;
   agentNotesContext?: string;
+  agentTasksDocumentsContext?: string;
   userName: string | null;
 };
 
@@ -76,6 +78,12 @@ export async function loadChatGenerationContext(
     chatResponse.teammateId,
   );
 
+  const agentTasksDocumentsContext = await loadTeammateTasksDocumentsContext(
+    db,
+    userId,
+    chatResponse.teammateId,
+  );
+
   return {
     history,
     teammateId: chatResponse.teammateId,
@@ -88,6 +96,7 @@ export async function loadChatGenerationContext(
     otherConversationsContext,
     otherTeammatesContext,
     agentNotesContext,
+    agentTasksDocumentsContext,
     userName,
   };
 }

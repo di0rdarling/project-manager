@@ -3,6 +3,10 @@ import {
   buildChatContextUsage,
   CHAT_CONTEXT_TOKEN_LIMIT,
 } from "@/lib/chats/chat-context/chat-context-usage";
+import {
+  buildProjectContextBucketText,
+  scaleContextUsageBreakdownToTotal,
+} from "@/lib/chats/chat-context/context-usage-breakdown";
 import { loadChatGenerationContext } from "@/lib/chats/chat-context/chat-generation-context";
 import {
   countChatContextTokens,
@@ -10,68 +14,7 @@ import {
 } from "@/lib/chat-generation";
 import { buildChatSystemPrompt } from "@/lib/prompts/chat-prompt";
 import type { StoredChat, StoredChatMessage } from "@/lib/serialize/serialize-chat";
-import type { ChatContextUsage, ChatContextUsageCategory } from "@/lib/types";
-
-const BREAKDOWN_CATEGORY_LABELS: Record<
-  ChatContextUsageCategory["key"],
-  string
-> = {
-  systemPrompt: "System prompt",
-  agentMemory: "Agent's memory",
-  sharedMemory: "Other teammates",
-  projectContext: "Project context",
-  conversation: "Conversation",
-};
-
-/**
- * Distributes raw per-category token counts so they sum exactly to
- * `total` (the authoritative count from the single combined countTokens
- * call that also gates sending). Raw per-category counts are gathered via
- * separate countTokens calls and won't add up perfectly on their own
- * because of per-request formatting overhead, so we scale them
- * proportionally and settle any rounding remainder on the largest
- * category.
- */
-function scaleBreakdownToTotal(
-  rawCounts: Record<ChatContextUsageCategory["key"], number>,
-  total: number,
-): ChatContextUsageCategory[] {
-  const keys = Object.keys(rawCounts) as ChatContextUsageCategory["key"][];
-  const rawTotal = keys.reduce((sum, key) => sum + rawCounts[key], 0);
-
-  const scaled: Record<ChatContextUsageCategory["key"], number> =
-    rawTotal > 0
-      ? keys.reduce(
-          (acc, key) => {
-            acc[key] = Math.round((rawCounts[key] / rawTotal) * total);
-            return acc;
-          },
-          {} as Record<ChatContextUsageCategory["key"], number>,
-        )
-      : keys.reduce(
-          (acc, key) => {
-            acc[key] = 0;
-            return acc;
-          },
-          {} as Record<ChatContextUsageCategory["key"], number>,
-        );
-
-  const scaledTotal = keys.reduce((sum, key) => sum + scaled[key], 0);
-  const remainder = total - scaledTotal;
-
-  if (remainder !== 0) {
-    const largestKey = keys.reduce((largest, key) =>
-      rawCounts[key] > rawCounts[largest] ? key : largest,
-    );
-    scaled[largestKey] += remainder;
-  }
-
-  return keys.map((key) => ({
-    key,
-    label: BREAKDOWN_CATEGORY_LABELS[key],
-    tokens: Math.max(0, scaled[key]),
-  }));
-}
+import type { ChatContextUsage } from "@/lib/types";
 
 export async function getChatContextUsage(
   db: Db,
@@ -90,11 +33,25 @@ export async function getChatContextUsage(
   );
 
   const usedTokens = await countChatContextTokens({
-    ...generationContext,
+    history: generationContext.history,
+    teammateId: generationContext.teammateId,
+    projectContext: generationContext.projectContext,
+    otherConversationsContext: generationContext.otherConversationsContext,
+    otherTeammatesContext: generationContext.otherTeammatesContext,
+    agentNotesContext: generationContext.agentNotesContext,
+    userName: generationContext.userName,
+    modelName: generationContext.modelId,
     pendingMessage,
+    agentTasksDocumentsContext: generationContext.agentTasksDocumentsContext,
   });
 
   const modelId = generationContext.modelId;
+
+  const projectContextBucketText = buildProjectContextBucketText(
+    generationContext.teammateId,
+    generationContext.projectContext,
+    generationContext.agentTasksDocumentsContext,
+  );
 
   const baseSystemPrompt = buildChatSystemPrompt(
     generationContext.teammateId,
@@ -129,11 +86,11 @@ export async function getChatContextUsage(
     countTextTokens(baseSystemPrompt, modelId),
     countTextTokens(agentMemoryText, modelId),
     countTextTokens(generationContext.otherTeammatesContext ?? "", modelId),
-    countTextTokens(generationContext.projectContext ?? "", modelId),
+    countTextTokens(projectContextBucketText, modelId),
     countTextTokens(conversationText, modelId),
   ]);
 
-  const breakdown = scaleBreakdownToTotal(
+  const breakdown = scaleContextUsageBreakdownToTotal(
     {
       systemPrompt: systemPromptTokens,
       agentMemory: agentMemoryTokens,

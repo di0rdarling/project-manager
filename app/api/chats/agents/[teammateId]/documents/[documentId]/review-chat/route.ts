@@ -438,6 +438,7 @@ export async function POST(request: Request, context: RouteContext) {
       generationContext.reasoningEffort,
       generatedAt,
       generationContext.documentReviewContext,
+      generationContext.agentTasksDocumentsContext,
     );
 
     const now = generatedAt.toISOString();
@@ -471,6 +472,7 @@ export async function POST(request: Request, context: RouteContext) {
         buildChatConversationSummaryPrompt({
           teammateId: parsed.teammateId,
           chatTitle: reviewChatTitle,
+          conversationKind: "document_review",
           olderSummary: hasTruncatedMessages ? session.conversationSummary : null,
           recentMessages,
           userName,

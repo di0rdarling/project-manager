@@ -12,6 +12,7 @@ import {
 } from "@/lib/chats/chat-list-cache";
 import { agentMemoryKeys, chatKeys } from "@/lib/query-keys";
 import type {
+  ChatMessageResponse,
   ChatWithMessagesResponse,
   SendChatMessageResponse,
 } from "@/lib/types";
@@ -25,12 +26,54 @@ type UseSendChatMessageOptions = Omit<
 
 export function useSendChatMessage(options?: UseSendChatMessageOptions) {
   const queryClient = useQueryClient();
-  const { onSuccess, ...restOptions } = options ?? {};
+  const { onSuccess, onError, onMutate, ...restOptions } = options ?? {};
 
   return useMutation({
     mutationFn: sendChatMessage,
     retry: false,
     ...restOptions,
+    onMutate: async (variables, mutationContext) => {
+      await queryClient.cancelQueries({
+        queryKey: chatKeys.detail(variables.chatId),
+      });
+
+      const previousChat = queryClient.getQueryData<ChatWithMessagesResponse>(
+        chatKeys.detail(variables.chatId),
+      );
+
+      if (previousChat) {
+        const optimisticUserMessage: ChatMessageResponse = {
+          _id: `pending-user-${Date.now()}`,
+          userId: previousChat.userId,
+          chatId: variables.chatId,
+          role: "user",
+          content: variables.content,
+          createdAt: new Date().toISOString(),
+        };
+
+        queryClient.setQueryData<ChatWithMessagesResponse>(
+          chatKeys.detail(variables.chatId),
+          {
+            ...previousChat,
+            messages: [...previousChat.messages, optimisticUserMessage],
+          },
+        );
+      }
+
+      await onMutate?.(variables, mutationContext);
+
+      return { previousChat };
+    },
+    onError: (error, variables, onMutateResult, mutationContext) => {
+      if (onMutateResult?.previousChat) {
+        queryClient.setQueryData(
+          chatKeys.detail(variables.chatId),
+          onMutateResult.previousChat,
+        );
+      }
+
+      onError?.(error, variables, onMutateResult, mutationContext);
+    },
     onSuccess: (data, variables, onMutateResult, context) => {
       queryClient.setQueryData<ChatWithMessagesResponse>(
         chatKeys.detail(variables.chatId),
@@ -46,16 +89,17 @@ export function useSendChatMessage(options?: UseSendChatMessageOptions) {
             };
           }
 
-          const existingMessageIds = new Set(
-            current.messages.map((entry) => entry._id),
+          const nextMessages = current.messages.filter(
+            (entry) => !entry._id.startsWith("pending-user-"),
           );
-          const nextMessages = [...current.messages];
 
-          if (!existingMessageIds.has(data.userMessage._id)) {
+          if (!nextMessages.some((entry) => entry._id === data.userMessage._id)) {
             nextMessages.push(data.userMessage);
           }
 
-          if (!existingMessageIds.has(data.assistantMessage._id)) {
+          if (
+            !nextMessages.some((entry) => entry._id === data.assistantMessage._id)
+          ) {
             nextMessages.push(data.assistantMessage);
           }
 

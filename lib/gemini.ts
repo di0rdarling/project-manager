@@ -214,6 +214,7 @@ export async function generateChatReply(
   modelName?: string,
   generatedAt?: Date,
   documentReviewContext?: string,
+  agentTasksDocumentsContext?: string,
 ): Promise<GenerateChatReplyResult> {
   const chat = getGenAIClient().chats.create({
     model: modelName ?? getChatModelName(),
@@ -227,6 +228,7 @@ export async function generateChatReply(
         userName,
         generatedAt,
         documentReviewContext,
+        agentTasksDocumentsContext,
       ),
       tools: [{ googleSearch: {} }],
       thinkingConfig: {
@@ -355,6 +357,7 @@ export type CountChatContextTokensInput = {
   modelName?: string;
   pendingMessage?: string;
   documentReviewContext?: string;
+  agentTasksDocumentsContext?: string;
 };
 
 export async function countChatContextTokens(
@@ -371,6 +374,7 @@ export async function countChatContextTokens(
     modelName,
     pendingMessage,
     documentReviewContext,
+    agentTasksDocumentsContext,
   } = input;
 
   const model = getGeminiClient().getGenerativeModel({
@@ -384,6 +388,7 @@ export async function countChatContextTokens(
       userName,
       undefined,
       documentReviewContext,
+      agentTasksDocumentsContext,
     ),
   });
 

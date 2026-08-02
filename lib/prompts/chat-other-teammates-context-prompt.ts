@@ -16,14 +16,19 @@ function formatProjectContext(
   return sections.join("\n");
 }
 
+function formatConversationLabel(chat: TeammateChatSummary): string {
+  return chat.kind === "document_review" ? "Document review" : "Chat";
+}
+
 function formatOtherTeammateChatSummary(
   chat: TeammateChatSummary,
   index: number,
 ): string {
   const teammate = getChatTeammate(chat.teammateId);
   const title = chat.title.trim() || "Untitled chat";
+  const conversationLabel = formatConversationLabel(chat);
   const sections = [
-    `${index + 1}. ${teammate.name} (${teammate.role}) — Chat "${title}" (last updated ${chat.updatedAt})`,
+    `${index + 1}. ${teammate.name} (${teammate.role}) — ${conversationLabel} "${title}" (last updated ${chat.updatedAt})`,
   ];
 
   if (chat.project) {

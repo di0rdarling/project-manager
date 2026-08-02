@@ -51,6 +51,7 @@ import {
   getChatDetailHref,
   parseAgentProfileNavigationContext,
 } from "@/lib/chats/agent-profile-navigation";
+import { shouldShowAssistantTypingIndicator } from "@/lib/chats/should-show-assistant-typing-indicator";
 import { formatDisplayDateTime } from "@/lib/dates";
 import type { ChatMessageResponse } from "@/lib/types";
 
@@ -269,6 +270,10 @@ export default function ChatDetailView({
   );
   const showReasoningEffortSelect = chatModelSupportsReasoningEffort(
     selectedModelId,
+  );
+  const showAssistantTypingIndicator = shouldShowAssistantTypingIndicator(
+    sendMessageMutation.isPending,
+    chat?.messages ?? [],
   );
 
   useEffect(() => {
@@ -528,7 +533,7 @@ export default function ChatDetailView({
             ))
           )}
 
-          {sendMessageMutation.isPending ? (
+          {showAssistantTypingIndicator ? (
             <AssistantTypingIndicator teammate={teammate} projectId={projectId} />
           ) : null}
 

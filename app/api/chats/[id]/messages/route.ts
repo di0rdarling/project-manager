@@ -166,6 +166,8 @@ export async function POST(request: Request, context: RouteContext) {
       generationContext.modelId,
       generationContext.reasoningEffort,
       generatedAt,
+      undefined,
+      generationContext.agentTasksDocumentsContext,
     );
     const now = generatedAt.toISOString();
     const userMessage: Omit<ChatMessage, "_id"> = {

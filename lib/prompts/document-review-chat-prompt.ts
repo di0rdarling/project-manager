@@ -1,58 +1,46 @@
+import { getAgentDocumentStatusLabel } from "@/lib/agents/agent-documents";
+import {
+  getAgentTaskStatus,
+  getAgentTaskStatusLabel,
+} from "@/lib/agents/agent-tasks";
 import type { AgentDocumentResponse, AgentTask } from "@/lib/types";
 
-type BuildDocumentReviewContextInput = {
+type BuildDocumentReviewFocusContextInput = {
   document: AgentDocumentResponse;
   task: AgentTask | null;
 };
 
 /**
- * Context block injected into the chat system prompt when the user is
- * discussing a task deliverable during document review.
+ * Lightweight focus block for when the user is actively reviewing a
+ * deliverable. Full document content is already included in the standing
+ * autonomous tasks and deliverables context.
  */
-export function buildDocumentReviewContext({
+export function buildDocumentReviewFocusContext({
   document,
   task,
-}: BuildDocumentReviewContextInput): string {
+}: BuildDocumentReviewFocusContextInput): string {
   const sections = [
-    "You wrote this document yourself. Speak in first person about your work. Help them understand your reasoning, answer questions about specific sections, and discuss any changes they want before sign-off.",
-    "Do not regenerate or rewrite the entire document in chat unless they explicitly ask you to redo the task. Focus on discussion, clarification, and targeted feedback.",
+    "The user is currently viewing one of your deliverables alongside this conversation. The full content of all your deliverables is already included in your autonomous tasks and deliverables context above — do not ask them to paste it or claim you cannot see it.",
+    "Help them understand your work, answer questions about specific sections, and discuss any changes they want before sign-off. Do not regenerate or rewrite the entire document in chat unless they explicitly ask you to redo the task.",
     "",
-    "### The deliverable under review",
+    "### Deliverable the user is viewing now",
     "",
     `Title: ${document.title}`,
+    `Document status: ${getAgentDocumentStatusLabel(document.status)}`,
   ];
 
   if (task) {
     sections.push(
       "",
-      "### The task this deliverable completes",
-      "",
-      `Task title: ${task.title}`,
-      `What you set out to do: ${task.detail}`,
-      `Why you suggested it: ${task.rationale}`,
-      `What you said you'd produce: ${task.outputDescription}`,
+      `Linked task: ${task.title}`,
+      `Task status: ${getAgentTaskStatusLabel(getAgentTaskStatus(task))}`,
     );
-
-    if (task.outputApproach) {
-      sections.push("", `Your approach: ${task.outputApproach}`);
-    }
-
-    if (task.outputCompletionSummary) {
-      sections.push(
-        "",
-        `How this completes the task: ${task.outputCompletionSummary}`,
-      );
-    }
   } else if (document.taskTitle) {
     sections.push("", `Linked task: ${document.taskTitle}`);
   }
 
-  sections.push(
-    "",
-    "### Document content",
-    "",
-    document.content.trim(),
-  );
-
   return sections.join("\n");
 }
+
+/** @deprecated Use buildDocumentReviewFocusContext — kept as alias during migration */
+export const buildDocumentReviewContext = buildDocumentReviewFocusContext;

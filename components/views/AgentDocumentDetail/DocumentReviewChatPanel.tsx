@@ -31,6 +31,7 @@ import {
   type KimiReasoningEffort,
 } from "@/lib/chats/kimi-reasoning-effort";
 import { formatDisplayDateTime } from "@/lib/dates";
+import { shouldShowAssistantTypingIndicator } from "@/lib/chats/should-show-assistant-typing-indicator";
 import type { AgentDocumentReviewMessageResponse } from "@/lib/types";
 
 type DocumentReviewChatPanelProps = {
@@ -181,6 +182,10 @@ export function DocumentReviewChatPanel({
   const isAtContextLimit = Boolean(reviewChat?.contextUsage?.isAtLimit);
   const modelSettingsDisabled =
     updateSettingsMutation.isPending || sendMessageMutation.isPending;
+  const showAssistantTypingIndicator = shouldShowAssistantTypingIndicator(
+    sendMessageMutation.isPending,
+    reviewChat?.messages ?? [],
+  );
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -329,7 +334,8 @@ export function DocumentReviewChatPanel({
               </div>
             ) : null}
 
-            {reviewChat?.messages.length === 0 ? (
+            {reviewChat?.messages.length === 0 &&
+            !sendMessageMutation.isPending ? (
               <div className="rounded-xl border border-dashed border-zinc-300 px-3 py-6 text-center dark:border-zinc-700">
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">
                   Ask {teammate.name} about their approach, request
@@ -346,17 +352,17 @@ export function DocumentReviewChatPanel({
                     projectId={projectId}
                   />
                 ))}
-
-                {sendMessageMutation.isPending ? (
-                  <AssistantTypingIndicator
-                    teammateId={teammateId}
-                    projectId={projectId}
-                  />
-                ) : null}
-
-                <div ref={messagesEndRef} />
               </div>
             )}
+
+            {showAssistantTypingIndicator ? (
+              <AssistantTypingIndicator
+                teammateId={teammateId}
+                projectId={projectId}
+              />
+            ) : null}
+
+            <div ref={messagesEndRef} />
           </>
         )}
       </div>
