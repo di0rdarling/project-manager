@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import {
   ArrowLeftIcon,
+  Cog6ToothIcon,
   DocumentTextIcon,
   PencilIcon,
 } from "@heroicons/react/24/outline";
@@ -17,6 +18,7 @@ import { CopyToClipboardButton } from "@/components/ui/CopyToClipboardButton";
 import { IconButton } from "@/components/ui/IconButton";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { MarkdownContent } from "@/components/ui/MarkdownContent";
+import ChatModelSettingsModal from "@/components/views/Chats/modals/ChatModelSettingsModal";
 import EditChatTitleModal from "@/components/views/Chats/modals/EditChatTitleModal";
 import { ChatContextUsageIndicator } from "@/components/views/Chats/ChatContextUsageIndicator";
 import { ChatModelSelect } from "@/components/views/Chats/ChatModelSelect";
@@ -140,10 +142,12 @@ function ChatContextChips({
   project,
   requirement,
   feature,
+  className,
 }: {
   project: { _id: string; name: string } | null;
   requirement: { _id: string; title: string } | null;
   feature: { _id: string; title: string } | null;
+  className?: string;
 }) {
   if (!project && !requirement && !feature) {
     return null;
@@ -155,7 +159,7 @@ function ChatContextChips({
   const contextChipClassName = `${chipClassName} bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300`;
 
   return (
-    <div className="flex min-w-0 items-center gap-1.5">
+    <div className={`flex min-w-0 items-center gap-1.5 ${className ?? ""}`}>
       {project ? (
         <span title={project.name}>
           <ContextTag className={projectChipClassName}>{project.name}</ContextTag>
@@ -204,6 +208,7 @@ export default function ChatDetailView({
   const [message, setMessage] = useState("");
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [isEditTitleModalOpen, setIsEditTitleModalOpen] = useState(false);
+  const [isModelSettingsModalOpen, setIsModelSettingsModalOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isSendingRef = useRef(false);
 
@@ -370,32 +375,99 @@ export default function ChatDetailView({
   }
 
   const teammate = getChatTeammate(chat.teammateId);
+  const modelSettingsDisabled =
+    isArchived ||
+    updateChatModelMutation.isPending ||
+    sendMessageMutation.isPending;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="shrink-0 border-b border-zinc-200 bg-white px-4 py-3 sm:px-6 sm:py-4 dark:border-zinc-800 dark:bg-zinc-950">
-        <div className={`flex items-center gap-3 sm:gap-4 ${pageInnerClassName}`}>
-          <Link
-            href={backNavigation.href}
-            className="inline-flex shrink-0 items-center gap-2 rounded-lg px-2 py-1 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
-          >
-            <ArrowLeftIcon className="size-4" aria-hidden />
-            <span className="hidden sm:inline">Back</span>
-          </Link>
-          <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className={`space-y-2 ${pageInnerClassName}`}>
+          <div className="flex items-start gap-2 sm:gap-3 lg:gap-4">
+            <Link
+              href={backNavigation.href}
+              className="mt-0.5 inline-flex shrink-0 items-center gap-2 rounded-lg px-1.5 py-1 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 sm:mt-1 sm:px-2 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+            >
+              <ArrowLeftIcon className="size-4" aria-hidden />
+              <span className="hidden sm:inline">Back</span>
+            </Link>
             <TeammateAvatar teammate={teammate} size="md" projectId={projectId} />
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1">
-                <h1 className="truncate text-base font-semibold sm:text-lg">
-                  {chat.title}
-                </h1>
-                <IconButton
-                  type="button"
-                  aria-label="Edit chat title"
-                  onClick={() => setIsEditTitleModalOpen(true)}
-                >
-                  <PencilIcon className="size-4" />
-                </IconButton>
+              <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
+                <div className="flex min-w-0 flex-1 items-center gap-0.5 sm:gap-1">
+                  <h1 className="truncate text-base font-semibold sm:text-lg">
+                    {chat.title}
+                  </h1>
+                  <IconButton
+                    type="button"
+                    aria-label="Edit chat title"
+                    onClick={() => setIsEditTitleModalOpen(true)}
+                    className="shrink-0"
+                  >
+                    <PencilIcon className="size-4" />
+                  </IconButton>
+                </div>
+                <ChatContextChips
+                  project={chat.project}
+                  requirement={chat.requirement}
+                  feature={chat.feature}
+                  className="hidden shrink-0 lg:flex"
+                />
+                <div className="hidden shrink-0 items-center gap-2 lg:flex">
+                  <div className="w-44">
+                    <ChatModelSelect
+                      id="chat-model"
+                      value={selectedModelId}
+                      onChange={handleModelChange}
+                      disabled={modelSettingsDisabled}
+                    />
+                  </div>
+                  {showReasoningEffortSelect ? (
+                    <div className="w-24">
+                      <ChatReasoningEffortSelect
+                        id="chat-reasoning-effort"
+                        value={selectedReasoningEffort}
+                        onChange={handleReasoningEffortChange}
+                        disabled={modelSettingsDisabled}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <IconButton
+                    type="button"
+                    aria-label="Model settings"
+                    title="Model settings"
+                    className="lg:hidden"
+                    onClick={() => setIsModelSettingsModalOpen(true)}
+                  >
+                    <Cog6ToothIcon className="size-4" />
+                  </IconButton>
+                  {isArchived ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="px-2 py-1 text-xs sm:px-3 sm:py-2 sm:text-sm"
+                      onClick={() => unarchiveChatMutation.mutate(chatId)}
+                      disabled={unarchiveChatMutation.isPending}
+                    >
+                      {unarchiveChatMutation.isPending
+                        ? "Restoring..."
+                        : "Unarchive"}
+                    </Button>
+                  ) : null}
+                  {chat.conversationSummary ? (
+                    <IconButton
+                      type="button"
+                      aria-label="View conversation summary"
+                      title="View conversation summary"
+                      onClick={() => setIsSummaryModalOpen(true)}
+                    >
+                      <DocumentTextIcon className="size-4" />
+                    </IconButton>
+                  ) : null}
+                </div>
               </div>
               <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
                 <TeammateProfileLink
@@ -406,65 +478,18 @@ export default function ChatDetailView({
                 >
                   {teammate.name}
                 </TeammateProfileLink>
-                {" · "}
-                {teammate.role}
+                <span className="hidden sm:inline">
+                  {" · "}
+                  {teammate.role}
+                </span>
               </p>
-            </div>
-          </div>
-          <ChatContextChips
-            project={chat.project}
-            requirement={chat.requirement}
-            feature={chat.feature}
-          />
-          <div className="flex shrink-0 items-center gap-2">
-            <div className="w-28 sm:w-36 md:w-44">
-              <ChatModelSelect
-                id="chat-model"
-                value={selectedModelId}
-                onChange={handleModelChange}
-                disabled={
-                  isArchived ||
-                  updateChatModelMutation.isPending ||
-                  sendMessageMutation.isPending
-                }
+              <ChatContextChips
+                project={chat.project}
+                requirement={chat.requirement}
+                feature={chat.feature}
+                className="mt-1.5 lg:hidden"
               />
             </div>
-            {showReasoningEffortSelect ? (
-              <div className="w-20 sm:w-24">
-                <ChatReasoningEffortSelect
-                  id="chat-reasoning-effort"
-                  value={selectedReasoningEffort}
-                  onChange={handleReasoningEffortChange}
-                  disabled={
-                    isArchived ||
-                    updateChatModelMutation.isPending ||
-                    sendMessageMutation.isPending
-                  }
-                />
-              </div>
-            ) : null}
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            {isArchived ? (
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => unarchiveChatMutation.mutate(chatId)}
-                disabled={unarchiveChatMutation.isPending}
-              >
-                {unarchiveChatMutation.isPending ? "Restoring..." : "Unarchive"}
-              </Button>
-            ) : null}
-            {chat.conversationSummary ? (
-              <IconButton
-                type="button"
-                aria-label="View conversation summary"
-                title="View conversation summary"
-                onClick={() => setIsSummaryModalOpen(true)}
-              >
-                <DocumentTextIcon className="size-5" />
-              </IconButton>
-            ) : null}
           </div>
         </div>
       </div>
@@ -569,6 +594,17 @@ export default function ChatDetailView({
         open={isSummaryModalOpen}
         summary={chat.conversationSummary}
         onClose={() => setIsSummaryModalOpen(false)}
+      />
+
+      <ChatModelSettingsModal
+        open={isModelSettingsModalOpen}
+        onClose={() => setIsModelSettingsModalOpen(false)}
+        modelId={selectedModelId}
+        reasoningEffort={selectedReasoningEffort}
+        showReasoningEffort={showReasoningEffortSelect}
+        disabled={modelSettingsDisabled}
+        onModelChange={handleModelChange}
+        onReasoningEffortChange={handleReasoningEffortChange}
       />
     </div>
   );
