@@ -9,7 +9,7 @@ import {
   generateAgentTasksRequest,
   type GenerateAgentTasksRequest,
 } from "@/lib/api/agent-tasks";
-import { agentTasksKeys } from "@/lib/query-keys";
+import { agentTasksKeys, dashboardKeys } from "@/lib/query-keys";
 import type { AgentTasksResponse } from "@/lib/types";
 
 type UseGenerateAgentTasksOptions = Omit<
@@ -29,6 +29,7 @@ export function useGenerateAgentTasks(options?: UseGenerateAgentTasksOptions) {
         agentTasksKeys.detail(input.teammateId, input.projectId),
         tasks,
       );
+      void queryClient.invalidateQueries({ queryKey: dashboardKeys.tasks });
       onSuccess?.(tasks, input, onMutateResult, context);
     },
   });

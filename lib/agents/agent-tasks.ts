@@ -217,6 +217,10 @@ export function mergeGeneratedAgentTasks(
   ];
 }
 
+export function isReplaceableAgentTaskStatus(status: AgentTaskStatus): boolean {
+  return status === "pending" || status === "rejected";
+}
+
 export function canReplaceAgentTask(
   tasks: AgentTask[],
   taskTitle: string,
@@ -227,7 +231,7 @@ export function canReplaceAgentTask(
     return false;
   }
 
-  return getAgentTaskDecisionStatus(task) !== "accepted";
+  return isReplaceableAgentTaskStatus(getAgentTaskStatus(task));
 }
 
 export function replaceGeneratedAgentTask(

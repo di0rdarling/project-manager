@@ -1,4 +1,7 @@
-import { getChatTeammate } from "@/lib/chats/chat-teammates";
+import {
+  getChatTeammate,
+  isCrossProjectTeammate,
+} from "@/lib/chats/chat-teammates";
 import { loadAgentTaskPromptContext } from "@/lib/agents/load-agent-task-prompt-context";
 import { parseAgentTasksJson } from "@/lib/agents/agent-tasks-json";
 import {
@@ -100,6 +103,16 @@ export async function POST(request: Request, context: RouteContext) {
 
     if ("error" in parsedTeammate) {
       return parsedTeammate.error;
+    }
+
+    if (isCrossProjectTeammate(parsedTeammate.teammateId)) {
+      return Response.json(
+        {
+          error:
+            "Cross-project teammates do not generate autonomous tasks.",
+        },
+        { status: 400 },
+      );
     }
 
     const parsedProject = parseProjectId(new URL(request.url).searchParams);

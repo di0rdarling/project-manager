@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/ItemActionsMenu";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import AgentTaskDetailModal from "@/components/views/Chats/AgentTaskDetailModal";
+import { AgentTaskGenerateAlternativeMenu } from "@/components/agents/AgentTaskGenerateAlternativeMenu";
 import { useDeleteAgentTasks } from "@/hooks/mutations/chats/useDeleteAgentTasks";
 import { useGenerateAgentTasks } from "@/hooks/mutations/chats/useGenerateAgentTasks";
 import { useStartAgentTaskOutput } from "@/hooks/mutations/chats/useStartAgentTaskOutput";
@@ -474,15 +475,10 @@ export default function AgentTasks({
                           />
                         </button>
                         {canGenerateAlternative ? (
-                          <ItemActionsMenu
-                            menuLabel={`Actions for ${task.title}`}
-                            actions={[
-                              regenerateItemAction(
-                                "Generate alternative",
-                                () => handleGenerateAlternative(task.title),
-                                isGenerating,
-                              ),
-                            ]}
+                          <AgentTaskGenerateAlternativeMenu
+                            taskTitle={task.title}
+                            onGenerateAlternative={handleGenerateAlternative}
+                            disabled={isGenerating}
                           />
                         ) : null}
                       </div>

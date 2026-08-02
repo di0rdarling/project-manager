@@ -24,7 +24,10 @@ import { useGenerateUserMemory } from "@/hooks/mutations/chats/useGenerateUserMe
 import { useAgentChats } from "@/hooks/queries/useAgentChats";
 import { useFetchAgentTasks } from "@/hooks/queries/useFetchAgentTasks";
 import { useFetchUserMemory } from "@/hooks/queries/useFetchUserMemory";
-import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
+import {
+  isCrossProjectTeammate,
+  type ChatTeammateId,
+} from "@/lib/chats/chat-teammates";
 
 interface AgentUserMemoryOverviewProps {
   teammateId: ChatTeammateId;
@@ -86,6 +89,7 @@ export default function AgentUserMemoryOverview({
   const hasAnyData =
     Boolean(userMemory?.mostRecently) || stableContext.length > 0;
   const tasksCount = agentTasks?.tasks.length ?? 0;
+  const isCrossProject = isCrossProjectTeammate(teammateId);
 
   return (
     <section className="space-y-4">
@@ -134,15 +138,20 @@ export default function AgentUserMemoryOverview({
           <AgentMostRecently mostRecently={userMemory?.mostRecently ?? null} />
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="space-y-6 lg:col-span-2">
-              {projectId ? (
-                <AgentTasks teammateId={teammateId} projectId={projectId} />
-              ) : (
-                <AgentTasksAllProjects teammateId={teammateId} />
-              )}
+              {!isCrossProject ? (
+                projectId ? (
+                  <AgentTasks teammateId={teammateId} projectId={projectId} />
+                ) : (
+                  <AgentTasksAllProjects teammateId={teammateId} />
+                )
+              ) : null}
               <AIAgentMemory teammateId={teammateId} />
             </div>
             <div className="space-y-6">
-              <AgentAtAGlance chatsCount={chatsCount} tasksCount={tasksCount} />
+              <AgentAtAGlance
+                chatsCount={chatsCount}
+                tasksCount={isCrossProject ? undefined : tasksCount}
+              />
               <AgentStableContext items={stableContext} />
               <AgentConversations
                 conversations={agentChats}
@@ -179,15 +188,20 @@ export default function AgentUserMemoryOverview({
           </div>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="space-y-6 lg:col-span-2">
-              {projectId ? (
-                <AgentTasks teammateId={teammateId} projectId={projectId} />
-              ) : (
-                <AgentTasksAllProjects teammateId={teammateId} />
-              )}
+              {!isCrossProject ? (
+                projectId ? (
+                  <AgentTasks teammateId={teammateId} projectId={projectId} />
+                ) : (
+                  <AgentTasksAllProjects teammateId={teammateId} />
+                )
+              ) : null}
               <AIAgentMemory teammateId={teammateId} />
             </div>
             <div className="space-y-6">
-              <AgentAtAGlance chatsCount={chatsCount} tasksCount={tasksCount} />
+              <AgentAtAGlance
+                chatsCount={chatsCount}
+                tasksCount={isCrossProject ? undefined : tasksCount}
+              />
               <AgentConversations
                 conversations={agentChats}
                 isPending={isChatsPending}

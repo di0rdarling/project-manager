@@ -225,7 +225,7 @@ function groupBy<T, K extends string>(
 
 function buildDigestUserMessage(agentTasksContext: string | undefined): string {
   const sections = [
-    "Give me a concise cross-project status update and one concrete next action I should take.",
+    "Give me a substantive cross-project status update and one concrete next action I should take.",
     "",
     "Use all of the context you have: my projects, recent conversations, what my other AI teammates have been working on with me, and the autonomous tasks below.",
     "",
@@ -247,7 +247,7 @@ function buildDigestUserMessage(agentTasksContext: string | undefined): string {
     "",
     "Return your response as a single JSON object with no markdown, code fences, or extra commentary. Use this exact shape:",
     "",
-    '{"digest": "2-3 sentences summarizing what\'s most important across my projects", "suggestedAction": "one specific next step I should take"}',
+    '{"digest": "3-5 substantial sentences summarizing what\'s most important across my projects. Include: (1) what has moved forward recently, (2) what is stalled or blocked and why, (3) any decisions or follow-ups from my conversations that still need resolution, (4) patterns or risks spanning multiple projects. Be specific — name projects, teammates, and deliverables where relevant.", "suggestedAction": "one specific next step I should take"}',
   );
 
   return sections.join("\n");
