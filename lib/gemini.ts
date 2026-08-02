@@ -213,6 +213,7 @@ export async function generateChatReply(
   userName?: string | null,
   modelName?: string,
   generatedAt?: Date,
+  documentReviewContext?: string,
 ): Promise<GenerateChatReplyResult> {
   const chat = getGenAIClient().chats.create({
     model: modelName ?? getChatModelName(),
@@ -225,6 +226,7 @@ export async function generateChatReply(
         agentNotesContext,
         userName,
         generatedAt,
+        documentReviewContext,
       ),
       tools: [{ googleSearch: {} }],
       thinkingConfig: {
@@ -278,10 +280,6 @@ export async function generateChatTitle(prompt: string): Promise<string> {
 
 export async function generateAgentMemory(prompt: string): Promise<string> {
   return generateText(prompt, getMemoryModelName());
-}
-
-export async function generateDashboardDigest(prompt: string): Promise<string> {
-  return generateJsonText(prompt, getDashboardModelName());
 }
 
 /**
@@ -356,6 +354,7 @@ export type CountChatContextTokensInput = {
   userName?: string | null;
   modelName?: string;
   pendingMessage?: string;
+  documentReviewContext?: string;
 };
 
 export async function countChatContextTokens(
@@ -371,6 +370,7 @@ export async function countChatContextTokens(
     userName,
     modelName,
     pendingMessage,
+    documentReviewContext,
   } = input;
 
   const model = getGeminiClient().getGenerativeModel({
@@ -382,6 +382,8 @@ export async function countChatContextTokens(
       otherTeammatesContext,
       agentNotesContext,
       userName,
+      undefined,
+      documentReviewContext,
     ),
   });
 

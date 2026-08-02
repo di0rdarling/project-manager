@@ -113,6 +113,30 @@ export type AgentTaskOutputResult = {
   completionSummary: string;
 };
 
+export async function findAgentTaskByDocumentId(
+  db: Db,
+  userId: ObjectId,
+  teammateId: ChatTeammateId,
+  documentId: string,
+): Promise<{ task: AgentTask; projectId: ObjectId } | null> {
+  const records = await db
+    .collection<StoredAgentTasks>(AGENT_TASKS_COLLECTION)
+    .find({ userId, teammateId })
+    .toArray();
+
+  for (const record of records) {
+    const task = record.tasks.find(
+      (entry) => entry.outputDocumentId === documentId,
+    );
+
+    if (task) {
+      return { task, projectId: record.projectId };
+    }
+  }
+
+  return null;
+}
+
 export async function updateAgentTaskOutput(
   db: Db,
   userId: ObjectId,

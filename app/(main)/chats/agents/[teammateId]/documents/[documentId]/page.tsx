@@ -10,7 +10,7 @@ export default async function AgentDocumentPage({
   const { teammateId, documentId } = await params;
 
   return (
-    <div className="flex flex-1 flex-col bg-zinc-50 font-sans dark:bg-black">
+    <div className="flex h-full flex-col overflow-hidden bg-zinc-50 font-sans dark:bg-black">
       <AgentDocumentDetailView
         teammateId={teammateId}
         documentId={documentId}

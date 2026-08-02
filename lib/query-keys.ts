@@ -92,6 +92,8 @@ export const agentDocumentKeys = {
   list: (teammateId: string) => ["agent-documents", teammateId] as const,
   detail: (teammateId: string, documentId: string) =>
     ["agent-documents", teammateId, documentId] as const,
+  reviewChat: (teammateId: string, documentId: string) =>
+    ["agent-documents", teammateId, documentId, "review-chat"] as const,
 };
 
 export const currentUserKeys = {

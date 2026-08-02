@@ -17,6 +17,7 @@ export function buildChatSystemPrompt(
   agentNotesContext?: string,
   userName?: string | null,
   generatedAt?: Date,
+  documentReviewContext?: string,
 ): string {
   const sections = [
     buildAiTeammatesRosterPrompt(teammateId),
@@ -72,6 +73,14 @@ export function buildChatSystemPrompt(
         projectContext.trim(),
       );
     }
+  }
+
+  if (documentReviewContext?.trim()) {
+    sections.push(
+      "",
+      "The user is reviewing a deliverable you produced for an autonomous task. They can see the full document alongside this conversation. Use the task and document details below to discuss your work — answer questions, clarify your reasoning, and respond to feedback before sign-off.",
+      documentReviewContext.trim(),
+    );
   }
 
   return sections.join("\n");

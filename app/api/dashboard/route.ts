@@ -1,10 +1,9 @@
 import { requireUserId } from "@/lib/current-user";
+import { generateJordanDashboardDigest } from "@/lib/dashboard/generate-jordan-digest";
 import getClientPromise from "@/lib/mongodb";
-import { generateDashboardDigest } from "@/lib/gemini";
-import { buildDashboardDigestPrompt } from "@/lib/prompts/dashboard-digest-prompt";
-import { serializeProject, type StoredProject } from "@/lib/serialize/serialize-project";
+import type { StoredProject } from "@/lib/serialize/serialize-project";
 import type { StoredChat } from "@/lib/serialize/serialize-chat";
-import type { DashboardDigestResponse } from "@/lib/types";
+import { findUserById } from "@/lib/users";
 
 function getStartOfWeek(date: Date): Date {
   const result = new Date(date);
@@ -13,23 +12,6 @@ function getStartOfWeek(date: Date): Date {
   result.setDate(result.getDate() + diff);
   result.setHours(0, 0, 0, 0);
   return result;
-}
-
-function parseDashboardDigestJson(text: string): DashboardDigestResponse {
-  const parsed = JSON.parse(text) as Record<string, unknown>;
-
-  const digest =
-    typeof parsed.digest === "string" ? parsed.digest.trim() : "";
-  const suggestedAction =
-    typeof parsed.suggestedAction === "string"
-      ? parsed.suggestedAction.trim()
-      : "";
-
-  if (!digest || !suggestedAction) {
-    throw new Error("Dashboard digest response is missing required fields");
-  }
-
-  return { digest, suggestedAction };
 }
 
 export async function GET() {
@@ -81,72 +63,10 @@ export async function POST() {
     const db = client.db();
     const userId = auth.userId;
 
-    const startOfWeek = getStartOfWeek(new Date());
-    const generatedAt = new Date();
+    const user = await findUserById(db, userId);
+    const userName = user?.name ?? null;
 
-    const [projects, openChats, recentNotes] = await Promise.all([
-      db
-        .collection<StoredProject>("projects")
-        .find({ userId })
-        .sort({ updatedAt: -1 })
-        .toArray(),
-      db
-        .collection<StoredChat>("chats")
-        .find({ userId, archivedAt: null })
-        .sort({ updatedAt: -1 })
-        .toArray(),
-      db
-        .collection("notes")
-        .find({
-          userId,
-          $or: [
-            { createdAt: { $gte: startOfWeek } },
-            { updatedAt: { $gte: startOfWeek } },
-          ],
-        })
-        .sort({ updatedAt: -1 })
-        .toArray(),
-    ]);
-
-    const projectMap = new Map(
-      projects.map((project) => [
-        project._id.toString(),
-        serializeProject(project),
-      ]),
-    );
-
-    const prompt = buildDashboardDigestPrompt({
-      projects: projects.map((project) => ({
-        name: project.name,
-        description: project.description,
-        aiSummary:
-          typeof project.aiSummary === "string" && project.aiSummary.trim()
-            ? project.aiSummary
-            : null,
-      })),
-      openChats: openChats.map((chat) => ({
-        title: chat.title || "Untitled chat",
-        projectName:
-          chat.projectId != null
-            ? projectMap.get(chat.projectId.toString())?.name ?? null
-            : null,
-        updatedAt: new Date(chat.updatedAt).toISOString(),
-      })),
-      recentNotes: recentNotes.map((note) => ({
-        title: typeof note.title === "string" ? note.title : "Untitled note",
-        projectName:
-          note.projectId != null
-            ? projectMap.get(note.projectId.toString())?.name ?? null
-            : null,
-        updatedAt: new Date(
-          note.updatedAt ?? note.createdAt,
-        ).toISOString(),
-      })),
-      generatedAt,
-    });
-
-    const rawDigest = await generateDashboardDigest(prompt);
-    const digest = parseDashboardDigestJson(rawDigest);
+    const digest = await generateJordanDashboardDigest(db, userId, userName);
 
     return Response.json(digest);
   } catch (error) {

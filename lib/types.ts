@@ -371,3 +371,36 @@ export type DashboardDigestResponse = {
   digest: string;
   suggestedAction: string;
 };
+
+export type AgentDocumentReviewMessageResponse = {
+  _id: string;
+  role: ChatMessageRole;
+  content: string;
+  createdAt: string;
+};
+
+export type AgentDocumentReviewChatResponse = {
+  messages: AgentDocumentReviewMessageResponse[];
+  document: AgentDocumentResponse;
+  task: AgentTask | null;
+  modelId: ChatModelId;
+  reasoningEffort: KimiReasoningEffort | null;
+  conversationSummary: string | null;
+  contextUsage: ChatContextUsage;
+};
+
+export type SendDocumentReviewMessageResponse = {
+  userMessage: AgentDocumentReviewMessageResponse;
+  assistantMessage: AgentDocumentReviewMessageResponse;
+  document: AgentDocumentResponse;
+  modelId: ChatModelId;
+  reasoningEffort: KimiReasoningEffort | null;
+  conversationSummary: string | null;
+  contextUsage: ChatContextUsage;
+};
+
+export type UpdateDocumentReviewChatResponse = {
+  modelId: ChatModelId;
+  reasoningEffort: KimiReasoningEffort | null;
+  contextUsage: ChatContextUsage;
+};

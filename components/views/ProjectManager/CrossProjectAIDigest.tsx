@@ -1,16 +1,17 @@
 "use client";
 
-import {
-  LightBulbIcon,
-  SparklesIcon,
-} from "@heroicons/react/24/outline";
+import { LightBulbIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { useQuery } from "@tanstack/react-query";
+import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useGenerateDashboardDigest } from "@/hooks/mutations/dashboard/useGenerateDashboardDigest";
+import { getChatTeammate } from "@/lib/chats/chat-teammates";
 import { dashboardKeys } from "@/lib/query-keys";
 import type { DashboardDigestResponse } from "@/lib/types";
+
+const jordan = getChatTeammate("jordan");
 
 export default function CrossProjectAIDigest() {
   const { data: digest, isFetching: isLoadingDigest } = useQuery<
@@ -41,13 +42,27 @@ export default function CrossProjectAIDigest() {
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="inline-flex items-center gap-2 text-lg font-semibold">
-          <SparklesIcon
-            className="size-5 text-zinc-500 dark:text-zinc-400"
-            aria-hidden
+        <div className="flex items-center gap-3">
+          <Avatar
+            initials={jordan.avatarInitials}
+            src={jordan.avatarImageSrc}
+            alt={jordan.name}
+            colorClassName={jordan.avatarColorClassName}
+            size="md"
           />
-          Cross-project digest
-        </h2>
+          <div>
+            <h2 className="inline-flex items-center gap-2 text-lg font-semibold">
+              {jordan.name}&apos;s update
+              <SparklesIcon
+                className="size-5 text-zinc-500 dark:text-zinc-400"
+                aria-hidden
+              />
+            </h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              {jordan.role}
+            </p>
+          </div>
+        </div>
         {hasDigest ? (
           <Button
             type="button"
@@ -61,7 +76,7 @@ export default function CrossProjectAIDigest() {
       </div>
 
       {isGenerating ? (
-        <LoadingMessage>Generating cross-project digest...</LoadingMessage>
+        <LoadingMessage>Jordan is reviewing your workspace...</LoadingMessage>
       ) : hasDigest ? (
         <div className="space-y-4">
           {isGenerateError ? (
@@ -97,8 +112,9 @@ export default function CrossProjectAIDigest() {
       ) : (
         <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-900/50">
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Generate an AI-powered overview of what is happening across all your
-            projects, plus one concrete next step to take.
+            Ask {jordan.name} {" "}for a cross-project update. He&apos;ll synthesize
+            your projects, recent notes, and conversations with the other AI
+            teammates to surface what matters most.
           </p>
           {isGenerateError ? (
             <div className="mt-4 text-left">
@@ -114,7 +130,7 @@ export default function CrossProjectAIDigest() {
             disabled={isBusy}
             className="mt-4"
           >
-            Generate Digest
+            Ask {jordan.name}
           </Button>
         </div>
       )}

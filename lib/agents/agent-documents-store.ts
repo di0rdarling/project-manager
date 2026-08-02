@@ -150,3 +150,22 @@ export async function deleteAgentDocument(
 
   return result.deletedCount > 0;
 }
+
+export async function updateAgentDocumentStatus(
+  db: Db,
+  userId: ObjectId,
+  teammateId: ChatTeammateId,
+  documentId: ObjectId,
+  status: AgentDocumentStatus,
+): Promise<AgentDocumentResponse | null> {
+  const now = new Date().toISOString();
+  const result = await db
+    .collection<StoredAgentDocument>(AGENT_DOCUMENTS_COLLECTION)
+    .findOneAndUpdate(
+      { _id: documentId, userId, teammateId },
+      { $set: { status, updatedAt: now } },
+      { returnDocument: "after" },
+    );
+
+  return result ? serializeAgentDocument(result) : null;
+}

@@ -135,6 +135,7 @@ export async function generateKimiChatReply(
   modelId?: string,
   reasoningEffort?: KimiReasoningEffort,
   generatedAt?: Date,
+  documentReviewContext?: string,
 ): Promise<GenerateChatReplyResult> {
   try {
     const client = getKimiClient();
@@ -146,6 +147,7 @@ export async function generateKimiChatReply(
       agentNotesContext,
       userName,
       generatedAt,
+      documentReviewContext,
     );
 
     const completion = await client.chat.completions.create({
@@ -185,6 +187,7 @@ export type CountKimiChatContextTokensInput = {
   agentNotesContext?: string;
   userName?: string | null;
   pendingMessage?: string;
+  documentReviewContext?: string;
 };
 
 export async function countKimiChatContextTokens(
@@ -199,6 +202,7 @@ export async function countKimiChatContextTokens(
     agentNotesContext,
     userName,
     pendingMessage,
+    documentReviewContext,
   } = input;
 
   const systemPrompt = buildChatSystemPrompt(
@@ -208,6 +212,8 @@ export async function countKimiChatContextTokens(
     otherTeammatesContext,
     agentNotesContext,
     userName,
+    undefined,
+    documentReviewContext,
   );
 
   const conversationText = [
