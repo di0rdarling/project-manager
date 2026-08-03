@@ -3,6 +3,7 @@
 import PageContent from "@/components/layout/PageContent";
 import EditableNameRow from "@/components/views/Account/EditableNameRow";
 import SubscriptionRow from "@/components/views/Account/SubscriptionRow";
+import AccountUsageLimitsSection from "@/components/views/Account/AccountUsageLimitsSection";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useFetchCurrentUser } from "@/hooks/queries/useFetchCurrentUser";
@@ -72,17 +73,18 @@ export default function AccountView() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">AI usage limits</h2>
-        <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-900/50">
-          <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-            Usage tracking is coming soon
-          </p>
-          <p className="mx-auto mt-2 max-w-md text-sm text-zinc-600 dark:text-zinc-400">
-            This section will show your AI usage limits and how much of your
-            monthly allowance you have used for chats, summaries, and other AI
-            features.
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold">AI usage limits</h2>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            How much of your plan allowance you&apos;ve used this month.
           </p>
         </div>
+
+        {currentUser ? (
+          <AccountUsageLimitsSection subscription={currentUser.subscription} />
+        ) : isPending ? (
+          <LoadingMessage>Loading usage limits...</LoadingMessage>
+        ) : null}
       </section>
     </PageContent>
   );
