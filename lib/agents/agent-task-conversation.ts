@@ -171,3 +171,40 @@ export async function resolveUnifiedTaskConversationSession(
 
   return getOrCreateTaskOverviewSession(db, key, defaultModelId);
 }
+
+/**
+ * Removes the task conversation transcript after sign-off or rejection while
+ * keeping the session's conversation summary for cross-chat agent context.
+ */
+export async function archiveTaskConversationTranscript(
+  db: Db,
+  key: TaskConversationKey,
+  documentId?: ObjectId,
+): Promise<void> {
+  if (documentId) {
+    await syncDocumentReviewIntoTaskConversation(db, key, documentId);
+  }
+
+  await db.collection(AGENT_TASK_OVERVIEW_MESSAGES_COLLECTION).deleteMany({
+    userId: key.userId,
+    teammateId: key.teammateId,
+    projectId: key.projectId,
+    taskTitle: key.taskTitle,
+  });
+
+  if (!documentId) {
+    return;
+  }
+
+  await db.collection(AGENT_DOCUMENT_REVIEW_MESSAGES_COLLECTION).deleteMany({
+    userId: key.userId,
+    teammateId: key.teammateId,
+    documentId,
+  });
+
+  await db.collection(AGENT_DOCUMENT_REVIEW_SESSIONS_COLLECTION).deleteOne({
+    userId: key.userId,
+    teammateId: key.teammateId,
+    documentId,
+  });
+}

@@ -47,7 +47,9 @@ export function useAcceptAgentDocument(
           variables.documentId,
         ),
         (current) =>
-          current ? { ...current, document } : current,
+          current
+            ? { ...current, document, messages: [] }
+            : current,
       );
 
       queryClient.setQueryData<AgentDocumentResponse[]>(
@@ -76,6 +78,22 @@ export function useAcceptAgentDocument(
             };
           },
         );
+
+        const linkedTask = queryClient
+          .getQueryData<AgentTasksResponse>(
+            agentTasksKeys.detail(variables.teammateId, variables.projectId),
+          )
+          ?.tasks.find((task) => task.outputDocumentId === document._id);
+
+        if (linkedTask) {
+          void queryClient.invalidateQueries({
+            queryKey: agentTasksKeys.overviewChat(
+              variables.teammateId,
+              variables.projectId,
+              linkedTask.title,
+            ),
+          });
+        }
       }
 
       void queryClient.invalidateQueries({ queryKey: dashboardKeys.tasks });

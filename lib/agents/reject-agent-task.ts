@@ -2,6 +2,7 @@ import { ObjectId, type Db } from "mongodb";
 import {
   deleteAgentDocument,
 } from "@/lib/agents/agent-documents-store";
+import { archiveTaskConversationTranscript } from "@/lib/agents/agent-task-conversation";
 import {
   findAgentTaskByDocumentId,
   getAgentTasks,
@@ -79,6 +80,14 @@ export async function rejectAndDeleteAgentTaskByTitle(
 
   await deleteTaskOutputDocument(db, userId, teammateId, task);
 
+  await archiveTaskConversationTranscript(
+    db,
+    { userId, teammateId, projectId, taskTitle },
+    task.outputDocumentId && ObjectId.isValid(task.outputDocumentId)
+      ? new ObjectId(task.outputDocumentId)
+      : undefined,
+  );
+
   return removeAgentTaskByTitle(
     db,
     userId,
@@ -117,6 +126,17 @@ export async function rejectAndDeleteAgentTaskByDocumentId(
   if (!linkedTask) {
     return { removedTask: null, record: null, projectId: null };
   }
+
+  await archiveTaskConversationTranscript(
+    db,
+    {
+      userId,
+      teammateId,
+      projectId: linkedTask.projectId,
+      taskTitle: linkedTask.task.title,
+    },
+    ObjectId.isValid(documentId) ? new ObjectId(documentId) : undefined,
+  );
 
   const { removedTask, record } = await removeAgentTaskByTitle(
     db,

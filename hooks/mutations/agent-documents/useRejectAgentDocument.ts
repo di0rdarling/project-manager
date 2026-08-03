@@ -62,6 +62,16 @@ export function useRejectAgentDocument(
         data.tasks,
       );
 
+      if (data.taskTitle) {
+        void queryClient.invalidateQueries({
+          queryKey: agentTasksKeys.overviewChat(
+            data.tasks.teammateId,
+            data.tasks.projectId,
+            data.taskTitle,
+          ),
+        });
+      }
+
       onSuccess?.(data, variables, onMutateResult, context);
     },
   });

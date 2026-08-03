@@ -11,6 +11,7 @@ import {
   updateAgentDocumentContent,
   updateAgentDocumentStatus,
 } from "@/lib/agents/agent-documents-store";
+import { archiveTaskConversationTranscript } from "@/lib/agents/agent-task-conversation";
 import {
   findAgentTaskByDocumentId,
   updateAgentTaskOutputDocumentTitle,
@@ -207,6 +208,26 @@ export async function PATCH(request: Request, context: RouteContext) {
 
       if (!document) {
         return Response.json({ error: "Document not found" }, { status: 404 });
+      }
+
+      const linkedTask = await findAgentTaskByDocumentId(
+        db,
+        auth.userId,
+        parsed.teammateId,
+        parsed.documentId,
+      );
+
+      if (linkedTask) {
+        await archiveTaskConversationTranscript(
+          db,
+          {
+            userId: auth.userId,
+            teammateId: parsed.teammateId,
+            projectId: linkedTask.projectId,
+            taskTitle: linkedTask.task.title,
+          },
+          documentObjectId,
+        );
       }
 
       return Response.json(document);

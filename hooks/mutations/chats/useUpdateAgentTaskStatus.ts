@@ -31,6 +31,17 @@ export function useUpdateAgentTaskStatus(
         agentTasksKeys.detail(input.teammateId, input.projectId),
         tasks,
       );
+
+      if (input.status === "rejected") {
+        void queryClient.invalidateQueries({
+          queryKey: agentTasksKeys.overviewChat(
+            input.teammateId,
+            input.projectId,
+            input.taskTitle,
+          ),
+        });
+      }
+
       onSuccess?.(tasks, input, onMutateResult, context);
     },
   });

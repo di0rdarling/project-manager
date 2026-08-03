@@ -73,6 +73,29 @@ type InsertTaskOverviewMessagesInput = {
   createdAt: string;
 };
 
+type TaskOverviewMessageKey = {
+  userId: ObjectId;
+  teammateId: ChatTeammateId;
+  projectId: ObjectId;
+  taskTitle: string;
+};
+
+export async function deleteTaskOverviewMessages(
+  db: Db,
+  key: TaskOverviewMessageKey,
+): Promise<number> {
+  const result = await db
+    .collection(AGENT_TASK_OVERVIEW_MESSAGES_COLLECTION)
+    .deleteMany({
+      userId: key.userId,
+      teammateId: key.teammateId,
+      projectId: key.projectId,
+      taskTitle: key.taskTitle,
+    });
+
+  return result.deletedCount;
+}
+
 export async function insertTaskOverviewMessages(
   db: Db,
   input: InsertTaskOverviewMessagesInput,
