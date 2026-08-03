@@ -1,8 +1,10 @@
 import { requireUserId } from "@/lib/current-user";
 import { isChatModelId, type ChatModelId } from "@/lib/chats/chat-models";
 import getClientPromise from "@/lib/mongodb";
+import type { UserSubscription } from "@/lib/types";
 import {
   findUserById,
+  normalizeUserSubscription,
   serializeUser,
   updateUserFields,
 } from "@/lib/users";
@@ -13,6 +15,7 @@ type PatchBody = {
   name?: unknown;
   agentTaskGenerationModelId?: unknown;
   dashboardDigestModelId?: unknown;
+  subscription?: unknown;
 };
 
 export async function GET() {
@@ -49,8 +52,14 @@ export async function PATCH(request: Request) {
     const hasName = "name" in body;
     const hasAgentTaskGenerationModelId = "agentTaskGenerationModelId" in body;
     const hasDashboardDigestModelId = "dashboardDigestModelId" in body;
+    const hasSubscription = "subscription" in body;
 
-    if (!hasName && !hasAgentTaskGenerationModelId && !hasDashboardDigestModelId) {
+    if (
+      !hasName &&
+      !hasAgentTaskGenerationModelId &&
+      !hasDashboardDigestModelId &&
+      !hasSubscription
+    ) {
       return Response.json(
         { error: "No valid fields to update" },
         { status: 400 },
@@ -64,6 +73,7 @@ export async function PATCH(request: Request) {
       name?: string | null;
       agentTaskGenerationModelId?: ChatModelId | null;
       dashboardDigestModelId?: ChatModelId | null;
+      subscription?: UserSubscription;
     } = {};
 
     if (hasName) {
@@ -106,6 +116,44 @@ export async function PATCH(request: Request) {
       }
 
       updates.dashboardDigestModelId = modelId;
+    }
+
+    if (hasSubscription) {
+      if (body.subscription !== "premium" && body.subscription !== "free") {
+        return Response.json(
+          { error: "subscription must be either free or premium" },
+          { status: 400 },
+        );
+      }
+
+      const existingUser = await findUserById(db, auth.userId);
+      if (!existingUser) {
+        return Response.json({ error: "User not found" }, { status: 404 });
+      }
+
+      const currentSubscription = normalizeUserSubscription(
+        existingUser.subscription,
+      );
+
+      if (body.subscription === currentSubscription) {
+        return Response.json(serializeUser(existingUser));
+      }
+
+      if (body.subscription === "premium" && currentSubscription !== "free") {
+        return Response.json(
+          { error: "Only free accounts can upgrade to premium" },
+          { status: 400 },
+        );
+      }
+
+      if (body.subscription === "free" && currentSubscription !== "premium") {
+        return Response.json(
+          { error: "Only premium accounts can cancel their subscription" },
+          { status: 400 },
+        );
+      }
+
+      updates.subscription = body.subscription;
     }
 
     const user = await updateUserFields(db, auth.userId, updates);

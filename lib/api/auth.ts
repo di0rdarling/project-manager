@@ -1,5 +1,5 @@
 import type { ChatModelId } from "@/lib/chats/chat-models";
-import type { UserResponse } from "@/lib/types";
+import type { UserResponse, UserSubscription } from "@/lib/types";
 import { parseResponse } from "@/lib/api/response";
 
 export async function fetchCurrentUser(): Promise<UserResponse> {
@@ -11,6 +11,7 @@ export type UpdateCurrentUserInput = {
   name?: string;
   agentTaskGenerationModelId?: ChatModelId | null;
   dashboardDigestModelId?: ChatModelId | null;
+  subscription?: UserSubscription;
 };
 
 export async function updateCurrentUser(

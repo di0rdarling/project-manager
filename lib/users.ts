@@ -116,6 +116,7 @@ type UserFieldUpdates = {
   name?: string | null;
   agentTaskGenerationModelId?: ChatModelId | null;
   dashboardDigestModelId?: ChatModelId | null;
+  subscription?: UserSubscription;
 };
 
 export async function updateUserFields(
@@ -138,6 +139,10 @@ export async function updateUserFields(
 
   if ("dashboardDigestModelId" in updates) {
     setUpdates.dashboardDigestModelId = updates.dashboardDigestModelId ?? null;
+  }
+
+  if ("subscription" in updates) {
+    setUpdates.subscription = updates.subscription;
   }
 
   const result = await db

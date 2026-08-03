@@ -2,15 +2,11 @@
 
 import PageContent from "@/components/layout/PageContent";
 import EditableNameRow from "@/components/views/Account/EditableNameRow";
+import SubscriptionRow from "@/components/views/Account/SubscriptionRow";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useFetchCurrentUser } from "@/hooks/queries/useFetchCurrentUser";
 import { formatDisplayDate } from "@/lib/dates";
-import type { UserSubscription } from "@/lib/types";
-
-function formatSubscriptionLabel(subscription: UserSubscription): string {
-  return subscription === "premium" ? "Premium" : "Free";
-}
 
 type AccountDetailRowProps = {
   label: string;
@@ -63,10 +59,7 @@ export default function AccountView() {
           <dl className="overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
             <EditableNameRow name={currentUser.name} />
             <AccountDetailRow label="Email" value={currentUser.email} />
-            <AccountDetailRow
-              label="Subscription"
-              value={formatSubscriptionLabel(currentUser.subscription)}
-            />
+            <SubscriptionRow subscription={currentUser.subscription} />
             <AccountDetailRow
               label="Member since"
               value={formatDisplayDate(currentUser.createdAt)}
