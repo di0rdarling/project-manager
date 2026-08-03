@@ -2,8 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { Button } from "@/components/ui/Button";
-import { DeleteAISummaryModal } from "@/components/ui/DeleteAISummaryModal";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { ChatModelSelect } from "@/components/views/Chats/ChatModelSelect";
@@ -18,11 +16,9 @@ import {
   AgentChatTypingIndicator,
 } from "@/components/views/shared/AgentChatMessageBubble";
 import { AgentSideChatPanelAside } from "@/components/views/shared/AgentSideChatPanelAside";
-import { useSendDocumentReviewMessage } from "@/hooks/mutations/agent-documents/useSendDocumentReviewMessage";
-import { useAcceptAgentDocument } from "@/hooks/mutations/agent-documents/useAcceptAgentDocument";
-import { useRejectAgentDocument } from "@/hooks/mutations/agent-documents/useRejectAgentDocument";
-import { useUpdateDocumentReviewChat } from "@/hooks/mutations/agent-documents/useUpdateDocumentReviewChat";
-import { useFetchDocumentReviewChat } from "@/hooks/queries/useFetchDocumentReviewChat";
+import { useSendAgentTaskOverviewMessage } from "@/hooks/mutations/chats/useSendAgentTaskOverviewMessage";
+import { useUpdateAgentTaskOverviewChat } from "@/hooks/mutations/chats/useUpdateAgentTaskOverviewChat";
+import { useFetchAgentTaskOverviewChat } from "@/hooks/queries/useFetchAgentTaskOverviewChat";
 import {
   getChatModelLabel,
   normalizeChatModelId,
@@ -37,65 +33,43 @@ import {
   type KimiReasoningEffort,
 } from "@/lib/chats/kimi-reasoning-effort";
 import { shouldShowAssistantTypingIndicator } from "@/lib/chats/should-show-assistant-typing-indicator";
-import { canAcceptAgentDocument, canRejectAgentDocument } from "@/lib/agents/agent-documents";
-import { REJECT_AGENT_TASK_CONFIRMATION } from "@/lib/agents/agent-task-reject-copy";
-import type { AgentDocumentStatus } from "@/lib/types";
 
-type DocumentReviewChatPanelProps = {
+type AgentTaskOverviewChatPanelProps = {
   teammateId: ChatTeammateId;
-  documentId: string;
-  projectId?: string | null;
-  documentStatus?: AgentDocumentStatus;
-  onTaskRejected?: () => void;
+  projectId: string;
+  taskTitle: string;
+  compact?: boolean;
+  onClose?: () => void;
 };
 
-export function DocumentReviewChatPanel({
+export function AgentTaskOverviewChatPanel({
   teammateId,
-  documentId,
-  projectId = null,
-  documentStatus: initialDocumentStatus,
-  onTaskRejected,
-}: Readonly<DocumentReviewChatPanelProps>) {
+  projectId,
+  taskTitle,
+  compact = false,
+  onClose,
+}: Readonly<AgentTaskOverviewChatPanelProps>) {
   const [message, setMessage] = useState("");
-  const [isRejectConfirmOpen, setIsRejectConfirmOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isSendingRef = useRef(false);
   const teammate = getChatTeammate(teammateId);
 
   const {
-    data: reviewChat,
+    data: overviewChat,
     isPending,
     isError,
     error,
-  } = useFetchDocumentReviewChat(teammateId, documentId);
+  } = useFetchAgentTaskOverviewChat(teammateId, projectId, taskTitle, {
+    enabled: Boolean(projectId && taskTitle),
+  });
 
-  const sendMessageMutation = useSendDocumentReviewMessage({
+  const sendMessageMutation = useSendAgentTaskOverviewMessage({
     onError: (mutationError) => {
       toast.error(mutationError.message);
     },
   });
 
-  const acceptDocumentMutation = useAcceptAgentDocument({
-    onSuccess: () => {
-      toast.success("Task marked complete.");
-    },
-    onError: (mutationError) => {
-      toast.error(mutationError.message);
-    },
-  });
-
-  const rejectDocumentMutation = useRejectAgentDocument({
-    onSuccess: () => {
-      toast.success("Task rejected.");
-      setIsRejectConfirmOpen(false);
-      onTaskRejected?.();
-    },
-    onError: (mutationError) => {
-      toast.error(mutationError.message);
-    },
-  });
-
-  const updateSettingsMutation = useUpdateDocumentReviewChat({
+  const updateSettingsMutation = useUpdateAgentTaskOverviewChat({
     onSuccess: (data, variables) => {
       if (variables.modelId !== undefined) {
         toast.success(`Model changed to ${getChatModelLabel(data.modelId)}.`);
@@ -116,59 +90,23 @@ export function DocumentReviewChatPanel({
     },
   });
 
-  const selectedModelId = normalizeChatModelId(reviewChat?.modelId);
+  const selectedModelId = normalizeChatModelId(overviewChat?.modelId);
   const selectedReasoningEffort = normalizeKimiReasoningEffort(
-    reviewChat?.reasoningEffort ?? DEFAULT_KIMI_REASONING_EFFORT,
+    overviewChat?.reasoningEffort ?? DEFAULT_KIMI_REASONING_EFFORT,
   );
   const showReasoningEffortSelect =
     chatModelSupportsReasoningEffort(selectedModelId);
-  const isAtContextLimit = Boolean(reviewChat?.contextUsage?.isAtLimit);
+  const isAtContextLimit = Boolean(overviewChat?.contextUsage?.isAtLimit);
   const modelSettingsDisabled =
     updateSettingsMutation.isPending || sendMessageMutation.isPending;
   const showAssistantTypingIndicator = shouldShowAssistantTypingIndicator(
     sendMessageMutation.isPending,
-    reviewChat?.messages ?? [],
+    overviewChat?.messages ?? [],
   );
-  const documentStatus =
-    reviewChat?.document.status ?? initialDocumentStatus ?? null;
-  const canMarkComplete = documentStatus
-    ? canAcceptAgentDocument(documentStatus)
-    : false;
-  const canReject = documentStatus
-    ? canRejectAgentDocument(documentStatus)
-    : false;
-  const isMarkingComplete = acceptDocumentMutation.isPending;
-  const isRejecting = rejectDocumentMutation.isPending;
-  const reviewActionDisabled =
-    isMarkingComplete || isRejecting || isPending || isError;
-
-  function handleMarkComplete() {
-    if (!canMarkComplete || reviewActionDisabled) {
-      return;
-    }
-
-    acceptDocumentMutation.mutate({
-      teammateId,
-      documentId,
-      projectId,
-    });
-  }
-
-  function handleReject() {
-    if (!canReject || reviewActionDisabled) {
-      return;
-    }
-
-    rejectDocumentMutation.mutate({
-      teammateId,
-      documentId,
-      projectId,
-    });
-  }
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [reviewChat?.messages.length, sendMessageMutation.isPending]);
+  }, [overviewChat?.messages.length, sendMessageMutation.isPending]);
 
   function sendMessage() {
     const trimmedMessage = message.trim();
@@ -188,7 +126,8 @@ export function DocumentReviewChatPanel({
     sendMessageMutation.mutate(
       {
         teammateId,
-        documentId,
+        projectId,
+        taskTitle,
         content: trimmedMessage,
       },
       {
@@ -227,7 +166,8 @@ export function DocumentReviewChatPanel({
 
     updateSettingsMutation.mutate({
       teammateId,
-      documentId,
+      projectId,
+      taskTitle,
       modelId,
     });
   }
@@ -243,7 +183,8 @@ export function DocumentReviewChatPanel({
 
     updateSettingsMutation.mutate({
       teammateId,
-      documentId,
+      projectId,
+      taskTitle,
       reasoningEffort,
     });
   }
@@ -258,48 +199,36 @@ export function DocumentReviewChatPanel({
         projectId={projectId}
       />
       <div className="min-w-0 flex-1">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-          <TeammateProfileLink
-            teammate={teammate}
-            from="agents"
-            projectId={projectId}
-            className="transition hover:underline"
-          >
-            {teammate.name}
-          </TeammateProfileLink>
-        </h2>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Discuss this deliverable
-        </p>
-        {canMarkComplete || canReject ? (
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-            {canReject ? (
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setIsRejectConfirmOpen(true)}
-                disabled={reviewActionDisabled}
-                className="w-full sm:flex-1"
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              <TeammateProfileLink
+                teammate={teammate}
+                from="agents"
+                projectId={projectId}
+                className="transition hover:underline"
               >
-                Reject task
-              </Button>
-            ) : null}
-            {canMarkComplete ? (
-              <Button
-                type="button"
-                onClick={handleMarkComplete}
-                disabled={reviewActionDisabled}
-                className="w-full sm:flex-1"
-              >
-                {isMarkingComplete ? "Marking complete..." : "Mark task complete"}
-              </Button>
-            ) : null}
+                {teammate.name}
+              </TeammateProfileLink>
+            </h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Discuss this task
+            </p>
           </div>
-        ) : null}
+          {onClose ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="shrink-0 rounded-lg px-2 py-1 text-xs text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+            >
+              Close
+            </button>
+          ) : null}
+        </div>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <div className="w-36 min-w-0">
             <ChatModelSelect
-              id={`document-review-model-${documentId}`}
+              id={`task-overview-model-${taskTitle}`}
               value={selectedModelId}
               onChange={handleModelChange}
               disabled={modelSettingsDisabled || isPending || isError}
@@ -308,7 +237,7 @@ export function DocumentReviewChatPanel({
           {showReasoningEffortSelect ? (
             <div className="w-24 min-w-0">
               <ChatReasoningEffortSelect
-                id={`document-review-reasoning-${documentId}`}
+                id={`task-overview-reasoning-${taskTitle}`}
                 value={selectedReasoningEffort}
                 onChange={handleReasoningEffortChange}
                 disabled={modelSettingsDisabled || isPending || isError}
@@ -325,7 +254,7 @@ export function DocumentReviewChatPanel({
   ) : isError ? (
     <ErrorMessage
       error={error}
-      fallbackMessage="Failed to load review chat"
+      fallbackMessage="Failed to load task conversation"
     />
   ) : (
     <>
@@ -335,17 +264,17 @@ export function DocumentReviewChatPanel({
         </div>
       ) : null}
 
-      {reviewChat?.messages.length === 0 &&
+      {overviewChat?.messages.length === 0 &&
       !sendMessageMutation.isPending ? (
         <div className="rounded-xl border border-dashed border-zinc-300 px-3 py-6 text-center dark:border-zinc-700">
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Ask {teammate.name} about their approach, request
-            clarifications, or discuss changes before you sign off.
+            Ask {teammate.name} about this task, discuss scope and impact, or
+            explore alternatives before you accept or reject it.
           </p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {reviewChat?.messages.map((chatMessage) => (
+          {overviewChat?.messages.map((chatMessage) => (
             <AgentChatMessageBubble
               key={chatMessage._id}
               message={chatMessage}
@@ -377,32 +306,18 @@ export function DocumentReviewChatPanel({
       onKeyDown={handleKeyDown}
       isSending={sendMessageMutation.isPending}
       isDisabled={isPending || isError}
-      contextUsage={reviewChat?.contextUsage}
+      contextUsage={overviewChat?.contextUsage}
       isAtContextLimit={isAtContextLimit}
     />
   );
 
   return (
-    <>
-      <AgentSideChatPanelAside header={header} footer={footer}>
-        {messagesContent}
-      </AgentSideChatPanelAside>
-
-      <DeleteAISummaryModal
-        open={isRejectConfirmOpen}
-        title="Reject this task?"
-        description={REJECT_AGENT_TASK_CONFIRMATION}
-        confirmLabel="Reject task"
-        pendingLabel="Rejecting..."
-        isPending={isRejecting}
-        error={rejectDocumentMutation.error}
-        onClose={() => {
-          if (!isRejecting) {
-            setIsRejectConfirmOpen(false);
-          }
-        }}
-        onConfirm={handleReject}
-      />
-    </>
+    <AgentSideChatPanelAside
+      header={header}
+      footer={footer}
+      compact={compact}
+    >
+      {messagesContent}
+    </AgentSideChatPanelAside>
   );
 }

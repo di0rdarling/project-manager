@@ -12,6 +12,7 @@ import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { DocumentDetailContent } from "@/components/views/document-detail/DocumentDetailContent";
 import { DocumentDetailHeader } from "@/components/views/document-detail/DocumentDetailHeader";
 import { DocumentDetailLayout } from "@/components/views/document-detail/DocumentDetailLayout";
+import { ContentWithChatLayout } from "@/components/views/shared/ContentWithChatLayout";
 import { DocumentReviewChatPanel } from "@/components/views/AgentDocumentDetail/DocumentReviewChatPanel";
 import { useDocumentHeadings } from "@/hooks/document-detail/useDocumentHeadings";
 import { useSaveAgentDocumentAsProjectNote } from "@/hooks/mutations/agent-documents/useSaveAgentDocumentAsProjectNote";
@@ -151,8 +152,9 @@ function ReviewLayout({
         </Link>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col xl:flex-row">
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
+      <ContentWithChatLayout
+        className="flex-1"
+        content={
           <DocumentBody
             document={document}
             teammateId={teammateId}
@@ -162,16 +164,18 @@ function ReviewLayout({
             contentElement={contentElement}
             contentPanelRef={contentPanelRef}
           />
-        </div>
-
-        <DocumentReviewChatPanel
-          teammateId={teammateId}
-          documentId={document._id}
-          projectId={document.projectId}
-          documentStatus={document.status}
-          onTaskRejected={onTaskRejected}
-        />
-      </div>
+        }
+        contentClassName="px-4 py-6 sm:px-6"
+        chatPanel={
+          <DocumentReviewChatPanel
+            teammateId={teammateId}
+            documentId={document._id}
+            projectId={document.projectId}
+            documentStatus={document.status}
+            onTaskRejected={onTaskRejected}
+          />
+        }
+      />
     </div>
   );
 }

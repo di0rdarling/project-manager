@@ -450,3 +450,34 @@ export type UpdateDocumentReviewChatResponse = {
   reasoningEffort: KimiReasoningEffort | null;
   contextUsage: ChatContextUsage;
 };
+
+export type AgentTaskOverviewMessageResponse = {
+  _id: string;
+  role: ChatMessageRole;
+  content: string;
+  createdAt: string;
+};
+
+export type AgentTaskOverviewChatResponse = {
+  messages: AgentTaskOverviewMessageResponse[];
+  task: AgentTask;
+  modelId: ChatModelId;
+  reasoningEffort: KimiReasoningEffort | null;
+  conversationSummary: string | null;
+  contextUsage: ChatContextUsage;
+};
+
+export type SendAgentTaskOverviewMessageResponse = {
+  userMessage: AgentTaskOverviewMessageResponse;
+  assistantMessage: AgentTaskOverviewMessageResponse;
+  modelId: ChatModelId;
+  reasoningEffort: KimiReasoningEffort | null;
+  conversationSummary: string | null;
+  contextUsage: ChatContextUsage;
+};
+
+export type UpdateAgentTaskOverviewChatResponse = {
+  modelId: ChatModelId;
+  reasoningEffort: KimiReasoningEffort | null;
+  contextUsage: ChatContextUsage;
+};

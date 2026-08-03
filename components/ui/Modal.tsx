@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId } from "react";
+import { useEffect, useId, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/Button";
 
@@ -18,14 +18,19 @@ type ModalProps = {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
-  size?: "narrow" | "wide";
+  size?: "narrow" | "wide" | "extraWide";
   primaryAction?: ModalAction;
   secondaryAction?: ModalAction;
+  /** Optional content pinned to the left of the sticky footer. */
+  footerStart?: ReactNode;
+  /** When true, children fill remaining height for split layouts. */
+  fillHeight?: boolean;
 };
 
 const sizeClassNames = {
   narrow: "max-w-lg",
   wide: "max-w-4xl",
+  extraWide: "max-w-7xl",
 } as const;
 
 function ModalActionButton({
@@ -61,9 +66,14 @@ export function Modal({
   size = "wide",
   primaryAction,
   secondaryAction,
+  footerStart,
+  fillHeight = false,
 }: ModalProps) {
   const titleId = useId();
-  const hasFooterActions = Boolean(primaryAction || secondaryAction);
+  const hasFooterActions = Boolean(
+    primaryAction || secondaryAction || footerStart,
+  );
+  const hasTrailingFooterActions = Boolean(primaryAction || secondaryAction);
 
   useEffect(() => {
     if (!open) {
@@ -119,26 +129,49 @@ export function Modal({
         </div>
 
         <div
-          className={`min-h-0 flex-1 overflow-y-auto px-6 ${
-            hasFooterActions ? "pb-4" : "pb-6"
+          className={`min-h-0 flex-1 ${
+            fillHeight
+              ? "flex flex-col overflow-hidden"
+              : "overflow-y-auto"
+          } px-6 ${
+            hasFooterActions
+              ? fillHeight
+                ? "pb-0"
+                : "pb-4"
+              : "pb-6"
           }`}
         >
           {children}
         </div>
 
         {hasFooterActions ? (
-          <div className="flex shrink-0 justify-end gap-3 border-t border-zinc-200 px-6 py-4 dark:border-zinc-800">
-            {secondaryAction ? (
-              <ModalActionButton
-                action={secondaryAction}
-                defaultVariant="secondary"
-              />
+          <div
+            className={`flex shrink-0 gap-3 border-t border-zinc-200 px-6 py-4 dark:border-zinc-800 ${
+              footerStart && hasTrailingFooterActions
+                ? "items-center justify-between"
+                : footerStart
+                  ? "justify-start"
+                  : "justify-end"
+            }`}
+          >
+            {footerStart ? (
+              <div className="flex flex-wrap items-center gap-2">{footerStart}</div>
             ) : null}
-            {primaryAction ? (
-              <ModalActionButton
-                action={primaryAction}
-                defaultVariant="primary"
-              />
+            {hasTrailingFooterActions ? (
+              <div className="flex shrink-0 items-center gap-3">
+                {secondaryAction ? (
+                  <ModalActionButton
+                    action={secondaryAction}
+                    defaultVariant="secondary"
+                  />
+                ) : null}
+                {primaryAction ? (
+                  <ModalActionButton
+                    action={primaryAction}
+                    defaultVariant="primary"
+                  />
+                ) : null}
+              </div>
             ) : null}
           </div>
         ) : null}

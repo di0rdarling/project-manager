@@ -4,11 +4,9 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import {
-  ArrowTrendingUpIcon,
   CheckCircleIcon,
   ChevronRightIcon,
   DocumentTextIcon,
-  ExclamationTriangleIcon,
   LightBulbIcon,
   SparklesIcon,
 } from "@heroicons/react/24/outline";
@@ -17,6 +15,12 @@ import { DeleteAISummaryModal } from "@/components/ui/DeleteAISummaryModal";
 import { Modal } from "@/components/ui/Modal";
 import { Tabs, TabsList, TabsPanel, TabsTrigger } from "@/components/ui/Tabs";
 import { ChatModelSelect } from "@/components/views/Chats/ChatModelSelect";
+import {
+  AgentTaskOverviewContent,
+  buildAgentTaskDetailBlocks,
+} from "@/components/views/Agents/Tasks/AgentTaskOverviewContent";
+import { AgentTaskOverviewChatPanel } from "@/components/views/Agents/Tasks/AgentTaskOverviewChatPanel";
+import { ContentWithChatLayout } from "@/components/views/shared/ContentWithChatLayout";
 import { useAcceptAgentDocument } from "@/hooks/mutations/agent-documents/useAcceptAgentDocument";
 import { useRejectAgentDocument } from "@/hooks/mutations/agent-documents/useRejectAgentDocument";
 import {
@@ -61,127 +65,13 @@ type AgentTaskDetailModalProps = {
   teammateId?: ChatTeammateId;
   profileFrom?: AgentProfileFrom | null;
   profileProjectId?: string | null;
+  projectId?: string | null;
   onStartOutput?: (input: StartAgentTaskOutputInput) => void;
   isStartingOutput?: boolean;
   isRegeneratingOutput?: boolean;
   onGenerateAlternative?: () => void;
   isGeneratingAlternative?: boolean;
 };
-
-type DetailBlock = {
-  key: string;
-  label: string;
-  icon: typeof LightBulbIcon;
-  value: string;
-  iconClassName: string;
-};
-
-function AgentTaskOverviewSkeleton() {
-  return (
-    <div className="space-y-5 animate-pulse" aria-hidden>
-      <div className="space-y-2">
-        <div className="h-4 w-full rounded bg-zinc-200 dark:bg-zinc-700" />
-        <div className="h-4 w-5/6 rounded bg-zinc-200 dark:bg-zinc-700" />
-      </div>
-      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="h-3 w-28 rounded bg-zinc-200 dark:bg-zinc-700" />
-        <div className="mt-3 space-y-2">
-          <div className="h-3 w-full rounded bg-zinc-200 dark:bg-zinc-700" />
-          <div className="h-3 w-4/5 rounded bg-zinc-200 dark:bg-zinc-700" />
-        </div>
-      </div>
-      <div className="space-y-4">
-        {[0, 1, 2].map((index) => (
-          <div
-            key={index}
-            className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900"
-          >
-            <div className="h-3 w-40 rounded bg-zinc-200 dark:bg-zinc-700" />
-            <div className="mt-3 space-y-2">
-              <div className="h-3 w-full rounded bg-zinc-200 dark:bg-zinc-700" />
-              <div className="h-3 w-full rounded bg-zinc-200 dark:bg-zinc-700" />
-              <div className="h-3 w-3/4 rounded bg-zinc-200 dark:bg-zinc-700" />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function AgentTaskOverviewContent({
-  task,
-  blocks,
-  onGenerateAlternative,
-  isGeneratingAlternative = false,
-}: Readonly<{
-  task: AgentTask;
-  blocks: DetailBlock[];
-  onGenerateAlternative?: () => void;
-  isGeneratingAlternative?: boolean;
-}>) {
-  if (isGeneratingAlternative) {
-    return <AgentTaskOverviewSkeleton />;
-  }
-
-  return (
-    <div className="space-y-5">
-      <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-        {task.detail}
-      </p>
-
-      {task.outputDescription ? (
-        <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
-          <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-            <DocumentTextIcon
-              className="size-4 shrink-0 text-blue-500 dark:text-blue-400"
-              aria-hidden
-            />
-            What I&apos;ll produce
-          </p>
-          <p className="mt-2 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
-            {task.outputDescription}
-          </p>
-        </div>
-      ) : null}
-
-      <div className="space-y-4">
-        {blocks.map(({ key, label, icon: Icon, value, iconClassName }) =>
-          value ? (
-            <div
-              key={key}
-              className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900"
-            >
-              <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                <Icon
-                  className={`size-4 shrink-0 ${iconClassName}`}
-                  aria-hidden
-                />
-                {label}
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
-                {value}
-              </p>
-            </div>
-          ) : null,
-        )}
-      </div>
-
-      {onGenerateAlternative ? (
-        <div className="flex justify-end border-t border-zinc-200 pt-4 dark:border-zinc-800">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onGenerateAlternative}
-            disabled={isGeneratingAlternative}
-          >
-            Generate alternative
-          </Button>
-        </div>
-      ) : null}
-    </div>
-  );
-}
 
 function AgentTaskOutputNotAccepted() {
   return (
@@ -620,6 +510,7 @@ export default function AgentTaskDetailModal({
   teammateId,
   profileFrom = null,
   profileProjectId = null,
+  projectId = null,
   onStartOutput,
   isStartingOutput = false,
   isRegeneratingOutput = false,
@@ -627,6 +518,7 @@ export default function AgentTaskDetailModal({
   isGeneratingAlternative = false,
 }: Readonly<AgentTaskDetailModalProps>) {
   const [activeTab, setActiveTab] = useState("overview");
+  const [isOverviewChatOpen, setIsOverviewChatOpen] = useState(false);
   const [isRedoConfirmOpen, setIsRedoConfirmOpen] = useState(false);
   const [isRejectConfirmOpen, setIsRejectConfirmOpen] = useState(false);
   const [selectedModelId, setSelectedModelId] =
@@ -657,6 +549,7 @@ export default function AgentTaskDetailModal({
     if (!open) {
       setIsRedoConfirmOpen(false);
       setIsRejectConfirmOpen(false);
+      setIsOverviewChatOpen(false);
     }
   }, [open]);
 
@@ -667,6 +560,7 @@ export default function AgentTaskDetailModal({
     }
 
     setActiveTab("overview");
+    setIsOverviewChatOpen(false);
     setSelectedModelId(getAgentTaskOutputModelId(task));
     previousTaskStatusRef.current = getAgentTaskDecisionStatus(task);
   }, [open, task?.title, task?.outputModelId]);
@@ -689,6 +583,12 @@ export default function AgentTaskDetailModal({
 
     previousTaskStatusRef.current = status;
   }, [open, task?.status, task?.title, task]);
+
+  useEffect(() => {
+    if (activeTab !== "overview") {
+      setIsOverviewChatOpen(false);
+    }
+  }, [activeTab]);
 
   if (!open || !task) {
     return null;
@@ -788,29 +688,49 @@ export default function AgentTaskDetailModal({
     onStartOutput?.({ regenerate: false, modelId: selectedModelId });
   }
 
-  const blocks: DetailBlock[] = [
-    {
-      key: "rationale",
-      label: "Why I'm suggesting this",
-      icon: LightBulbIcon,
-      value: task.rationale,
-      iconClassName: "text-amber-500 dark:text-amber-400",
-    },
-    {
-      key: "impact",
-      label: "Impact if this gets done",
-      icon: ArrowTrendingUpIcon,
-      value: task.impact,
-      iconClassName: "text-emerald-500 dark:text-emerald-400",
-    },
-    {
-      key: "risk",
-      label: "If this is skipped",
-      icon: ExclamationTriangleIcon,
-      value: task.riskIfSkipped,
-      iconClassName: "text-red-500 dark:text-red-400",
-    },
-  ];
+  const blocks = buildAgentTaskDetailBlocks(activeTask);
+  const chatProjectId = profileProjectId ?? projectId;
+  const canDiscussOverview =
+    Boolean(teammateId && chatProjectId) && !isGeneratingAlternative;
+  const showOverviewSplit =
+    activeTab === "overview" &&
+    isOverviewChatOpen &&
+    canDiscussOverview &&
+    teammateId &&
+    chatProjectId;
+  const showDiscussOverviewAction =
+    activeTab === "overview" &&
+    canDiscussOverview &&
+    !isOverviewChatOpen &&
+    !isGeneratingAlternative;
+  const showGenerateAlternativeAction =
+    activeTab === "overview" &&
+    Boolean(onGenerateAlternative) &&
+    !isGeneratingAlternative;
+  const overviewFooterStart =
+    showDiscussOverviewAction || showGenerateAlternativeAction ? (
+      <>
+        {showDiscussOverviewAction ? (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setIsOverviewChatOpen(true)}
+          >
+            Chat
+          </Button>
+        ) : null}
+        {showGenerateAlternativeAction ? (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onGenerateAlternative}
+            disabled={isGeneratingAlternative}
+          >
+            Generate alternative
+          </Button>
+        ) : null}
+      </>
+    ) : undefined;
 
   return (
     <>
@@ -818,7 +738,9 @@ export default function AgentTaskDetailModal({
         open={open}
         onClose={onClose}
         title={activeTask.title}
-        size="wide"
+        size={showOverviewSplit ? "extraWide" : "wide"}
+        fillHeight={Boolean(showOverviewSplit)}
+        footerStart={overviewFooterStart}
         secondaryAction={
           showOverviewActions && onReject
             ? {
@@ -865,8 +787,14 @@ export default function AgentTaskDetailModal({
               : undefined
         }
       >
-      <div className="space-y-5">
-        <div className="flex flex-wrap items-center gap-2">
+      <div
+        className={
+          showOverviewSplit
+            ? "flex min-h-0 flex-1 flex-col gap-5"
+            : "space-y-5"
+        }
+      >
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <span
             className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentTaskStatusBadgeClassName(taskStatus)}`}
           >
@@ -891,9 +819,13 @@ export default function AgentTaskDetailModal({
           value={activeTab}
           onValueChange={setActiveTab}
           defaultValue="overview"
-          className="space-y-5"
+          className={
+            showOverviewSplit
+              ? "flex min-h-0 flex-1 flex-col gap-5"
+              : "space-y-5"
+          }
         >
-          <TabsList aria-label="Task details">
+          <TabsList aria-label="Task details" className="shrink-0">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="output" disabled={!outputTabsEnabled}>
               Output
@@ -903,13 +835,43 @@ export default function AgentTaskDetailModal({
             </TabsTrigger>
           </TabsList>
 
-          <TabsPanel value="overview">
-            <AgentTaskOverviewContent
-              task={task}
-              blocks={blocks}
-              onGenerateAlternative={onGenerateAlternative}
-              isGeneratingAlternative={isGeneratingAlternative}
-            />
+          <TabsPanel
+            value="overview"
+            className={
+              showOverviewSplit
+                ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+                : undefined
+            }
+          >
+            {showOverviewSplit ? (
+              <ContentWithChatLayout
+                compact
+                className="min-h-0 flex-1 -mx-6"
+                contentClassName="pl-6 pr-4"
+                content={
+                  <AgentTaskOverviewContent
+                    task={task}
+                    blocks={blocks}
+                    isGeneratingAlternative={isGeneratingAlternative}
+                  />
+                }
+                chatPanel={
+                  <AgentTaskOverviewChatPanel
+                    teammateId={teammateId}
+                    projectId={chatProjectId}
+                    taskTitle={activeTask.title}
+                    compact
+                    onClose={() => setIsOverviewChatOpen(false)}
+                  />
+                }
+              />
+            ) : (
+              <AgentTaskOverviewContent
+                task={task}
+                blocks={blocks}
+                isGeneratingAlternative={isGeneratingAlternative}
+              />
+            )}
           </TabsPanel>
 
           <TabsPanel value="output">

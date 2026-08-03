@@ -113,6 +113,17 @@ export type AgentTaskOutputResult = {
   completionSummary: string;
 };
 
+export async function findAgentTaskByTitle(
+  db: Db,
+  userId: ObjectId,
+  teammateId: ChatTeammateId,
+  projectId: ObjectId,
+  taskTitle: string,
+): Promise<AgentTask | null> {
+  const record = await getAgentTasks(db, userId, teammateId, projectId);
+  return record?.tasks.find((task) => task.title === taskTitle) ?? null;
+}
+
 export async function findAgentTaskByDocumentId(
   db: Db,
   userId: ObjectId,

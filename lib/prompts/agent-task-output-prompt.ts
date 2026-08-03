@@ -26,8 +26,10 @@ type BuildAgentTaskOutputPromptInput = {
   task: AgentTask;
   chatSummaries: TeammateChatSummary[];
   agentNotesContext?: string | null;
+  agentMemoryContext?: string | null;
   existingOverviewContext?: string | null;
   agentTasksDocumentsContext?: string | null;
+  otherTeammatesContext?: string | null;
   userName?: string | null;
   /** When true, the user asked for a fresh attempt — produce a new document. */
   isRegenerate?: boolean;
@@ -38,9 +40,10 @@ type BuildAgentTaskOutputPromptInput = {
  * Builds the prompt for actually producing the deliverable behind an
  * accepted agent task (the "Output" tab on the task detail modal). Reuses
  * the same identity/roster guardrails, personality traits, user notes,
- * profile Overview, prior conversation history, and other tasks and
- * deliverables as task-suggestion and live chat prompts, so the produced
- * content reads consistently as this teammate's voice and work.
+ * agent Memory, profile Overview, prior conversation history, other
+ * teammates' recent conversations, and other tasks and deliverables as
+ * task-suggestion and live chat prompts, so the produced content reads
+ * consistently as this teammate's voice and work.
  */
 export function buildAgentTaskOutputPrompt({
   teammateId,
@@ -51,8 +54,10 @@ export function buildAgentTaskOutputPrompt({
   task,
   chatSummaries,
   agentNotesContext,
+  agentMemoryContext,
   existingOverviewContext,
   agentTasksDocumentsContext,
+  otherTeammatesContext,
   userName,
   isRegenerate = false,
   generatedAt,
@@ -91,10 +96,14 @@ export function buildAgentTaskOutputPrompt({
 
   appendAgentTaskSupplementalContextSections(sections, {
     agentNotesContext,
+    agentMemoryContext,
     existingOverviewContext,
     agentTasksDocumentsContext,
+    otherTeammatesContext,
     overviewIntro:
       "What you already know about your shared work with this user, from your profile Overview (most recently and stable context) — stay consistent with this while completing this task:",
+    agentMemoryIntro:
+      "Your compact first-person Memory from your profile — decisions, preferences, and open loops you've retained from past conversations with this user. Stay consistent with this while completing this task:",
   });
 
   sections.push(

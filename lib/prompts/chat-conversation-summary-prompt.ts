@@ -84,6 +84,12 @@ export function buildChatConversationSummaryPrompt({
     );
   }
 
+  if (conversationKind === "task_overview") {
+    sections.push(
+      "This is a task overview conversation: the user is viewing one of your suggested autonomous tasks and discussing it with you before accepting or rejecting it. Make it clear in the summary that this was a discussion about the task suggestion, including any questions, scope clarifications, alternatives considered, or decisions about whether to accept the task.",
+    );
+  }
+
   if (trimmedOlderSummary) {
     sections.push(
       "",

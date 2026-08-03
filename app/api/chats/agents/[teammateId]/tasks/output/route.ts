@@ -125,8 +125,10 @@ export async function POST(request: Request, context: RouteContext) {
     const {
       chatSummaries,
       agentNotesContext,
+      agentMemoryContext,
       existingOverviewContext,
       agentTasksDocumentsContext,
+      otherTeammatesContext,
     } = await loadAgentTaskPromptContext(
       db,
       auth.userId,
@@ -153,8 +155,10 @@ export async function POST(request: Request, context: RouteContext) {
         task,
         chatSummaries,
         agentNotesContext,
+        agentMemoryContext,
         existingOverviewContext,
         agentTasksDocumentsContext,
+        otherTeammatesContext,
         userName,
         isRegenerate: regenerate,
         generatedAt,

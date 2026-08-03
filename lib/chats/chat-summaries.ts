@@ -12,7 +12,10 @@ import type { StoredChat } from "@/lib/serialize/serialize-chat";
 import type { StoredProject } from "@/lib/serialize/serialize-project";
 import type { AgentDocument } from "@/lib/types";
 
-export type TeammateChatSummaryKind = "chat" | "document_review";
+export type TeammateChatSummaryKind =
+  | "chat"
+  | "document_review"
+  | "task_overview";
 
 export type TeammateChatSummary = {
   chatId: string;

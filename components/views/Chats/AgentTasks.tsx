@@ -14,7 +14,7 @@ import {
   regenerateItemAction,
 } from "@/components/ui/ItemActionsMenu";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
-import AgentTaskDetailModal from "@/components/views/Chats/AgentTaskDetailModal";
+import AgentTaskDetailModal from "@/components/views/Agents/Tasks/AgentTaskDetailModal";
 import { AgentTaskGenerateAlternativeMenu } from "@/components/agents/AgentTaskGenerateAlternativeMenu";
 import { useDeleteAgentTasks } from "@/hooks/mutations/chats/useDeleteAgentTasks";
 import { useGenerateAgentTasks } from "@/hooks/mutations/chats/useGenerateAgentTasks";
@@ -635,6 +635,7 @@ export default function AgentTasks({
         teammateId={teammateId}
         profileFrom={navigationContext.from}
         profileProjectId={navigationContext.projectId}
+        projectId={projectId ?? null}
         onStartOutput={handleStartTaskOutput}
         isStartingOutput={startTaskOutputMutation.isPending}
         isRegeneratingOutput={
