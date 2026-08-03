@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { SparklesIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
+import { SubscriptionChip } from "@/components/ui/SubscriptionChip";
 import UpgradeSubscriptionModal from "@/components/views/Account/UpgradeSubscriptionModal";
 import CancelSubscriptionModal from "@/components/views/Account/CancelSubscriptionModal";
 import type { UserSubscription } from "@/lib/types";
@@ -10,10 +10,6 @@ import type { UserSubscription } from "@/lib/types";
 type SubscriptionRowProps = {
   subscription: UserSubscription;
 };
-
-function formatSubscriptionLabel(subscription: UserSubscription): string {
-  return subscription === "premium" ? "Premium" : "Free";
-}
 
 export default function SubscriptionRow({ subscription }: SubscriptionRowProps) {
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
@@ -29,16 +25,7 @@ export default function SubscriptionRow({ subscription }: SubscriptionRowProps) 
 
         <dd className="flex w-full flex-col gap-3 sm:max-w-md sm:items-end">
           <div className="flex w-full items-center justify-between gap-3 sm:justify-end">
-            {isPremium ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-sm font-medium text-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
-                <SparklesIcon className="size-4" aria-hidden="true" />
-                Premium
-              </span>
-            ) : (
-              <span className="text-sm text-zinc-900 dark:text-zinc-100">
-                {formatSubscriptionLabel(subscription)}
-              </span>
-            )}
+            <SubscriptionChip subscription={subscription} />
           </div>
 
           {!isPremium ? (

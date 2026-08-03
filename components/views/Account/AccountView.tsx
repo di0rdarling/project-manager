@@ -57,7 +57,10 @@ export default function AccountView() {
 
         {currentUser ? (
           <dl className="overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-            <EditableNameRow name={currentUser.name} />
+            <EditableNameRow
+              name={currentUser.name}
+              subscription={currentUser.subscription}
+            />
             <AccountDetailRow label="Email" value={currentUser.email} />
             <SubscriptionRow subscription={currentUser.subscription} />
             <AccountDetailRow

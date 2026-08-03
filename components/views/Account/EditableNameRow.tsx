@@ -4,16 +4,22 @@ import { useEffect, useState } from "react";
 import { PencilIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
+import { SubscriptionChip } from "@/components/ui/SubscriptionChip";
 import { useUpdateCurrentUser } from "@/hooks/mutations/auth/useUpdateCurrentUser";
+import type { UserSubscription } from "@/lib/types";
 
 const inputClassName =
   "w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:focus:border-zinc-400";
 
 type EditableNameRowProps = {
   name: string | null;
+  subscription: UserSubscription;
 };
 
-export default function EditableNameRow({ name }: EditableNameRowProps) {
+export default function EditableNameRow({
+  name,
+  subscription,
+}: EditableNameRowProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftName, setDraftName] = useState(name ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -98,9 +104,12 @@ export default function EditableNameRow({ name }: EditableNameRowProps) {
           </div>
         ) : (
           <dd className="flex w-full items-center justify-between gap-3 sm:max-w-md sm:justify-end">
-            <span className="text-sm text-zinc-900 dark:text-zinc-100">
-              {name?.trim() || "Not set"}
-            </span>
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="truncate text-sm text-zinc-900 dark:text-zinc-100">
+                {name?.trim() || "Not set"}
+              </span>
+              <SubscriptionChip subscription={subscription} size="sm" />
+            </div>
             <IconButton
               type="button"
               aria-label="Edit name"

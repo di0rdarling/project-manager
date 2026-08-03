@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { ProjectManagerLogo } from "@/components/ui/ProjectManagerLogo";
+import { SubscriptionChip } from "@/components/ui/SubscriptionChip";
 import { useProjectSectionNav } from "@/components/views/ProjectDetail/ProjectSectionNavContext";
 import { useFetchCurrentUser } from "@/hooks/queries/useFetchCurrentUser";
 import { useFetchFeature } from "@/hooks/queries/useFetchFeature";
@@ -462,9 +463,17 @@ export default function NavigationSidebar({
           <Link
             href="/account"
             onClick={onNavigate}
-            className="mb-2 block truncate rounded-lg px-1 py-1 text-xs text-zinc-500 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+            className="mb-2 block rounded-lg px-1 py-1 text-xs text-zinc-500 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
           >
-            {currentUser.name || currentUser.email}
+            <div className="flex items-center gap-2">
+              <span className="truncate">
+                {currentUser.name || currentUser.email}
+              </span>
+              <SubscriptionChip
+                subscription={currentUser.subscription}
+                size="sm"
+              />
+            </div>
           </Link>
         ) : null}
         {currentUser && isCollapsed ? (
@@ -472,9 +481,14 @@ export default function NavigationSidebar({
             href="/account"
             title={currentUser.name || currentUser.email}
             onClick={onNavigate}
-            className="mb-2 flex justify-center rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+            className="mb-2 flex flex-col items-center gap-1 rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
           >
             <UserCircleIcon className="size-5 shrink-0" aria-hidden />
+            <SubscriptionChip
+              subscription={currentUser.subscription}
+              size="sm"
+              iconOnly={currentUser.subscription === "premium"}
+            />
             <span className="sr-only">{currentUser.name || currentUser.email}</span>
           </Link>
         ) : null}
