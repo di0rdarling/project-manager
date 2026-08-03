@@ -17,7 +17,7 @@ import {
   createOptimisticUserMessage,
   finalizePendingChatMessages,
 } from "@/lib/chats/streaming-chat-mutation-helpers";
-import { agentMemoryKeys, chatKeys } from "@/lib/query-keys";
+import { agentMemoryKeys, accountUsageKeys, chatKeys } from "@/lib/query-keys";
 import type {
   ChatMessageResponse,
   ChatWithMessagesResponse,
@@ -171,6 +171,10 @@ export function useSendChatMessage(options?: UseSendChatMessageOptions) {
 
       void queryClient.invalidateQueries({
         queryKey: agentMemoryKeys.detail(data.chat.teammateId),
+      });
+
+      void queryClient.invalidateQueries({
+        queryKey: accountUsageKeys.detail,
       });
 
       onSuccess?.(data, variables, onMutateResult, context);

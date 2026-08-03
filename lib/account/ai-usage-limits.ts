@@ -17,6 +17,7 @@ type AiUsageLimitBase = {
   key: AiUsageCategoryKey;
   label: string;
   used: number;
+  isLiveData: boolean;
 };
 
 export type NumericAiUsageLimit = AiUsageLimitBase & {
@@ -78,6 +79,14 @@ const CATEGORY_ORDER: AiUsageCategoryKey[] = [
   "aiTeammates",
 ];
 
+/** Categories with live usage tracking wired up — add keys here as tracking ships. */
+export const AI_USAGE_LIVE_DATA_CATEGORIES: ReadonlySet<AiUsageCategoryKey> =
+  new Set(["activeProjects", "aiChats"]);
+
+export function isAiUsageCategoryLive(key: AiUsageCategoryKey): boolean {
+  return AI_USAGE_LIVE_DATA_CATEGORIES.has(key);
+}
+
 export type AiUsageCounts = Partial<Record<AiUsageCategoryKey, number>>;
 
 function getCategoryUsedCount(
@@ -101,6 +110,7 @@ function buildUsageLimitCategory(
   const limits = getSubscriptionLimits(subscription);
   const used = getCategoryUsedCount(subscription, key, usageCounts);
   const label = CATEGORY_LABELS[key];
+  const isLiveData = isAiUsageCategoryLive(key);
 
   switch (key) {
     case "activeProjects":
@@ -110,6 +120,7 @@ function buildUsageLimitCategory(
           key,
           label,
           used,
+          isLiveData,
         };
       }
 
@@ -118,6 +129,7 @@ function buildUsageLimitCategory(
         key,
         label,
         used,
+        isLiveData,
         max: limits.activeProjects,
         unitLabel: "projects",
       };
@@ -128,6 +140,7 @@ function buildUsageLimitCategory(
         key,
         label,
         used,
+        isLiveData,
         max: limits.aiChatMessagesPerMonth,
         unitLabel: "messages per month",
       };
@@ -138,6 +151,7 @@ function buildUsageLimitCategory(
         key,
         label,
         used,
+        isLiveData,
         max: limits.aiTextEnhancementsPerMonth,
         unitLabel: "enhancements per month",
       };
@@ -148,6 +162,7 @@ function buildUsageLimitCategory(
         key,
         label,
         used,
+        isLiveData,
         max: limits.aiSummariesPerMonth,
         unitLabel: "summaries per month",
       };
@@ -160,6 +175,7 @@ function buildUsageLimitCategory(
         key,
         label,
         used: teammateIds.length,
+        isLiveData,
         max: teammateIds.length,
         includedLabel: formatAiTeammateLimitNames(teammateIds),
         summaryLabel:

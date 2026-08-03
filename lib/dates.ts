@@ -41,6 +41,13 @@ export function isSameCalendarDay(
   );
 }
 
+/** UTC calendar month start for usage limits and billing periods. */
+export function getStartOfCurrentMonthUtc(referenceDate: Date = new Date()): Date {
+  return new Date(
+    Date.UTC(referenceDate.getUTCFullYear(), referenceDate.getUTCMonth(), 1),
+  );
+}
+
 export function getRelativeDayLabel(
   date: Date | string,
   referenceDate: Date | string,

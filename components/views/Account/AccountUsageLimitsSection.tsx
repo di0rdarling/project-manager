@@ -2,6 +2,7 @@
 
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
+import { UsageDataSourceChip } from "@/components/ui/UsageDataSourceChip";
 import { useFetchAccountUsage } from "@/hooks/queries/useFetchAccountUsage";
 import {
   formatAiUsageLimitValue,
@@ -43,9 +44,12 @@ function AccountUsageLimitRow({ category }: AccountUsageLimitRowProps) {
     <div className="border-b border-zinc-200 px-4 py-4 last:border-b-0 dark:border-zinc-800">
       <div className="mb-2 flex items-start justify-between gap-4">
         <div className="min-w-0 space-y-0.5">
-          <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-            {category.label}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+              {category.label}
+            </span>
+            <UsageDataSourceChip isLiveData={category.isLiveData} />
+          </div>
           {unitLabel ? (
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               {unitLabel}
@@ -122,6 +126,7 @@ export default function AccountUsageLimitsSection({
 
   const categories = getAiUsageLimits(subscription, {
     activeProjects: accountUsage.activeProjects,
+    aiChats: accountUsage.aiChatMessages,
   });
 
   return (
