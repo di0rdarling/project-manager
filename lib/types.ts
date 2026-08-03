@@ -93,6 +93,8 @@ type AgentDocumentBase<TId> = {
   status: AgentDocumentStatus;
   /** The autonomous task that produced this document, when known. */
   taskTitle?: string;
+  /** Project note created from this document, when saved by the user. */
+  savedProjectNoteId?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -385,6 +387,12 @@ export type DashboardTaskItem = {
   outputDocumentId?: string;
   outputDocumentStatus?: AgentDocumentStatus;
   updatedAt: string | null;
+};
+
+export type SaveAgentDocumentAsProjectNoteResponse = {
+  note: NoteResponse;
+  document: AgentDocumentResponse;
+  alreadySaved: boolean;
 };
 
 export type DashboardTasksResponse = {

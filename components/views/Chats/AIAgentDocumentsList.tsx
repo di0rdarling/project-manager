@@ -2,13 +2,17 @@
 
 import type { MouseEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import toast from "react-hot-toast";
 import { ListItemDate } from "@/components/ui/ListItemDate";
 import {
   DataTable,
   type DataTableColumn,
 } from "@/components/ui/tables/DataTable";
+import { AgentDocumentSaveAsProjectNoteMenu } from "@/components/agents/AgentDocumentSaveAsProjectNoteMenu";
+import { useSaveAgentDocumentAsProjectNote } from "@/hooks/mutations/agent-documents/useSaveAgentDocumentAsProjectNote";
 import { getAgentTaskProjectBadgeClassName } from "@/lib/agents/agent-tasks";
 import {
+  canSaveAgentDocumentAsProjectNote,
   getAgentDocumentDetailPath,
   getAgentDocumentStatusBadgeClassName,
   getAgentDocumentStatusLabel,
@@ -37,6 +41,40 @@ export default function AIAgentDocumentsList({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const {
+    mutate: saveAsProjectNote,
+    isPending: isSavingAsProjectNote,
+    variables: saveAsProjectNoteVariables,
+  } = useSaveAgentDocumentAsProjectNote({
+    onSuccess: (response) => {
+      toast.success(
+        response.alreadySaved
+          ? "This document is already saved as a project note."
+          : "Added to project notes.",
+      );
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to add document to project notes.",
+      );
+    },
+  });
+
+  function handleSaveAsProjectNote(document: AgentDocumentResponse) {
+    saveAsProjectNote({
+      teammateId,
+      documentId: document._id,
+    });
+  }
+
+  function isSavingDocumentAsProjectNote(document: AgentDocumentResponse) {
+    return (
+      isSavingAsProjectNote &&
+      saveAsProjectNoteVariables?.documentId === document._id
+    );
+  }
 
   function handleTaskClick(
     event: MouseEvent,
@@ -123,6 +161,27 @@ export default function AIAgentDocumentsList({
         </span>
       ),
       getSortValue: (document) => document.status,
+    },
+    {
+      key: "actions",
+      header: "",
+      headerClassName: "w-12 px-4 py-3",
+      cellClassName: "px-4 py-3 text-right",
+      sortable: false,
+      render: (document) =>
+        canSaveAgentDocumentAsProjectNote(document) ? (
+          <div
+            className="flex justify-end"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            <AgentDocumentSaveAsProjectNoteMenu
+              document={document}
+              onSave={() => handleSaveAsProjectNote(document)}
+              isSaving={isSavingDocumentAsProjectNote(document)}
+            />
+          </div>
+        ) : null,
     },
   ];
 

@@ -6,6 +6,7 @@ import {
   ArrowsPointingOutIcon,
   ArchiveBoxIcon,
   ArrowPathIcon,
+  DocumentPlusIcon,
   EllipsisVerticalIcon,
   PencilIcon,
   ShareIcon,
@@ -88,6 +89,20 @@ export function archiveItemAction(
     key: "archive",
     label,
     icon: <ArchiveBoxIcon className="size-4" aria-hidden />,
+    onClick,
+    disabled,
+  };
+}
+
+export function saveToNoteItemAction(
+  label: string,
+  onClick: () => void,
+  disabled = false,
+): ItemAction {
+  return {
+    key: "save-to-note",
+    label,
+    icon: <DocumentPlusIcon className="size-4" aria-hidden />,
     onClick,
     disabled,
   };

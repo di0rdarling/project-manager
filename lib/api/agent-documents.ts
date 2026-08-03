@@ -1,6 +1,7 @@
 import type {
   AgentDocumentResponse,
   RejectAgentDocumentResponse,
+  SaveAgentDocumentAsProjectNoteResponse,
 } from "@/lib/types";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import { parseResponse } from "@/lib/api/response";
@@ -61,4 +62,16 @@ export async function rejectAgentDocument(input: {
     },
   );
   return parseResponse<RejectAgentDocumentResponse>(response);
+}
+
+export async function saveAgentDocumentAsProjectNote(input: {
+  teammateId: ChatTeammateId;
+  documentId: string;
+}): Promise<SaveAgentDocumentAsProjectNoteResponse> {
+  const { teammateId, documentId } = input;
+  const response = await fetch(
+    `/api/chats/agents/${teammateId}/documents/${documentId}/save-as-note`,
+    { method: "POST" },
+  );
+  return parseResponse<SaveAgentDocumentAsProjectNoteResponse>(response);
 }

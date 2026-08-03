@@ -227,7 +227,7 @@ function buildDigestUserMessage(agentTasksContext: string | undefined): string {
   const sections = [
     "Give me a substantive cross-project status update and one concrete next action I should take.",
     "",
-    "Use all of the context you have: my projects, recent conversations, what my other AI teammates have been working on with me, and the autonomous tasks below.",
+    "Use all of the context you have: my projects, recent conversations, what my other AI teammates have been working on with me, and the autonomous tasks below. You are synthesizing and reporting on their work — not claiming it as your own.",
     "",
     "Pay special attention to tasks that need my decision (pending, suggested, or in_review). These are blocked on me, so they are strong candidates for the next action. If a task needs my decision, say so explicitly and name the agent I should talk to about it.",
     "",
@@ -244,6 +244,8 @@ function buildDigestUserMessage(agentTasksContext: string | undefined): string {
   }
 
   sections.push(
+    "",
+    "CRITICAL — attribution: you did not personally do the work that Sandy, Arlo, Theo, Nova, or Reid did with me. When describing their work, attribute it to them by name every single time. Say 'Nova helped you fix...' or 'You and Sandy resolved...' — never say 'I worked with you' or 'we resolved this' for work that belongs to another teammate. Only use 'I' when giving your own direct synthesis, judgement, or recommendation.",
     "",
     "Return your response as a single JSON object with no markdown, code fences, or extra commentary. Use this exact shape:",
     "",

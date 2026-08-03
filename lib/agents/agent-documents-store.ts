@@ -36,6 +36,7 @@ export function serializeAgentDocument(
     content: document.content,
     status: document.status,
     taskTitle: document.taskTitle,
+    savedProjectNoteId: document.savedProjectNoteId,
     createdAt: toIsoString(document.createdAt),
     updatedAt: document.updatedAt
       ? toIsoString(document.updatedAt)
@@ -164,6 +165,25 @@ export async function updateAgentDocumentStatus(
     .findOneAndUpdate(
       { _id: documentId, userId, teammateId },
       { $set: { status, updatedAt: now } },
+      { returnDocument: "after" },
+    );
+
+  return result ? serializeAgentDocument(result) : null;
+}
+
+export async function updateAgentDocumentSavedProjectNoteId(
+  db: Db,
+  userId: ObjectId,
+  teammateId: ChatTeammateId,
+  documentId: ObjectId,
+  savedProjectNoteId: string,
+): Promise<AgentDocumentResponse | null> {
+  const now = new Date().toISOString();
+  const result = await db
+    .collection<StoredAgentDocument>(AGENT_DOCUMENTS_COLLECTION)
+    .findOneAndUpdate(
+      { _id: documentId, userId, teammateId },
+      { $set: { savedProjectNoteId, updatedAt: now } },
       { returnDocument: "after" },
     );
 

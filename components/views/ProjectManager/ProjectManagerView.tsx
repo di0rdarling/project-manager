@@ -60,12 +60,6 @@ export default function ProjectManagerView() {
 
       <CrossProjectAIDigest />
 
-      <HomepageTeammatesSection />
-
-      <HomepageRecentChatsSection />
-
-      <HomepageTasksSection />
-
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Your projects</h2>
@@ -103,6 +97,12 @@ export default function ProjectManagerView() {
           />
         )}
       </section>
+
+      <HomepageTeammatesSection />
+
+      <HomepageRecentChatsSection />
+
+      <HomepageTasksSection />
 
       <CreateProjectModal
         open={isCreateModalOpen}

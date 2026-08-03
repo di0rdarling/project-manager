@@ -77,3 +77,15 @@ export function getAgentDocumentDetailPath(
 ): string {
   return `/chats/agents/${teammateId}/documents/${documentId}`;
 }
+
+export function canSaveAgentDocumentAsProjectNote(document: {
+  status: AgentDocumentStatus;
+}): boolean {
+  return isAgentDocumentAccepted(document.status);
+}
+
+export function hasSavedAgentDocumentAsProjectNote(document: {
+  savedProjectNoteId?: string;
+}): boolean {
+  return Boolean(document.savedProjectNoteId?.trim());
+}

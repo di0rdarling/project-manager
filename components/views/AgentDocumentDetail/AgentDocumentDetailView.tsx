@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, type RefObject } from "react";
+import toast from "react-hot-toast";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import PageContent from "@/components/layout/PageContent";
+import { AgentDocumentSaveAsProjectNoteButton } from "@/components/agents/AgentDocumentSaveAsProjectNoteMenu";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { DocumentDetailContent } from "@/components/views/document-detail/DocumentDetailContent";
@@ -12,8 +14,10 @@ import { DocumentDetailHeader } from "@/components/views/document-detail/Documen
 import { DocumentDetailLayout } from "@/components/views/document-detail/DocumentDetailLayout";
 import { DocumentReviewChatPanel } from "@/components/views/AgentDocumentDetail/DocumentReviewChatPanel";
 import { useDocumentHeadings } from "@/hooks/document-detail/useDocumentHeadings";
+import { useSaveAgentDocumentAsProjectNote } from "@/hooks/mutations/agent-documents/useSaveAgentDocumentAsProjectNote";
 import { useFetchAgentDocument } from "@/hooks/queries/useFetchAgentDocument";
 import {
+  canSaveAgentDocumentAsProjectNote,
   getAgentDocumentStatusBadgeClassName,
   getAgentDocumentStatusLabel,
   isAgentDocumentInReviewStage,
@@ -42,14 +46,22 @@ function DocumentBody({
   headingsKey,
   contentElement,
   contentPanelRef,
+  onSaveAsProjectNote,
+  isSavingAsProjectNote = false,
 }: Readonly<{
   document: AgentDocumentResponse;
+  teammateId: ChatTeammateId;
   headings: ReturnType<typeof useDocumentHeadings>["headings"];
   hasHeadings: boolean;
   headingsKey: string;
   contentElement: HTMLElement | null;
   contentPanelRef: RefObject<HTMLDivElement | null>;
+  onSaveAsProjectNote?: () => void;
+  isSavingAsProjectNote?: boolean;
 }>) {
+  const canSaveAsProjectNote =
+    canSaveAgentDocumentAsProjectNote(document) && Boolean(onSaveAsProjectNote);
+
   return (
     <DocumentDetailLayout
       hasHeadings={hasHeadings}
@@ -67,11 +79,20 @@ function DocumentBody({
           title={document.title || "Untitled document"}
           isEditing={false}
           actions={
-            <span
-              className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentDocumentStatusBadgeClassName(document.status)}`}
-            >
-              {getAgentDocumentStatusLabel(document.status)}
-            </span>
+            <>
+              <span
+                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentDocumentStatusBadgeClassName(document.status)}`}
+              >
+                {getAgentDocumentStatusLabel(document.status)}
+              </span>
+              {canSaveAsProjectNote ? (
+                <AgentDocumentSaveAsProjectNoteButton
+                  document={document}
+                  onSave={onSaveAsProjectNote!}
+                  isSaving={isSavingAsProjectNote}
+                />
+              ) : null}
+            </>
           }
         />
       }
@@ -134,6 +155,7 @@ function ReviewLayout({
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
           <DocumentBody
             document={document}
+            teammateId={teammateId}
             headings={headings}
             hasHeadings={hasHeadings}
             headingsKey={headingsKey}
@@ -171,6 +193,23 @@ export default function AgentDocumentDetailView({
     error,
   } = useFetchAgentDocument(teammateId ?? DEFAULT_CHAT_TEAMMATE_ID, documentId, {
     enabled: Boolean(teammateId),
+  });
+
+  const saveAsProjectNoteMutation = useSaveAgentDocumentAsProjectNote({
+    onSuccess: (response) => {
+      toast.success(
+        response.alreadySaved
+          ? "This document is already saved as a project note."
+          : "Added to project notes.",
+      );
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to add document to project notes.",
+      );
+    },
   });
 
   const {
@@ -231,6 +270,17 @@ export default function AgentDocumentDetailView({
     return null;
   }
 
+  function handleSaveAsProjectNote() {
+    if (!teammateId || saveAsProjectNoteMutation.isPending) {
+      return;
+    }
+
+    saveAsProjectNoteMutation.mutate({
+      teammateId,
+      documentId,
+    });
+  }
+
   if (showReviewChat) {
     return (
       <ReviewLayout
@@ -260,11 +310,14 @@ export default function AgentDocumentDetailView({
 
       <DocumentBody
         document={document}
+        teammateId={teammateId}
         headings={headings}
         hasHeadings={hasHeadings}
         headingsKey={headingsKey}
         contentElement={contentElement}
         contentPanelRef={contentPanelRef}
+        onSaveAsProjectNote={handleSaveAsProjectNote}
+        isSavingAsProjectNote={saveAsProjectNoteMutation.isPending}
       />
     </PageContent>
   );
