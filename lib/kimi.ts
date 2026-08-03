@@ -123,6 +123,91 @@ function extractKimiMessageContent(message: OpenAI.Chat.Completions.ChatCompleti
   return reasoningContent ?? "";
 }
 
+type KimiChatGenerationOptions = {
+  history: GeminiChatMessage[];
+  message: string;
+  teammateId?: ChatTeammateId;
+  projectContext?: string;
+  otherConversationsContext?: string;
+  otherTeammatesContext?: string;
+  agentNotesContext?: string;
+  userName?: string | null;
+  modelId?: string;
+  reasoningEffort?: KimiReasoningEffort;
+  generatedAt?: Date;
+  documentReviewContext?: string;
+  agentTasksDocumentsContext?: string;
+};
+
+function buildKimiChatMessages(
+  options: KimiChatGenerationOptions,
+): OpenAI.Chat.Completions.ChatCompletionMessageParam[] {
+  const systemPrompt = buildChatSystemPrompt(
+    options.teammateId,
+    options.projectContext,
+    options.otherConversationsContext,
+    options.otherTeammatesContext,
+    options.agentNotesContext,
+    options.userName,
+    options.generatedAt,
+    options.documentReviewContext,
+    options.agentTasksDocumentsContext,
+  );
+
+  return [
+    { role: "system", content: systemPrompt },
+    ...options.history.map((entry) => ({
+      role: toKimiRole(entry.role),
+      content: entry.content,
+    })),
+    { role: "user", content: options.message },
+  ];
+}
+
+export type KimiChatReplyStreamYield =
+  | { type: "token"; delta: string }
+  | { type: "complete"; result: GenerateChatReplyResult };
+
+export async function* streamKimiChatReply(
+  options: KimiChatGenerationOptions,
+): AsyncGenerator<KimiChatReplyStreamYield> {
+  try {
+    const client = getKimiClient();
+    const stream = await client.chat.completions.create({
+      model: resolveKimiModelName(options.modelId),
+      ...(options.reasoningEffort
+        ? { reasoning_effort: options.reasoningEffort }
+        : {}),
+      messages: buildKimiChatMessages(options),
+      stream: true,
+    });
+
+    let content = "";
+
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content;
+
+      if (delta) {
+        content += delta;
+        yield { type: "token", delta };
+      }
+    }
+
+    const trimmedContent = content.trim();
+
+    if (!trimmedContent) {
+      throw new KimiApiError("Kimi returned an empty response.", 502);
+    }
+
+    yield {
+      type: "complete",
+      result: { content: trimmedContent },
+    };
+  } catch (error) {
+    throw toKimiApiError(error);
+  }
+}
+
 export async function generateKimiChatReply(
   history: GeminiChatMessage[],
   message: string,
@@ -138,46 +223,33 @@ export async function generateKimiChatReply(
   documentReviewContext?: string,
   agentTasksDocumentsContext?: string,
 ): Promise<GenerateChatReplyResult> {
-  try {
-    const client = getKimiClient();
-    const systemPrompt = buildChatSystemPrompt(
-      teammateId,
-      projectContext,
-      otherConversationsContext,
-      otherTeammatesContext,
-      agentNotesContext,
-      userName,
-      generatedAt,
-      documentReviewContext,
-      agentTasksDocumentsContext,
-    );
+  let result: GenerateChatReplyResult | undefined;
 
-    const completion = await client.chat.completions.create({
-      model: resolveKimiModelName(modelId),
-      ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {}),
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...history.map((entry) => ({
-          role: toKimiRole(entry.role),
-          content: entry.content,
-        })),
-        { role: "user", content: message },
-      ],
-    } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming);
-
-    const assistantMessage = completion.choices[0]?.message;
-    const content = assistantMessage
-      ? extractKimiMessageContent(assistantMessage)
-      : "";
-
-    if (!content) {
-      throw new KimiApiError("Kimi returned an empty response.", 502);
+  for await (const event of streamKimiChatReply({
+    history,
+    message,
+    teammateId,
+    projectContext,
+    otherConversationsContext,
+    otherTeammatesContext,
+    agentNotesContext,
+    userName,
+    modelId,
+    reasoningEffort,
+    generatedAt,
+    documentReviewContext,
+    agentTasksDocumentsContext,
+  })) {
+    if (event.type === "complete") {
+      result = event.result;
     }
-
-    return { content };
-  } catch (error) {
-    throw toKimiApiError(error);
   }
+
+  if (!result) {
+    throw new KimiApiError("Kimi returned an empty response.", 502);
+  }
+
+  return result;
 }
 
 export type CountKimiChatContextTokensInput = {

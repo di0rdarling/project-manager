@@ -37,9 +37,14 @@ import {
 import { loadDocumentReviewGenerationContext } from "@/lib/chats/chat-context/document-review-generation-context";
 import { isChatTeammateId } from "@/lib/chats/chat-teammates";
 import {
-  generateChatReply,
   getChatProviderConfigError,
+  streamChatReply,
+  type GenerateChatReplyResult,
 } from "@/lib/chat-generation";
+import {
+  createChatStreamResponse,
+  type ChatStreamEvent,
+} from "@/lib/chats/chat-stream-protocol";
 import { DEFAULT_CHAT_MODEL_ID } from "@/lib/chats/chat-models";
 import {
   chatModelSupportsReasoningEffort,
@@ -550,177 +555,193 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const generatedAt = new Date();
-    const assistantReply = await generateChatReply(
-      generationContext.history,
-      content,
-      generationContext.teammateId,
-      generationContext.projectContext,
-      generationContext.otherConversationsContext,
-      generationContext.otherTeammatesContext,
-      generationContext.agentNotesContext,
-      userName,
-      generationContext.modelId,
-      generationContext.reasoningEffort,
-      generatedAt,
-      generationContext.documentReviewContext,
-      generationContext.agentTasksDocumentsContext,
-    );
 
-    const now = generatedAt.toISOString();
-    const { userMessage, assistantMessage } = usesUnifiedConversation
-      ? await insertTaskOverviewMessages(db, {
-          userId: auth.userId,
-          teammateId: parsed.teammateId,
-          projectId: loaded.projectId!,
-          taskTitle: loaded.task!.title,
-          userContent: content,
-          assistantContent: assistantReply.content,
-          createdAt: now,
-        })
-      : await insertDocumentReviewMessages(db, {
-          userId: auth.userId,
-          teammateId: parsed.teammateId,
-          documentId: parsed.documentId,
-          userContent: content,
-          assistantContent: assistantReply.content,
-          createdAt: now,
-        });
+    return createChatStreamResponse(async (send) => {
+      let assistantReply: GenerateChatReplyResult | undefined;
 
-    const fullTranscript = [
-      ...generationContext.history,
-      { role: "user" as const, content },
-      { role: "model" as const, content: assistantReply.content },
-    ];
+      for await (const event of streamChatReply(
+        generationContext.history,
+        content,
+        generationContext.teammateId,
+        generationContext.projectContext,
+        generationContext.otherConversationsContext,
+        generationContext.otherTeammatesContext,
+        generationContext.agentNotesContext,
+        userName,
+        generationContext.modelId,
+        generationContext.reasoningEffort,
+        generatedAt,
+        generationContext.documentReviewContext,
+        generationContext.agentTasksDocumentsContext,
+      )) {
+        if (event.type === "token") {
+          send({ type: "token", delta: event.delta });
+          continue;
+        }
 
-    const reviewChatTitle = usesUnifiedConversation
-      ? `Task: ${loaded.task!.title}`
-      : `Review: ${generationContext.documentTitle}`;
-    let conversationSummary = session.conversationSummary;
+        assistantReply = event.result;
+      }
 
-    try {
-      const recentMessages = fullTranscript.slice(-RECENT_MESSAGE_WINDOW);
-      const hasTruncatedMessages =
-        fullTranscript.length > recentMessages.length;
+      if (!assistantReply) {
+        throw new Error("Chat returned an empty response");
+      }
 
-      conversationSummary = await generateConversationSummary(
-        buildChatConversationSummaryPrompt({
-          teammateId: parsed.teammateId,
-          chatTitle: reviewChatTitle,
-          conversationKind: usesUnifiedConversation
-            ? "task_overview"
-            : "document_review",
-          olderSummary: hasTruncatedMessages ? session.conversationSummary : null,
-          recentMessages,
-          userName,
-          generatedAt,
-        }),
-      );
+      const now = generatedAt.toISOString();
+      const { userMessage, assistantMessage } = usesUnifiedConversation
+        ? await insertTaskOverviewMessages(db, {
+            userId: auth.userId,
+            teammateId: parsed.teammateId,
+            projectId: loaded.projectId!,
+            taskTitle: loaded.task!.title,
+            userContent: content,
+            assistantContent: assistantReply.content,
+            createdAt: now,
+          })
+        : await insertDocumentReviewMessages(db, {
+            userId: auth.userId,
+            teammateId: parsed.teammateId,
+            documentId: parsed.documentId,
+            userContent: content,
+            assistantContent: assistantReply.content,
+            createdAt: now,
+          });
 
-      if (usesUnifiedConversation && taskConversationKey) {
-        await updateTaskOverviewSessionSummary(
-          db,
-          taskConversationKey,
-          conversationSummary,
-          now,
+      const fullTranscript = [
+        ...generationContext.history,
+        { role: "user" as const, content },
+        { role: "model" as const, content: assistantReply.content },
+      ];
+
+      const reviewChatTitle = usesUnifiedConversation
+        ? `Task: ${loaded.task!.title}`
+        : `Review: ${generationContext.documentTitle}`;
+      let conversationSummary = session.conversationSummary;
+
+      try {
+        const recentMessages = fullTranscript.slice(-RECENT_MESSAGE_WINDOW);
+        const hasTruncatedMessages =
+          fullTranscript.length > recentMessages.length;
+
+        conversationSummary = await generateConversationSummary(
+          buildChatConversationSummaryPrompt({
+            teammateId: parsed.teammateId,
+            chatTitle: reviewChatTitle,
+            conversationKind: usesUnifiedConversation
+              ? "task_overview"
+              : "document_review",
+            olderSummary: hasTruncatedMessages ? session.conversationSummary : null,
+            recentMessages,
+            userName,
+            generatedAt,
+          }),
         );
-      } else {
-        await updateDocumentReviewSessionSummary(
+
+        if (usesUnifiedConversation && taskConversationKey) {
+          await updateTaskOverviewSessionSummary(
+            db,
+            taskConversationKey,
+            conversationSummary,
+            now,
+          );
+        } else {
+          await updateDocumentReviewSessionSummary(
+            db,
+            auth.userId,
+            parsed.teammateId,
+            parsed.documentId,
+            conversationSummary,
+            now,
+          );
+        }
+      } catch {
+        // Keep the previous summary if generation fails.
+      }
+
+      if (conversationSummary?.trim()) {
+        try {
+          await refreshAgentMemoryFromChatSummary({
+            db,
+            userId: auth.userId,
+            teammateId: parsed.teammateId,
+            chatTitle: reviewChatTitle,
+            conversationSummary,
+            projectId: new ObjectId(generationContext.projectId),
+            userName,
+            updatedAt: now,
+          });
+        } catch {
+          // Memory refresh is best-effort.
+        }
+
+        try {
+          await refreshUserMemoryFromChatSummary({
+            db,
+            userId: auth.userId,
+            teammateId: parsed.teammateId,
+            chatTitle: reviewChatTitle,
+            conversationSummary,
+            projectId: new ObjectId(generationContext.projectId),
+            userName,
+            updatedAt: now,
+          });
+        } catch {
+          // Memory refresh is best-effort.
+        }
+      }
+
+      let document = loaded.document;
+
+      if (document.status === "ready_for_review") {
+        const updated = await updateAgentDocumentStatus(
           db,
           auth.userId,
           parsed.teammateId,
           parsed.documentId,
-          conversationSummary,
-          now,
+          "in_review",
         );
-      }
-    } catch {
-      // Keep the previous summary if generation fails.
-    }
-
-    if (conversationSummary?.trim()) {
-      try {
-        await refreshAgentMemoryFromChatSummary({
-          db,
-          userId: auth.userId,
-          teammateId: parsed.teammateId,
-          chatTitle: reviewChatTitle,
-          conversationSummary,
-          projectId: new ObjectId(generationContext.projectId),
-          userName,
-          updatedAt: now,
-        });
-      } catch {
-        // Memory refresh is best-effort.
+        document = updated ?? document;
       }
 
-      try {
-        await refreshUserMemoryFromChatSummary({
-          db,
-          userId: auth.userId,
-          teammateId: parsed.teammateId,
-          chatTitle: reviewChatTitle,
-          conversationSummary,
-          projectId: new ObjectId(generationContext.projectId),
-          userName,
-          updatedAt: now,
-        });
-      } catch {
-        // Memory refresh is best-effort.
-      }
-    }
+      const updatedMessages = usesUnifiedConversation
+        ? await getUnifiedTaskConversationMessages(
+            db,
+            taskConversationKey!,
+            parsed.documentId,
+          )
+        : await getDocumentReviewMessages(
+            db,
+            auth.userId,
+            parsed.teammateId,
+            parsed.documentId,
+          );
 
-    let document = loaded.document;
-
-    if (document.status === "ready_for_review") {
-      const updated = await updateAgentDocumentStatus(
+      const updatedContextUsage = await getDocumentReviewContextUsage({
         db,
-        auth.userId,
-        parsed.teammateId,
-        parsed.documentId,
-        "in_review",
-      );
-      document = updated ?? document;
-    }
+        userId: auth.userId,
+        teammateId: parsed.teammateId,
+        document,
+        task: loaded.task,
+        messages: updatedMessages,
+        userName,
+        modelId: session.modelId,
+        reasoningEffort: session.reasoningEffort,
+        conversationSummary,
+        continuesTaskConversation: usesUnifiedConversation,
+      });
 
-    const updatedMessages = usesUnifiedConversation
-      ? await getUnifiedTaskConversationMessages(
-          db,
-          taskConversationKey!,
-          parsed.documentId,
-        )
-      : await getDocumentReviewMessages(
-          db,
-          auth.userId,
-          parsed.teammateId,
-          parsed.documentId,
-        );
+      const response: SendDocumentReviewMessageResponse = {
+        userMessage,
+        assistantMessage,
+        document,
+        taskConversation: getTaskConversationMeta(loaded.task, loaded.projectId),
+        modelId: session.modelId,
+        reasoningEffort: session.reasoningEffort,
+        conversationSummary,
+        contextUsage: updatedContextUsage,
+      };
 
-    const updatedContextUsage = await getDocumentReviewContextUsage({
-      db,
-      userId: auth.userId,
-      teammateId: parsed.teammateId,
-      document,
-      task: loaded.task,
-      messages: updatedMessages,
-      userName,
-      modelId: session.modelId,
-      reasoningEffort: session.reasoningEffort,
-      conversationSummary,
-      continuesTaskConversation: usesUnifiedConversation,
+      send({ type: "done", data: response } satisfies ChatStreamEvent);
     });
-
-    const response: SendDocumentReviewMessageResponse = {
-      userMessage,
-      assistantMessage,
-      document,
-      taskConversation: getTaskConversationMeta(loaded.task, loaded.projectId),
-      modelId: session.modelId,
-      reasoningEffort: session.reasoningEffort,
-      conversationSummary,
-      contextUsage: updatedContextUsage,
-    };
-
-    return Response.json(response);
   } catch (error) {
     if (error instanceof KimiApiError) {
       return Response.json({ error: error.message }, { status: error.status });

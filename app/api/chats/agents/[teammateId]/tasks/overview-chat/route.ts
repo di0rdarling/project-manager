@@ -22,8 +22,15 @@ import {
   getAgentTaskOverviewContextUsage,
 } from "@/lib/chats/chat-context/get-agent-task-overview-context-usage";
 import { loadAgentTaskOverviewGenerationContext } from "@/lib/chats/chat-context/agent-task-overview-generation-context";
-import { generateAgentTaskOverviewChatReply } from "@/lib/agent-task-overview-chat-generation";
+import {
+  streamAgentTaskOverviewChatReply,
+  type GenerateAgentTaskOverviewChatReplyResult,
+} from "@/lib/agent-task-overview-chat-generation";
 import { getChatProviderConfigError } from "@/lib/chat-generation";
+import {
+  createChatStreamResponse,
+  type ChatStreamEvent,
+} from "@/lib/chats/chat-stream-protocol";
 import { DEFAULT_CHAT_MODEL_ID } from "@/lib/chats/chat-models";
 import { chatModelSupportsReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
 import { generateConversationSummary } from "@/lib/gemini";
@@ -453,167 +460,184 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const generatedAt = new Date();
-    const assistantReply = await generateAgentTaskOverviewChatReply(
-      {
-        history: generationContext.history,
-        message: content,
-        teammateId: generationContext.teammateId,
-        projectContext: generationContext.projectContext,
-        otherConversationsContext: generationContext.otherConversationsContext,
-        otherTeammatesContext: generationContext.otherTeammatesContext,
-        agentNotesContext: generationContext.agentNotesContext,
-        userName,
-        modelId: generationContext.modelId,
-        reasoningEffort: generationContext.reasoningEffort,
-        generatedAt,
-        taskOverviewContext: generationContext.taskOverviewContext,
-        agentTasksDocumentsContext: generationContext.agentTasksDocumentsContext,
-      },
-      {
-        db,
-        userId: auth.userId,
-        teammateId: parsedTeammate.teammateId,
-        projectId: parsedProject.projectId,
-        taskTitle: parsedTaskTitle.taskTitle,
-      },
-    );
 
-    const updatedTask =
-      assistantReply.updatedTask ??
-      (await findAgentTaskByTitle(
-        db,
-        auth.userId,
-        parsedTeammate.teammateId,
-        parsedProject.projectId,
-        parsedTaskTitle.taskTitle,
-      ));
+    return createChatStreamResponse(async (send) => {
+      let assistantReply: GenerateAgentTaskOverviewChatReplyResult | undefined;
 
-    const currentTaskTitle = updatedTask?.title ?? parsedTaskTitle.taskTitle;
-    const previousTaskTitle =
-      currentTaskTitle !== parsedTaskTitle.taskTitle
-        ? parsedTaskTitle.taskTitle
-        : undefined;
-
-    const now = generatedAt.toISOString();
-    const { userMessage, assistantMessage } = await insertTaskOverviewMessages(
-      db,
-      {
-        userId: auth.userId,
-        teammateId: parsedTeammate.teammateId,
-        projectId: parsedProject.projectId,
-        taskTitle: currentTaskTitle,
-        userContent: content,
-        assistantContent: assistantReply.content,
-        createdAt: now,
-      },
-    );
-
-    const fullTranscript = [
-      ...generationContext.history,
-      { role: "user" as const, content },
-      { role: "model" as const, content: assistantReply.content },
-    ];
-
-    const overviewChatTitle = `Task: ${currentTaskTitle}`;
-    let conversationSummary = session.conversationSummary;
-
-    try {
-      const recentMessages = fullTranscript.slice(-RECENT_MESSAGE_WINDOW);
-      const hasTruncatedMessages =
-        fullTranscript.length > recentMessages.length;
-
-      conversationSummary = await generateConversationSummary(
-        buildChatConversationSummaryPrompt({
-          teammateId: parsedTeammate.teammateId,
-          chatTitle: overviewChatTitle,
-          conversationKind: "task_overview",
-          olderSummary: hasTruncatedMessages ? session.conversationSummary : null,
-          recentMessages,
+      for await (const event of streamAgentTaskOverviewChatReply(
+        {
+          history: generationContext.history,
+          message: content,
+          teammateId: generationContext.teammateId,
+          projectContext: generationContext.projectContext,
+          otherConversationsContext: generationContext.otherConversationsContext,
+          otherTeammatesContext: generationContext.otherTeammatesContext,
+          agentNotesContext: generationContext.agentNotesContext,
           userName,
+          modelId: generationContext.modelId,
+          reasoningEffort: generationContext.reasoningEffort,
           generatedAt,
-        }),
-      );
+          taskOverviewContext: generationContext.taskOverviewContext,
+          agentTasksDocumentsContext:
+            generationContext.agentTasksDocumentsContext,
+        },
+        {
+          db,
+          userId: auth.userId,
+          teammateId: parsedTeammate.teammateId,
+          projectId: parsedProject.projectId,
+          taskTitle: parsedTaskTitle.taskTitle,
+        },
+      )) {
+        if (event.type === "token") {
+          send({ type: "token", delta: event.delta });
+          continue;
+        }
 
-      await updateTaskOverviewSessionSummary(
+        assistantReply = event.result;
+      }
+
+      if (!assistantReply) {
+        throw new Error("Agent task overview chat returned an empty response");
+      }
+
+      const updatedTask =
+        assistantReply.updatedTask ??
+        (await findAgentTaskByTitle(
+          db,
+          auth.userId,
+          parsedTeammate.teammateId,
+          parsedProject.projectId,
+          parsedTaskTitle.taskTitle,
+        ));
+
+      const currentTaskTitle = updatedTask?.title ?? parsedTaskTitle.taskTitle;
+      const previousTaskTitle =
+        currentTaskTitle !== parsedTaskTitle.taskTitle
+          ? parsedTaskTitle.taskTitle
+          : undefined;
+
+      const now = generatedAt.toISOString();
+      const { userMessage, assistantMessage } = await insertTaskOverviewMessages(
         db,
         {
           userId: auth.userId,
           teammateId: parsedTeammate.teammateId,
           projectId: parsedProject.projectId,
           taskTitle: currentTaskTitle,
+          userContent: content,
+          assistantContent: assistantReply.content,
+          createdAt: now,
         },
-        conversationSummary,
-        now,
       );
-    } catch {
-      // Keep the previous summary if generation fails.
-    }
 
-    if (conversationSummary?.trim()) {
-      try {
-        await refreshAgentMemoryFromChatSummary({
-          db,
-          userId: auth.userId,
-          teammateId: parsedTeammate.teammateId,
-          chatTitle: overviewChatTitle,
-          conversationSummary,
-          projectId: parsedProject.projectId,
-          userName,
-          updatedAt: now,
-        });
-      } catch {
-        // Memory refresh is best-effort.
-      }
+      const fullTranscript = [
+        ...generationContext.history,
+        { role: "user" as const, content },
+        { role: "model" as const, content: assistantReply.content },
+      ];
+
+      const overviewChatTitle = `Task: ${currentTaskTitle}`;
+      let conversationSummary = session.conversationSummary;
 
       try {
-        await refreshUserMemoryFromChatSummary({
+        const recentMessages = fullTranscript.slice(-RECENT_MESSAGE_WINDOW);
+        const hasTruncatedMessages =
+          fullTranscript.length > recentMessages.length;
+
+        conversationSummary = await generateConversationSummary(
+          buildChatConversationSummaryPrompt({
+            teammateId: parsedTeammate.teammateId,
+            chatTitle: overviewChatTitle,
+            conversationKind: "task_overview",
+            olderSummary: hasTruncatedMessages ? session.conversationSummary : null,
+            recentMessages,
+            userName,
+            generatedAt,
+          }),
+        );
+
+        await updateTaskOverviewSessionSummary(
           db,
-          userId: auth.userId,
-          teammateId: parsedTeammate.teammateId,
-          chatTitle: overviewChatTitle,
+          {
+            userId: auth.userId,
+            teammateId: parsedTeammate.teammateId,
+            projectId: parsedProject.projectId,
+            taskTitle: currentTaskTitle,
+          },
           conversationSummary,
-          projectId: parsedProject.projectId,
-          userName,
-          updatedAt: now,
-        });
+          now,
+        );
       } catch {
-        // Memory refresh is best-effort.
+        // Keep the previous summary if generation fails.
       }
-    }
 
-    const updatedMessages = await getTaskOverviewMessages(
-      db,
-      auth.userId,
-      parsedTeammate.teammateId,
-      parsedProject.projectId,
-      currentTaskTitle,
-    );
+      if (conversationSummary?.trim()) {
+        try {
+          await refreshAgentMemoryFromChatSummary({
+            db,
+            userId: auth.userId,
+            teammateId: parsedTeammate.teammateId,
+            chatTitle: overviewChatTitle,
+            conversationSummary,
+            projectId: parsedProject.projectId,
+            userName,
+            updatedAt: now,
+          });
+        } catch {
+          // Memory refresh is best-effort.
+        }
 
-    const updatedContextUsage = await getAgentTaskOverviewContextUsage({
-      db,
-      userId: auth.userId,
-      teammateId: parsedTeammate.teammateId,
-      projectId: parsedProject.projectId,
-      task: updatedTask ?? loaded.task,
-      messages: updatedMessages,
-      userName,
-      modelId: session.modelId,
-      reasoningEffort: session.reasoningEffort,
-      conversationSummary,
+        try {
+          await refreshUserMemoryFromChatSummary({
+            db,
+            userId: auth.userId,
+            teammateId: parsedTeammate.teammateId,
+            chatTitle: overviewChatTitle,
+            conversationSummary,
+            projectId: parsedProject.projectId,
+            userName,
+            updatedAt: now,
+          });
+        } catch {
+          // Memory refresh is best-effort.
+        }
+      }
+
+      const updatedMessages = await getTaskOverviewMessages(
+        db,
+        auth.userId,
+        parsedTeammate.teammateId,
+        parsedProject.projectId,
+        currentTaskTitle,
+      );
+
+      const updatedContextUsage = await getAgentTaskOverviewContextUsage({
+        db,
+        userId: auth.userId,
+        teammateId: parsedTeammate.teammateId,
+        projectId: parsedProject.projectId,
+        task: updatedTask ?? loaded.task,
+        messages: updatedMessages,
+        userName,
+        modelId: session.modelId,
+        reasoningEffort: session.reasoningEffort,
+        conversationSummary,
+      });
+
+      const response: SendAgentTaskOverviewMessageResponse = {
+        userMessage,
+        assistantMessage,
+        task: updatedTask ?? loaded.task,
+        ...(previousTaskTitle ? { previousTaskTitle } : {}),
+        modelId: session.modelId,
+        reasoningEffort: session.reasoningEffort,
+        conversationSummary,
+        contextUsage: updatedContextUsage,
+      };
+
+      send({ type: "done", data: response } satisfies ChatStreamEvent);
     });
-
-    const response: SendAgentTaskOverviewMessageResponse = {
-      userMessage,
-      assistantMessage,
-      task: updatedTask ?? loaded.task,
-      ...(previousTaskTitle ? { previousTaskTitle } : {}),
-      modelId: session.modelId,
-      reasoningEffort: session.reasoningEffort,
-      conversationSummary,
-      contextUsage: updatedContextUsage,
-    };
-
-    return Response.json(response);
   } catch (error) {
     if (error instanceof KimiApiError) {
       return Response.json({ error: error.message }, { status: error.status });

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import {
   useMutation,
   useQueryClient,
@@ -10,6 +11,12 @@ import {
   mergeChatListItem,
   updateAllChatListCaches,
 } from "@/lib/chats/chat-list-cache";
+import {
+  appendAssistantStreamDelta,
+  createOptimisticAssistantMessage,
+  createOptimisticUserMessage,
+  finalizePendingChatMessages,
+} from "@/lib/chats/streaming-chat-mutation-helpers";
 import { agentMemoryKeys, chatKeys } from "@/lib/query-keys";
 import type {
   ChatMessageResponse,
@@ -26,10 +33,10 @@ type UseSendChatMessageOptions = Omit<
 
 export function useSendChatMessage(options?: UseSendChatMessageOptions) {
   const queryClient = useQueryClient();
+  const streamingAssistantMessageIdRef = useRef<string | null>(null);
   const { onSuccess, onError, onMutate, ...restOptions } = options ?? {};
 
   return useMutation({
-    mutationFn: sendChatMessage,
     retry: false,
     ...restOptions,
     onMutate: async (variables, mutationContext) => {
@@ -43,19 +50,32 @@ export function useSendChatMessage(options?: UseSendChatMessageOptions) {
 
       if (previousChat) {
         const optimisticUserMessage: ChatMessageResponse = {
-          _id: `pending-user-${Date.now()}`,
+          _id: createOptimisticUserMessage(variables.content)._id,
           userId: previousChat.userId,
           chatId: variables.chatId,
           role: "user",
           content: variables.content,
           createdAt: new Date().toISOString(),
         };
+        const optimisticAssistantMessage: ChatMessageResponse = {
+          _id: createOptimisticAssistantMessage()._id,
+          userId: previousChat.userId,
+          chatId: variables.chatId,
+          role: "model",
+          content: "",
+          createdAt: new Date().toISOString(),
+        };
+        streamingAssistantMessageIdRef.current = optimisticAssistantMessage._id;
 
         queryClient.setQueryData<ChatWithMessagesResponse>(
           chatKeys.detail(variables.chatId),
           {
             ...previousChat,
-            messages: [...previousChat.messages, optimisticUserMessage],
+            messages: [
+              ...previousChat.messages,
+              optimisticUserMessage,
+              optimisticAssistantMessage,
+            ],
           },
         );
       }
@@ -64,7 +84,38 @@ export function useSendChatMessage(options?: UseSendChatMessageOptions) {
 
       return { previousChat };
     },
+    mutationFn: async (variables) =>
+      sendChatMessage({
+        ...variables,
+        onToken: (delta) => {
+          const assistantMessageId = streamingAssistantMessageIdRef.current;
+
+          if (!assistantMessageId) {
+            return;
+          }
+
+          queryClient.setQueryData<ChatWithMessagesResponse>(
+            chatKeys.detail(variables.chatId),
+            (current) => {
+              if (!current) {
+                return current;
+              }
+
+              return {
+                ...current,
+                messages: appendAssistantStreamDelta(
+                  current.messages,
+                  assistantMessageId,
+                  delta,
+                ),
+              };
+            },
+          );
+        },
+      }),
     onError: (error, variables, onMutateResult, mutationContext) => {
+      streamingAssistantMessageIdRef.current = null;
+
       if (onMutateResult?.previousChat) {
         queryClient.setQueryData(
           chatKeys.detail(variables.chatId),
@@ -75,6 +126,8 @@ export function useSendChatMessage(options?: UseSendChatMessageOptions) {
       onError?.(error, variables, onMutateResult, mutationContext);
     },
     onSuccess: (data, variables, onMutateResult, context) => {
+      streamingAssistantMessageIdRef.current = null;
+
       queryClient.setQueryData<ChatWithMessagesResponse>(
         chatKeys.detail(variables.chatId),
         (current) => {
@@ -89,20 +142,6 @@ export function useSendChatMessage(options?: UseSendChatMessageOptions) {
             };
           }
 
-          const nextMessages = current.messages.filter(
-            (entry) => !entry._id.startsWith("pending-user-"),
-          );
-
-          if (!nextMessages.some((entry) => entry._id === data.userMessage._id)) {
-            nextMessages.push(data.userMessage);
-          }
-
-          if (
-            !nextMessages.some((entry) => entry._id === data.assistantMessage._id)
-          ) {
-            nextMessages.push(data.assistantMessage);
-          }
-
           return {
             ...current,
             ...data.chat,
@@ -113,7 +152,11 @@ export function useSendChatMessage(options?: UseSendChatMessageOptions) {
             reasoningEffort:
               data.chat.reasoningEffort ?? current.reasoningEffort,
             contextUsage: data.contextUsage,
-            messages: nextMessages,
+            messages: finalizePendingChatMessages(
+              current.messages,
+              data.userMessage,
+              data.assistantMessage,
+            ),
           };
         },
       );

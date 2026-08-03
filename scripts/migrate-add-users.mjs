@@ -61,6 +61,7 @@ async function ensureLegacyUser(db) {
     email,
     passwordHash,
     name: process.env.LEGACY_USER_NAME?.trim() || null,
+    subscription: "free",
     createdAt: now,
     updatedAt: now,
   });

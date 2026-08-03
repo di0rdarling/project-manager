@@ -7,9 +7,14 @@ import {
 } from "@/lib/chats/chat-context/get-chat-context-usage";
 import { loadChatGenerationContext } from "@/lib/chats/chat-context/chat-generation-context";
 import {
-  generateChatReply,
   getChatProviderConfigError,
+  streamChatReply,
+  type GenerateChatReplyResult,
 } from "@/lib/chat-generation";
+import {
+  createChatStreamResponse,
+  type ChatStreamEvent,
+} from "@/lib/chats/chat-stream-protocol";
 import {
   generateChatTitle,
   generateConversationSummary,
@@ -154,194 +159,207 @@ export async function POST(request: Request, context: RouteContext) {
 
     const generatedAt = new Date();
 
-    const assistantReply = await generateChatReply(
-      history,
-      content,
-      generationContext.teammateId,
-      generationContext.projectContext,
-      generationContext.otherConversationsContext,
-      generationContext.otherTeammatesContext,
-      generationContext.agentNotesContext,
-      generationContext.userName,
-      generationContext.modelId,
-      generationContext.reasoningEffort,
-      generatedAt,
-      undefined,
-      generationContext.agentTasksDocumentsContext,
-    );
-    const now = generatedAt.toISOString();
-    const userMessage: Omit<ChatMessage, "_id"> = {
-      userId: auth.userId,
-      chatId: result.chatObjectId,
-      role: "user",
-      content,
-      createdAt: now,
-    };
-    const assistantMessage: Omit<ChatMessage, "_id"> = {
-      userId: auth.userId,
-      chatId: result.chatObjectId,
-      role: "model",
-      content: assistantReply.content,
-      ...(assistantReply.sources?.length
-        ? { sources: assistantReply.sources }
-        : {}),
-      ...(assistantReply.webSearchQueries?.length
-        ? { webSearchQueries: assistantReply.webSearchQueries }
-        : {}),
-      ...(assistantReply.searchSuggestionsHtml
-        ? { searchSuggestionsHtml: assistantReply.searchSuggestionsHtml }
-        : {}),
-      createdAt: now,
-    };
+    return createChatStreamResponse(async (send) => {
+      let assistantReply: GenerateChatReplyResult | undefined;
 
-    const db = result.client.db();
-    const userInsertResult = await db
-      .collection<Omit<ChatMessage, "_id">>("chat_messages")
-      .insertOne(userMessage);
-    const assistantInsertResult = await db
-      .collection<Omit<ChatMessage, "_id">>("chat_messages")
-      .insertOne(assistantMessage);
+      for await (const event of streamChatReply(
+        history,
+        content,
+        generationContext.teammateId,
+        generationContext.projectContext,
+        generationContext.otherConversationsContext,
+        generationContext.otherTeammatesContext,
+        generationContext.agentNotesContext,
+        generationContext.userName,
+        generationContext.modelId,
+        generationContext.reasoningEffort,
+        generatedAt,
+        undefined,
+        generationContext.agentTasksDocumentsContext,
+      )) {
+        if (event.type === "token") {
+          send({ type: "token", delta: event.delta });
+          continue;
+        }
 
-    const fullTranscript = [
-      ...history,
-      { role: "user" as const, content },
-      { role: "model" as const, content: assistantReply.content },
-    ];
+        assistantReply = event.result;
+      }
 
-    const titleIsCustom = result.chat.titleIsCustom ?? false;
-    const aiTitleGenerated = result.chat.aiTitleGenerated ?? false;
-    const completedTurnCount = fullTranscript.length / 2;
-    let nextTitle = result.chat.title;
-    let nextAiTitleGenerated = aiTitleGenerated;
+      if (!assistantReply) {
+        throw new Error("Chat returned an empty response");
+      }
 
-    if (!titleIsCustom && !aiTitleGenerated) {
-      if (existingMessages.length === 0) {
-        // First exchange: give the chat an immediate, readable title.
-        nextTitle = buildChatTitleFromMessage(content);
-      } else if (completedTurnCount >= CHAT_TITLE_GENERATION_TURN_THRESHOLD) {
-        // Enough context has accumulated (including existing chats that
-        // were already past the threshold before this feature existed):
-        // replace the placeholder title with an AI-generated summary.
-        try {
-          nextTitle = await generateChatTitle(
-            buildChatTitlePrompt(fullTranscript, generatedAt),
-          );
-          nextAiTitleGenerated = true;
-        } catch {
-          // Keep the current title and retry on the next message.
+      const now = generatedAt.toISOString();
+      const userMessage: Omit<ChatMessage, "_id"> = {
+        userId: auth.userId,
+        chatId: result.chatObjectId,
+        role: "user",
+        content,
+        createdAt: now,
+      };
+      const assistantMessage: Omit<ChatMessage, "_id"> = {
+        userId: auth.userId,
+        chatId: result.chatObjectId,
+        role: "model",
+        content: assistantReply.content,
+        ...(assistantReply.sources?.length
+          ? { sources: assistantReply.sources }
+          : {}),
+        ...(assistantReply.webSearchQueries?.length
+          ? { webSearchQueries: assistantReply.webSearchQueries }
+          : {}),
+        ...(assistantReply.searchSuggestionsHtml
+          ? { searchSuggestionsHtml: assistantReply.searchSuggestionsHtml }
+          : {}),
+        createdAt: now,
+      };
+
+      const db = result.client.db();
+      const userInsertResult = await db
+        .collection<Omit<ChatMessage, "_id">>("chat_messages")
+        .insertOne(userMessage);
+      const assistantInsertResult = await db
+        .collection<Omit<ChatMessage, "_id">>("chat_messages")
+        .insertOne(assistantMessage);
+
+      const fullTranscript = [
+        ...history,
+        { role: "user" as const, content },
+        { role: "model" as const, content: assistantReply.content },
+      ];
+
+      const titleIsCustom = result.chat.titleIsCustom ?? false;
+      const aiTitleGenerated = result.chat.aiTitleGenerated ?? false;
+      const completedTurnCount = fullTranscript.length / 2;
+      let nextTitle = result.chat.title;
+      let nextAiTitleGenerated = aiTitleGenerated;
+
+      if (!titleIsCustom && !aiTitleGenerated) {
+        if (existingMessages.length === 0) {
+          nextTitle = buildChatTitleFromMessage(content);
+        } else if (completedTurnCount >= CHAT_TITLE_GENERATION_TURN_THRESHOLD) {
+          try {
+            nextTitle = await generateChatTitle(
+              buildChatTitlePrompt(fullTranscript, generatedAt),
+            );
+            nextAiTitleGenerated = true;
+          } catch {
+            // Keep the current title and retry on the next message.
+          }
         }
       }
-    }
 
-    let conversationSummary = result.chat.conversationSummary ?? null;
-    let conversationSummaryUpdated = false;
+      let conversationSummary = result.chat.conversationSummary ?? null;
+      let conversationSummaryUpdated = false;
 
-    try {
-      const recentMessages = fullTranscript.slice(-RECENT_MESSAGE_WINDOW);
-      const hasTruncatedMessages =
-        fullTranscript.length > recentMessages.length;
+      try {
+        const recentMessages = fullTranscript.slice(-RECENT_MESSAGE_WINDOW);
+        const hasTruncatedMessages =
+          fullTranscript.length > recentMessages.length;
 
-      conversationSummary = await generateConversationSummary(
-        buildChatConversationSummaryPrompt({
-          teammateId: chatResponse.teammateId,
-          chatTitle: nextTitle,
-          olderSummary: hasTruncatedMessages
-            ? (result.chat.conversationSummary ?? null)
-            : null,
-          recentMessages,
-          userName,
-          generatedAt,
-        }),
+        conversationSummary = await generateConversationSummary(
+          buildChatConversationSummaryPrompt({
+            teammateId: chatResponse.teammateId,
+            chatTitle: nextTitle,
+            olderSummary: hasTruncatedMessages
+              ? (result.chat.conversationSummary ?? null)
+              : null,
+            recentMessages,
+            userName,
+            generatedAt,
+          }),
+        );
+        conversationSummaryUpdated = true;
+      } catch {
+        // Keep the previous summary if generation fails.
+      }
+
+      const updatedChat: Pick<
+        Chat,
+        "title" | "aiTitleGenerated" | "conversationSummary" | "updatedAt"
+      > = {
+        title: nextTitle,
+        aiTitleGenerated: nextAiTitleGenerated,
+        conversationSummary,
+        updatedAt: now,
+      };
+
+      await db.collection<StoredChat>("chats").updateOne(
+        { _id: result.chatObjectId, userId: auth.userId },
+        {
+          $set: updatedChat,
+        },
       );
-      conversationSummaryUpdated = true;
-    } catch {
-      // Keep the previous summary if generation fails.
-    }
 
-    const updatedChat: Pick<
-      Chat,
-      "title" | "aiTitleGenerated" | "conversationSummary" | "updatedAt"
-    > = {
-      title: nextTitle,
-      aiTitleGenerated: nextAiTitleGenerated,
-      conversationSummary,
-      updatedAt: now,
-    };
+      if (conversationSummaryUpdated && conversationSummary?.trim()) {
+        try {
+          await refreshAgentMemoryFromChatSummary({
+            db,
+            userId: auth.userId,
+            teammateId: chatResponse.teammateId,
+            chatTitle: nextTitle,
+            conversationSummary,
+            projectId: result.chat.projectId,
+            userName,
+            updatedAt: now,
+          });
+        } catch {
+          // Memory refresh is best-effort.
+        }
 
-    await db.collection<StoredChat>("chats").updateOne(
-      { _id: result.chatObjectId, userId: auth.userId },
-      {
-        $set: updatedChat,
-      },
-    );
-
-    if (conversationSummaryUpdated && conversationSummary?.trim()) {
-      try {
-        await refreshAgentMemoryFromChatSummary({
-          db,
-          userId: auth.userId,
-          teammateId: chatResponse.teammateId,
-          chatTitle: nextTitle,
-          conversationSummary,
-          projectId: result.chat.projectId,
-          userName,
-          updatedAt: now,
-        });
-      } catch {
-        // Memory refresh is best-effort; the reply and chat summary already
-        // succeeded, so do not fail the request if this step errors.
+        try {
+          await refreshUserMemoryFromChatSummary({
+            db,
+            userId: auth.userId,
+            teammateId: chatResponse.teammateId,
+            chatTitle: nextTitle,
+            conversationSummary,
+            projectId: result.chat.projectId,
+            userName,
+            updatedAt: now,
+          });
+        } catch {
+          // Memory refresh is best-effort.
+        }
       }
 
-      try {
-        await refreshUserMemoryFromChatSummary({
-          db,
-          userId: auth.userId,
-          teammateId: chatResponse.teammateId,
-          chatTitle: nextTitle,
-          conversationSummary,
-          projectId: result.chat.projectId,
-          userName,
-          updatedAt: now,
-        });
-      } catch {
-        // Also best-effort, and independent of the agent memory refresh
-        // above — one failing should not prevent the other from updating.
-      }
-    }
-
-    const chat = serializeChat({
-      ...result.chat,
-      ...updatedChat,
-    });
-
-    const updatedMessages = await db
-      .collection<StoredChatMessage>("chat_messages")
-      .find({ chatId: result.chatObjectId, userId: auth.userId })
-      .sort({ createdAt: 1 })
-      .toArray();
-
-    const updatedContextUsage = await getChatContextUsage(
-      db,
-      auth.userId,
-      {
+      const chat = serializeChat({
         ...result.chat,
         ...updatedChat,
-      },
-      updatedMessages,
-      userName,
-    );
+      });
 
-    return Response.json({
-      chat,
-      userMessage: serializeChatMessage({
-        ...userMessage,
-        _id: userInsertResult.insertedId,
-      }),
-      assistantMessage: serializeChatMessage({
-        ...assistantMessage,
-        _id: assistantInsertResult.insertedId,
-      }),
-      contextUsage: updatedContextUsage,
+      const updatedMessages = await db
+        .collection<StoredChatMessage>("chat_messages")
+        .find({ chatId: result.chatObjectId, userId: auth.userId })
+        .sort({ createdAt: 1 })
+        .toArray();
+
+      const updatedContextUsage = await getChatContextUsage(
+        db,
+        auth.userId,
+        {
+          ...result.chat,
+          ...updatedChat,
+        },
+        updatedMessages,
+        userName,
+      );
+
+      send({
+        type: "done",
+        data: {
+          chat,
+          userMessage: serializeChatMessage({
+            ...userMessage,
+            _id: userInsertResult.insertedId,
+          }),
+          assistantMessage: serializeChatMessage({
+            ...assistantMessage,
+            _id: assistantInsertResult.insertedId,
+          }),
+          contextUsage: updatedContextUsage,
+        },
+      } satisfies ChatStreamEvent);
     });
   } catch (error) {
     if (error instanceof KimiApiError) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { DeleteAISummaryModal } from "@/components/ui/DeleteAISummaryModal";
@@ -19,6 +19,7 @@ import {
 } from "@/components/views/shared/AgentChatMessageBubble";
 import { AgentSideChatPanelAside } from "@/components/views/shared/AgentSideChatPanelAside";
 import { useSendDocumentReviewMessage } from "@/hooks/mutations/agent-documents/useSendDocumentReviewMessage";
+import { useAgentChatAutoScroll } from "@/hooks/useAgentChatAutoScroll";
 import { useAcceptAgentDocument } from "@/hooks/mutations/agent-documents/useAcceptAgentDocument";
 import { useRejectAgentDocument } from "@/hooks/mutations/agent-documents/useRejectAgentDocument";
 import { useUpdateDocumentReviewChat } from "@/hooks/mutations/agent-documents/useUpdateDocumentReviewChat";
@@ -37,6 +38,7 @@ import {
   type KimiReasoningEffort,
 } from "@/lib/chats/kimi-reasoning-effort";
 import { shouldShowAssistantTypingIndicator } from "@/lib/chats/should-show-assistant-typing-indicator";
+import { getVisibleChatMessages } from "@/lib/chats/streaming-chat-mutation-helpers";
 import { canAcceptAgentDocument, canRejectAgentDocument } from "@/lib/agents/agent-documents";
 import { REJECT_AGENT_TASK_CONFIRMATION } from "@/lib/agents/agent-task-reject-copy";
 import type { AgentDocumentStatus } from "@/lib/types";
@@ -171,9 +173,11 @@ export function DocumentReviewChatPanel({
     });
   }
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [reviewChat?.messages.length, sendMessageMutation.isPending]);
+  useAgentChatAutoScroll(
+    reviewChat?.messages ?? [],
+    sendMessageMutation.isPending,
+    messagesEndRef,
+  );
 
   function sendMessage() {
     const trimmedMessage = message.trim();
@@ -350,7 +354,7 @@ export function DocumentReviewChatPanel({
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {reviewChat?.messages.map((chatMessage) => (
+          {getVisibleChatMessages(reviewChat?.messages ?? []).map((chatMessage) => (
             <AgentChatMessageBubble
               key={chatMessage._id}
               message={chatMessage}

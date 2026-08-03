@@ -202,21 +202,37 @@ export async function generateText(
   return text;
 }
 
-export async function generateChatReply(
-  history: GeminiChatMessage[],
-  message: string,
-  teammateId?: ChatTeammateId,
-  projectContext?: string,
-  otherConversationsContext?: string,
-  otherTeammatesContext?: string,
-  agentNotesContext?: string,
-  userName?: string | null,
-  modelName?: string,
-  generatedAt?: Date,
-  documentReviewContext?: string,
-  agentTasksDocumentsContext?: string,
-): Promise<GenerateChatReplyResult> {
-  const chat = getGenAIClient().chats.create({
+type GeminiChatGenerationOptions = {
+  history: GeminiChatMessage[];
+  message: string;
+  teammateId?: ChatTeammateId;
+  projectContext?: string;
+  otherConversationsContext?: string;
+  otherTeammatesContext?: string;
+  agentNotesContext?: string;
+  userName?: string | null;
+  modelName?: string;
+  generatedAt?: Date;
+  documentReviewContext?: string;
+  agentTasksDocumentsContext?: string;
+};
+
+function createGeminiChatSession(options: GeminiChatGenerationOptions) {
+  const {
+    history,
+    teammateId,
+    projectContext,
+    otherConversationsContext,
+    otherTeammatesContext,
+    agentNotesContext,
+    userName,
+    modelName,
+    generatedAt,
+    documentReviewContext,
+    agentTasksDocumentsContext,
+  } = options;
+
+  return getGenAIClient().chats.create({
     model: modelName ?? getChatModelName(),
     config: {
       systemInstruction: buildChatSystemPrompt(
@@ -241,18 +257,122 @@ export async function generateChatReply(
       parts: [{ text: entry.content }],
     })),
   });
+}
 
-  const response = await chat.sendMessage({ message });
-  const text = extractUserFacingText(response);
+function extractIncrementalUserFacingText(
+  chunk: GenerateContentResponse,
+): string {
+  const parts = chunk.candidates?.[0]?.content?.parts ?? [];
+  let text = "";
+
+  for (const part of parts) {
+    if (part.thought) {
+      continue;
+    }
+
+    if (
+      part.executableCode ||
+      part.functionCall ||
+      part.codeExecutionResult ||
+      part.functionResponse ||
+      part.toolCall
+    ) {
+      continue;
+    }
+
+    if (typeof part.text === "string") {
+      text += part.text;
+    }
+  }
+
+  return text;
+}
+
+export type GeminiChatReplyStreamYield =
+  | { type: "token"; delta: string }
+  | { type: "complete"; result: GenerateChatReplyResult };
+
+export async function* streamGeminiChatReply(
+  options: GeminiChatGenerationOptions,
+): AsyncGenerator<GeminiChatReplyStreamYield> {
+  const chat = createGeminiChatSession(options);
+  const responseStream = await chat.sendMessageStream({
+    message: options.message,
+  });
+
+  let accumulatedText = "";
+  let latestResponse: GenerateContentResponse | undefined;
+
+  for await (const chunk of responseStream) {
+    latestResponse = chunk;
+    const delta = extractIncrementalUserFacingText(chunk);
+
+    if (!delta) {
+      continue;
+    }
+
+    accumulatedText += delta;
+    yield { type: "token", delta };
+  }
+
+  const sanitized = stripInternalModelArtifacts(accumulatedText.trim());
+  const text =
+    sanitized ||
+    (latestResponse ? extractUserFacingText(latestResponse) : undefined);
 
   if (!text) {
     throw new Error("Gemini returned an empty response");
   }
 
-  return {
-    content: text,
-    ...extractGroundingFromResponse(response),
+  yield {
+    type: "complete",
+    result: {
+      content: text,
+      ...(latestResponse ? extractGroundingFromResponse(latestResponse) : {}),
+    },
   };
+}
+
+export async function generateChatReply(
+  history: GeminiChatMessage[],
+  message: string,
+  teammateId?: ChatTeammateId,
+  projectContext?: string,
+  otherConversationsContext?: string,
+  otherTeammatesContext?: string,
+  agentNotesContext?: string,
+  userName?: string | null,
+  modelName?: string,
+  generatedAt?: Date,
+  documentReviewContext?: string,
+  agentTasksDocumentsContext?: string,
+): Promise<GenerateChatReplyResult> {
+  let result: GenerateChatReplyResult | undefined;
+
+  for await (const event of streamGeminiChatReply({
+    history,
+    message,
+    teammateId,
+    projectContext,
+    otherConversationsContext,
+    otherTeammatesContext,
+    agentNotesContext,
+    userName,
+    modelName,
+    generatedAt,
+    documentReviewContext,
+    agentTasksDocumentsContext,
+  })) {
+    if (event.type === "complete") {
+      result = event.result;
+    }
+  }
+
+  if (!result) {
+    throw new Error("Gemini returned an empty response");
+  }
+
+  return result;
 }
 
 export async function generateProjectSummary(prompt: string): Promise<string> {

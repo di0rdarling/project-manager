@@ -5,13 +5,22 @@ import {
   type ChatModelId,
 } from "@/lib/chats/chat-models";
 import { toIsoString } from "@/lib/dates";
-import type { User, UserResponse } from "@/lib/types";
+import type { User, UserResponse, UserSubscription } from "@/lib/types";
+
+const DEFAULT_USER_SUBSCRIPTION: UserSubscription = "free";
+
+export function normalizeUserSubscription(
+  subscription: UserSubscription | null | undefined,
+): UserSubscription {
+  return subscription === "premium" ? "premium" : DEFAULT_USER_SUBSCRIPTION;
+}
 
 export const USERS_COLLECTION = "users";
 
-export type StoredUser = Omit<User, "createdAt" | "updatedAt"> & {
+export type StoredUser = Omit<User, "createdAt" | "updatedAt" | "subscription"> & {
   createdAt: string | Date;
   updatedAt: string | Date;
+  subscription?: UserSubscription;
 };
 
 export function normalizeEmail(email: string): string {
@@ -23,6 +32,7 @@ export function serializeUser(user: StoredUser): UserResponse {
     _id: user._id.toString(),
     email: user.email,
     name: user.name,
+    subscription: normalizeUserSubscription(user.subscription),
     agentTaskGenerationModelId: user.agentTaskGenerationModelId ?? null,
     dashboardDigestModelId: user.dashboardDigestModelId ?? null,
     createdAt: toIsoString(user.createdAt),
@@ -82,6 +92,7 @@ export async function createUser(
     email: normalizeEmail(input.email),
     passwordHash: input.passwordHash,
     name: input.name?.trim() || null,
+    subscription: DEFAULT_USER_SUBSCRIPTION,
     createdAt: now,
     updatedAt: now,
   };

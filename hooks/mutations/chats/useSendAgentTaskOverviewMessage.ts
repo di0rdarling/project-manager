@@ -1,11 +1,18 @@
 "use client";
 
+import { useRef } from "react";
 import {
   useMutation,
   useQueryClient,
   type UseMutationOptions,
 } from "@tanstack/react-query";
 import { sendAgentTaskOverviewMessage } from "@/lib/api/agent-task-overview-chat";
+import {
+  appendAssistantStreamDelta,
+  createOptimisticAssistantMessage,
+  createOptimisticUserMessage,
+  finalizePendingChatMessages,
+} from "@/lib/chats/streaming-chat-mutation-helpers";
 import { agentMemoryKeys, agentTasksKeys } from "@/lib/query-keys";
 import { syncReviewChatFromOverviewChat } from "@/lib/query-cache/sync-task-conversation-cache";
 import type {
@@ -30,10 +37,10 @@ export function useSendAgentTaskOverviewMessage(
   options?: UseSendAgentTaskOverviewMessageOptions,
 ) {
   const queryClient = useQueryClient();
+  const streamingAssistantMessageIdRef = useRef<string | null>(null);
   const { onSuccess, onError, onMutate, ...restOptions } = options ?? {};
 
   return useMutation({
-    mutationFn: sendAgentTaskOverviewMessage,
     retry: false,
     ...restOptions,
     onMutate: async (variables, mutationContext) => {
@@ -48,18 +55,20 @@ export function useSendAgentTaskOverviewMessage(
       const previousOverviewChat =
         queryClient.getQueryData<AgentTaskOverviewChatResponse>(queryKey);
 
-      if (previousOverviewChat) {
-        const optimisticUserMessage: AgentTaskOverviewChatResponse["messages"][number] =
-          {
-            _id: `pending-user-${Date.now()}`,
-            role: "user",
-            content: variables.content,
-            createdAt: new Date().toISOString(),
-          };
+      const optimisticUserMessage = createOptimisticUserMessage(
+        variables.content,
+      );
+      const optimisticAssistantMessage = createOptimisticAssistantMessage();
+      streamingAssistantMessageIdRef.current = optimisticAssistantMessage._id;
 
+      if (previousOverviewChat) {
         queryClient.setQueryData<AgentTaskOverviewChatResponse>(queryKey, {
           ...previousOverviewChat,
-          messages: [...previousOverviewChat.messages, optimisticUserMessage],
+          messages: [
+            ...previousOverviewChat.messages,
+            optimisticUserMessage,
+            optimisticAssistantMessage,
+          ],
         });
       }
 
@@ -67,7 +76,45 @@ export function useSendAgentTaskOverviewMessage(
 
       return { previousOverviewChat, queryKey };
     },
+    mutationFn: async (variables) => {
+      const queryKey = agentTasksKeys.overviewChat(
+        variables.teammateId,
+        variables.projectId,
+        variables.taskTitle,
+      );
+
+      return sendAgentTaskOverviewMessage({
+        ...variables,
+        onToken: (delta) => {
+          const assistantMessageId = streamingAssistantMessageIdRef.current;
+
+          if (!assistantMessageId) {
+            return;
+          }
+
+          queryClient.setQueryData<AgentTaskOverviewChatResponse>(
+            queryKey,
+            (current) => {
+              if (!current) {
+                return current;
+              }
+
+              return {
+                ...current,
+                messages: appendAssistantStreamDelta(
+                  current.messages,
+                  assistantMessageId,
+                  delta,
+                ),
+              };
+            },
+          );
+        },
+      });
+    },
     onError: (error, variables, onMutateResult, mutationContext) => {
+      streamingAssistantMessageIdRef.current = null;
+
       if (onMutateResult?.previousOverviewChat && onMutateResult.queryKey) {
         queryClient.setQueryData(
           onMutateResult.queryKey,
@@ -78,6 +125,8 @@ export function useSendAgentTaskOverviewMessage(
       onError?.(error, variables, onMutateResult, mutationContext);
     },
     onSuccess: (data, variables, onMutateResult, context) => {
+      streamingAssistantMessageIdRef.current = null;
+
       const currentTaskTitle = data.task.title;
       const titleChanged = currentTaskTitle !== variables.taskTitle;
       const sourceQueryKey = agentTasksKeys.overviewChat(
@@ -105,23 +154,13 @@ export function useSendAgentTaskOverviewMessage(
           };
         }
 
-        const nextMessages = current.messages.filter(
-          (entry) => !entry._id.startsWith("pending-user-"),
-        );
-
-        if (!nextMessages.some((entry) => entry._id === data.userMessage._id)) {
-          nextMessages.push(data.userMessage);
-        }
-
-        if (
-          !nextMessages.some((entry) => entry._id === data.assistantMessage._id)
-        ) {
-          nextMessages.push(data.assistantMessage);
-        }
-
         return {
           ...current,
-          messages: nextMessages,
+          messages: finalizePendingChatMessages(
+            current.messages,
+            data.userMessage,
+            data.assistantMessage,
+          ),
           task: data.task,
           modelId: data.modelId,
           reasoningEffort: data.reasoningEffort,

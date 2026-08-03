@@ -1,6 +1,7 @@
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type { ChatModelId } from "@/lib/chats/chat-models";
 import type { KimiReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
+import { consumeChatStream } from "@/lib/chats/chat-stream-protocol";
 import { parseResponse } from "@/lib/api/response";
 import type {
   AgentDocumentReviewChatResponse,
@@ -23,8 +24,9 @@ export async function sendDocumentReviewMessage(input: {
   teammateId: ChatTeammateId;
   documentId: string;
   content: string;
+  onToken?: (delta: string) => void;
 }): Promise<SendDocumentReviewMessageResponse> {
-  const { teammateId, documentId, content } = input;
+  const { teammateId, documentId, content, onToken } = input;
   const response = await fetch(
     `/api/chats/agents/${teammateId}/documents/${documentId}/review-chat`,
     {
@@ -34,7 +36,10 @@ export async function sendDocumentReviewMessage(input: {
     },
   );
 
-  return parseResponse<SendDocumentReviewMessageResponse>(response);
+  return consumeChatStream<SendDocumentReviewMessageResponse>(
+    response,
+    onToken ?? (() => {}),
+  );
 }
 
 export async function updateDocumentReviewChat(input: {

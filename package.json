@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "migrate:add-users": "node --env-file=.env scripts/migrate-add-users.mjs",
+    "migrate:add-user-subscription": "node --env-file=.env scripts/migrate-add-user-subscription.mjs",
     "migrate:feature-requirement-ids": "node --env-file=.env scripts/migrate-feature-requirement-ids.mjs"
   },
   "dependencies": {

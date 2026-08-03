@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
@@ -17,6 +17,7 @@ import {
 } from "@/components/views/shared/AgentChatMessageBubble";
 import { AgentSideChatPanelAside } from "@/components/views/shared/AgentSideChatPanelAside";
 import { useSendAgentTaskOverviewMessage } from "@/hooks/mutations/chats/useSendAgentTaskOverviewMessage";
+import { useAgentChatAutoScroll } from "@/hooks/useAgentChatAutoScroll";
 import { useUpdateAgentTaskOverviewChat } from "@/hooks/mutations/chats/useUpdateAgentTaskOverviewChat";
 import { useFetchAgentTaskOverviewChat } from "@/hooks/queries/useFetchAgentTaskOverviewChat";
 import {
@@ -33,6 +34,7 @@ import {
   type KimiReasoningEffort,
 } from "@/lib/chats/kimi-reasoning-effort";
 import { shouldShowAssistantTypingIndicator } from "@/lib/chats/should-show-assistant-typing-indicator";
+import { getVisibleChatMessages } from "@/lib/chats/streaming-chat-mutation-helpers";
 import type { AgentTask } from "@/lib/types";
 
 type AgentTaskOverviewChatPanelProps = {
@@ -110,9 +112,11 @@ export function AgentTaskOverviewChatPanel({
     overviewChat?.messages ?? [],
   );
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [overviewChat?.messages.length, sendMessageMutation.isPending]);
+  useAgentChatAutoScroll(
+    overviewChat?.messages ?? [],
+    sendMessageMutation.isPending,
+    messagesEndRef,
+  );
 
   function sendMessage() {
     const trimmedMessage = message.trim();
@@ -280,7 +284,7 @@ export function AgentTaskOverviewChatPanel({
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {overviewChat?.messages.map((chatMessage) => (
+          {getVisibleChatMessages(overviewChat?.messages ?? []).map((chatMessage) => (
             <AgentChatMessageBubble
               key={chatMessage._id}
               message={chatMessage}

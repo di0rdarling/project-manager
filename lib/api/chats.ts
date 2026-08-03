@@ -1,3 +1,4 @@
+import { consumeChatStream } from "@/lib/chats/chat-stream-protocol";
 import { parseResponse } from "@/lib/api/response";
 import type { ChatModelId } from "@/lib/chats/chat-models";
 import type { KimiReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
@@ -43,15 +44,19 @@ export async function createChat(input: {
 export async function sendChatMessage(input: {
   chatId: string;
   content: string;
+  onToken?: (delta: string) => void;
 }): Promise<SendChatMessageResponse> {
-  const { chatId, content } = input;
+  const { chatId, content, onToken } = input;
   const response = await fetch(`/api/chats/${chatId}/messages`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ content }),
   });
 
-  return parseResponse<SendChatMessageResponse>(response);
+  return consumeChatStream<SendChatMessageResponse>(
+    response,
+    onToken ?? (() => {}),
+  );
 }
 
 export async function updateChat(input: {

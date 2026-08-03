@@ -118,10 +118,21 @@ async function runUpdateTaskTool(
   }
 }
 
-async function generateGeminiOverviewChatReply(
+function toKimiRole(role: GeminiChatMessage["role"]): "user" | "assistant" {
+  return role === "model" ? "assistant" : "user";
+}
+
+export type AgentTaskOverviewChatReplyStreamYield =
+  | { type: "token"; delta: string }
+  | {
+      type: "complete";
+      result: GenerateAgentTaskOverviewChatReplyResult;
+    };
+
+async function* streamGeminiOverviewChatReply(
   input: SharedGenerationInput,
   onTaskUpdated: (task: AgentTask) => void,
-): Promise<string> {
+): AsyncGenerator<AgentTaskOverviewChatReplyStreamYield> {
   const model = getGeminiClient().getGenerativeModel({
     model: getChatModelApiName(input.modelId),
     systemInstruction: input.systemPrompt,
@@ -135,12 +146,29 @@ async function generateGeminiOverviewChatReply(
   }));
 
   const chat = model.startChat({ history });
-  let result = await chat.sendMessage(input.message);
+  let messageToSend: string | Part[] = input.message;
+  let finalText = "";
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
-    const functionCalls = result.response.functionCalls() ?? [];
+    const streamResult = await chat.sendMessageStream(messageToSend);
+    let roundText = "";
+
+    for await (const chunk of streamResult.stream) {
+      const chunkText = chunk.text();
+
+      if (!chunkText) {
+        continue;
+      }
+
+      roundText += chunkText;
+      yield { type: "token", delta: chunkText };
+    }
+
+    const response = await streamResult.response;
+    const functionCalls = response.functionCalls() ?? [];
 
     if (functionCalls.length === 0) {
+      finalText = roundText.trim() || response.text().trim();
       break;
     }
 
@@ -174,26 +202,26 @@ async function generateGeminiOverviewChatReply(
       });
     }
 
-    result = await chat.sendMessage(functionResponses);
+    messageToSend = functionResponses;
   }
 
-  const text = result.response.text().trim();
-
-  if (!text) {
+  if (!finalText) {
     throw new Error("Gemini returned an empty response");
   }
 
-  return text;
+  yield {
+    type: "complete",
+    result: {
+      content: finalText,
+      updatedTask: null,
+    },
+  };
 }
 
-function toKimiRole(role: GeminiChatMessage["role"]): "user" | "assistant" {
-  return role === "model" ? "assistant" : "user";
-}
-
-async function generateKimiOverviewChatReply(
+async function* streamKimiOverviewChatReply(
   input: SharedGenerationInput,
   onTaskUpdated: (task: AgentTask) => void,
-): Promise<string> {
+): AsyncGenerator<AgentTaskOverviewChatReplyStreamYield> {
   const client = getKimiClient();
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: "system", content: input.systemPrompt },
@@ -204,23 +232,101 @@ async function generateKimiOverviewChatReply(
     { role: "user", content: input.message },
   ];
 
-  let completion = await client.chat.completions.create({
-    model: getChatModelApiName(input.modelId),
-    ...(input.reasoningEffort ? { reasoning_effort: input.reasoningEffort } : {}),
-    messages,
-    tools: [UPDATE_AGENT_TASK_OPENAI_TOOL],
-  } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming);
+  let finalText = "";
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
-    const assistantMessage = completion.choices[0]?.message;
+    const stream = await client.chat.completions.create({
+      model: getChatModelApiName(input.modelId),
+      ...(input.reasoningEffort ? { reasoning_effort: input.reasoningEffort } : {}),
+      messages,
+      tools: [UPDATE_AGENT_TASK_OPENAI_TOOL],
+      stream: true,
+    });
 
-    if (!assistantMessage?.tool_calls?.length) {
+    let roundText = "";
+    let assistantMessage:
+      | OpenAI.Chat.Completions.ChatCompletionMessage
+      | undefined;
+    const toolCallsByIndex = new Map<
+      number,
+      { id: string; name: string; arguments: string }
+    >();
+
+    for await (const chunk of stream) {
+      const choice = chunk.choices[0];
+
+      if (!choice) {
+        continue;
+      }
+
+      if (choice.delta.content) {
+        roundText += choice.delta.content;
+        yield { type: "token", delta: choice.delta.content };
+      }
+
+      if (choice.delta.tool_calls) {
+        for (const toolCall of choice.delta.tool_calls) {
+          const existing = toolCallsByIndex.get(toolCall.index);
+
+          if (!existing) {
+            toolCallsByIndex.set(toolCall.index, {
+              id: toolCall.id ?? "",
+              name: toolCall.function?.name ?? "",
+              arguments: toolCall.function?.arguments ?? "",
+            });
+            continue;
+          }
+
+          if (toolCall.function?.name) {
+            existing.name += toolCall.function.name;
+          }
+
+          if (toolCall.function?.arguments) {
+            existing.arguments += toolCall.function.arguments;
+          }
+        }
+      }
+
+      if (choice.finish_reason) {
+        assistantMessage = {
+          role: "assistant",
+          content: roundText || null,
+          refusal: null,
+          tool_calls:
+            toolCallsByIndex.size > 0
+              ? Array.from(toolCallsByIndex.values()).map((toolCall) => ({
+                  id: toolCall.id,
+                  type: "function" as const,
+                  function: {
+                    name: toolCall.name,
+                    arguments: toolCall.arguments,
+                  },
+                }))
+              : undefined,
+        };
+      }
+    }
+
+    const toolCalls = assistantMessage?.tool_calls ?? [];
+
+    if (!toolCalls.length) {
+      const reasoningContent = (
+        assistantMessage as OpenAI.Chat.Completions.ChatCompletionMessage & {
+          reasoning_content?: string | null;
+        }
+      )?.reasoning_content?.trim();
+      finalText = roundText.trim() || reasoningContent || "";
+
+      if (!finalText) {
+        throw new KimiApiError("Kimi returned an empty response.", 502);
+      }
+
       break;
     }
 
-    messages.push(assistantMessage);
+    messages.push(assistantMessage!);
 
-    for (const toolCall of assistantMessage.tool_calls) {
+    for (const toolCall of toolCalls) {
       if (toolCall.type !== "function") {
         continue;
       }
@@ -257,36 +363,25 @@ async function generateKimiOverviewChatReply(
         content: JSON.stringify(formatToolResult(toolResult)),
       });
     }
-
-    completion = await client.chat.completions.create({
-      model: getChatModelApiName(input.modelId),
-      ...(input.reasoningEffort ? { reasoning_effort: input.reasoningEffort } : {}),
-      messages,
-      tools: [UPDATE_AGENT_TASK_OPENAI_TOOL],
-    } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming);
   }
 
-  const assistantMessage = completion.choices[0]?.message;
-  const content = assistantMessage?.content?.trim();
-  const reasoningContent = (
-    assistantMessage as OpenAI.Chat.Completions.ChatCompletionMessage & {
-      reasoning_content?: string | null;
-    }
-  )?.reasoning_content?.trim();
-
-  const text = content || reasoningContent;
-
-  if (!text) {
+  if (!finalText) {
     throw new KimiApiError("Kimi returned an empty response.", 502);
   }
 
-  return text;
+  yield {
+    type: "complete",
+    result: {
+      content: finalText,
+      updatedTask: null,
+    },
+  };
 }
 
-export async function generateAgentTaskOverviewChatReply(
+export async function* streamAgentTaskOverviewChatReply(
   input: GenerateAgentTaskOverviewChatReplyInput,
   toolContext: AgentTaskOverviewToolContext,
-): Promise<GenerateAgentTaskOverviewChatReplyResult> {
+): AsyncGenerator<AgentTaskOverviewChatReplyStreamYield> {
   let updatedTask: AgentTask | null = null;
 
   const onTaskUpdated = (task: AgentTask) => {
@@ -299,10 +394,42 @@ export async function generateAgentTaskOverviewChatReply(
     toolContext,
   };
 
-  const content =
+  const providerStream =
     getChatModelProvider(input.modelId) === "kimi"
-      ? await generateKimiOverviewChatReply(sharedInput, onTaskUpdated)
-      : await generateGeminiOverviewChatReply(sharedInput, onTaskUpdated);
+      ? streamKimiOverviewChatReply(sharedInput, onTaskUpdated)
+      : streamGeminiOverviewChatReply(sharedInput, onTaskUpdated);
 
-  return { content, updatedTask };
+  for await (const event of providerStream) {
+    if (event.type === "complete") {
+      yield {
+        type: "complete",
+        result: {
+          ...event.result,
+          updatedTask,
+        },
+      };
+      continue;
+    }
+
+    yield event;
+  }
+}
+
+export async function generateAgentTaskOverviewChatReply(
+  input: GenerateAgentTaskOverviewChatReplyInput,
+  toolContext: AgentTaskOverviewToolContext,
+): Promise<GenerateAgentTaskOverviewChatReplyResult> {
+  let result: GenerateAgentTaskOverviewChatReplyResult | undefined;
+
+  for await (const event of streamAgentTaskOverviewChatReply(input, toolContext)) {
+    if (event.type === "complete") {
+      result = event.result;
+    }
+  }
+
+  if (!result) {
+    throw new Error("Agent task overview chat returned an empty response");
+  }
+
+  return result;
 }

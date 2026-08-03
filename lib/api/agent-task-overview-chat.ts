@@ -1,6 +1,7 @@
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type { ChatModelId } from "@/lib/chats/chat-models";
 import type { KimiReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
+import { consumeChatStream } from "@/lib/chats/chat-stream-protocol";
 import { parseResponse } from "@/lib/api/response";
 import type {
   AgentTaskOverviewChatResponse,
@@ -35,8 +36,9 @@ export async function sendAgentTaskOverviewMessage(input: {
   projectId: string;
   taskTitle: string;
   content: string;
+  onToken?: (delta: string) => void;
 }): Promise<SendAgentTaskOverviewMessageResponse> {
-  const { teammateId, projectId, taskTitle, content } = input;
+  const { teammateId, projectId, taskTitle, content, onToken } = input;
   const response = await fetch(
     getAgentTaskOverviewChatUrl({ teammateId, projectId, taskTitle }),
     {
@@ -46,7 +48,10 @@ export async function sendAgentTaskOverviewMessage(input: {
     },
   );
 
-  return parseResponse<SendAgentTaskOverviewMessageResponse>(response);
+  return consumeChatStream<SendAgentTaskOverviewMessageResponse>(
+    response,
+    onToken ?? (() => {}),
+  );
 }
 
 export async function updateAgentTaskOverviewChat(input: {

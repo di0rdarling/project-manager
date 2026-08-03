@@ -7,15 +7,17 @@ import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import {
   countChatContextTokens as countGeminiChatContextTokens,
   countTextTokens as countGeminiTextTokens,
-  generateChatReply as generateGeminiChatReply,
+  streamGeminiChatReply,
   type CountChatContextTokensInput,
   type GeminiChatMessage,
+  type GeminiChatReplyStreamYield,
   type GenerateChatReplyResult,
 } from "@/lib/gemini";
 import {
   countKimiChatContextTokens,
   countKimiTextTokens,
-  generateKimiChatReply,
+  streamKimiChatReply,
+  type KimiChatReplyStreamYield,
 } from "@/lib/kimi";
 import type { KimiReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
 
@@ -27,6 +29,57 @@ export type {
 
 function resolveModelId(modelName?: string): ChatModelId {
   return normalizeChatModelId(modelName);
+}
+
+export type ChatReplyStreamYield =
+  | { type: "token"; delta: string }
+  | { type: "complete"; result: GenerateChatReplyResult };
+
+export async function* streamChatReply(
+  history: GeminiChatMessage[],
+  message: string,
+  teammateId?: ChatTeammateId,
+  projectContext?: string,
+  otherConversationsContext?: string,
+  otherTeammatesContext?: string,
+  agentNotesContext?: string,
+  userName?: string | null,
+  modelName?: string,
+  reasoningEffort?: KimiReasoningEffort,
+  generatedAt?: Date,
+  documentReviewContext?: string,
+  agentTasksDocumentsContext?: string,
+): AsyncGenerator<ChatReplyStreamYield> {
+  const modelId = resolveModelId(modelName);
+  const sharedInput = {
+    history,
+    message,
+    teammateId,
+    projectContext,
+    otherConversationsContext,
+    otherTeammatesContext,
+    agentNotesContext,
+    userName,
+    modelName: modelId,
+    generatedAt,
+    documentReviewContext,
+    agentTasksDocumentsContext,
+  };
+
+  const providerStream: AsyncGenerator<
+    GeminiChatReplyStreamYield | KimiChatReplyStreamYield
+  > =
+    getChatModelProvider(modelId) === "kimi"
+      ? streamKimiChatReply({
+          ...sharedInput,
+          modelId,
+          reasoningEffort,
+        })
+      : streamGeminiChatReply(sharedInput);
+
+  for await (const event of providerStream) {
+    yield event;
+  }
 }
 
 export async function generateChatReply(
@@ -46,25 +99,9 @@ export async function generateChatReply(
 ): Promise<GenerateChatReplyResult> {
   const modelId = resolveModelId(modelName);
 
-  if (getChatModelProvider(modelId) === "kimi") {
-    return generateKimiChatReply(
-      history,
-      message,
-      teammateId,
-      projectContext,
-      otherConversationsContext,
-      otherTeammatesContext,
-      agentNotesContext,
-      userName,
-      modelId,
-      reasoningEffort,
-      generatedAt,
-      documentReviewContext,
-      agentTasksDocumentsContext,
-    );
-  }
+  let result: GenerateChatReplyResult | undefined;
 
-  return generateGeminiChatReply(
+  for await (const event of streamChatReply(
     history,
     message,
     teammateId,
@@ -74,10 +111,21 @@ export async function generateChatReply(
     agentNotesContext,
     userName,
     modelId,
+    reasoningEffort,
     generatedAt,
     documentReviewContext,
     agentTasksDocumentsContext,
-  );
+  )) {
+    if (event.type === "complete") {
+      result = event.result;
+    }
+  }
+
+  if (!result) {
+    throw new Error("Chat returned an empty response");
+  }
+
+  return result;
 }
 
 export async function countChatContextTokens(

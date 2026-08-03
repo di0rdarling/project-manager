@@ -30,6 +30,7 @@ import {
   TeammateProfileLink,
 } from "@/components/views/Chats/TeammateProfileLink";
 import { useSendChatMessage } from "@/hooks/mutations/chats/useSendChatMessage";
+import { useAgentChatAutoScroll } from "@/hooks/useAgentChatAutoScroll";
 import { useUnarchiveChat } from "@/hooks/mutations/chats/useUnarchiveChat";
 import { useUpdateChat } from "@/hooks/mutations/chats/useUpdateChat";
 import { useFetchChat } from "@/hooks/queries/useFetchChat";
@@ -52,6 +53,7 @@ import {
   parseAgentProfileNavigationContext,
 } from "@/lib/chats/agent-profile-navigation";
 import { shouldShowAssistantTypingIndicator } from "@/lib/chats/should-show-assistant-typing-indicator";
+import { getVisibleChatMessages } from "@/lib/chats/streaming-chat-mutation-helpers";
 import { formatDisplayDateTime } from "@/lib/dates";
 import type { ChatMessageResponse } from "@/lib/types";
 
@@ -276,9 +278,11 @@ export default function ChatDetailView({
     chat?.messages ?? [],
   );
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chat?.messages.length, sendMessageMutation.isPending]);
+  useAgentChatAutoScroll(
+    chat?.messages ?? [],
+    sendMessageMutation.isPending,
+    messagesEndRef,
+  );
 
   function sendMessage() {
     const trimmedMessage = message.trim();
@@ -523,7 +527,7 @@ export default function ChatDetailView({
               </p>
             </div>
           ) : (
-            chat.messages.map((chatMessage) => (
+            getVisibleChatMessages(chat.messages).map((chatMessage) => (
               <ChatMessageBubble
                 key={chatMessage._id}
                 message={chatMessage}

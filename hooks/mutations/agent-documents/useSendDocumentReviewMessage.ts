@@ -1,11 +1,18 @@
 "use client";
 
+import { useRef } from "react";
 import {
   useMutation,
   useQueryClient,
   type UseMutationOptions,
 } from "@tanstack/react-query";
 import { sendDocumentReviewMessage } from "@/lib/api/agent-document-review-chat";
+import {
+  appendAssistantStreamDelta,
+  createOptimisticAssistantMessage,
+  createOptimisticUserMessage,
+  finalizePendingChatMessages,
+} from "@/lib/chats/streaming-chat-mutation-helpers";
 import { agentDocumentKeys, agentMemoryKeys } from "@/lib/query-keys";
 import { syncOverviewChatFromReviewChat } from "@/lib/query-cache/sync-task-conversation-cache";
 import type {
@@ -30,54 +37,82 @@ export function useSendDocumentReviewMessage(
   options?: UseSendDocumentReviewMessageOptions,
 ) {
   const queryClient = useQueryClient();
+  const streamingAssistantMessageIdRef = useRef<string | null>(null);
   const { onSuccess, onError, onMutate, ...restOptions } = options ?? {};
 
   return useMutation({
-    mutationFn: sendDocumentReviewMessage,
     retry: false,
     ...restOptions,
     onMutate: async (variables, mutationContext) => {
-      await queryClient.cancelQueries({
-        queryKey: agentDocumentKeys.reviewChat(
-          variables.teammateId,
-          variables.documentId,
-        ),
-      });
+      const queryKey = agentDocumentKeys.reviewChat(
+        variables.teammateId,
+        variables.documentId,
+      );
+
+      await queryClient.cancelQueries({ queryKey });
 
       const previousReviewChat =
-        queryClient.getQueryData<AgentDocumentReviewChatResponse>(
-          agentDocumentKeys.reviewChat(
-            variables.teammateId,
-            variables.documentId,
-          ),
-        );
+        queryClient.getQueryData<AgentDocumentReviewChatResponse>(queryKey);
+
+      const optimisticUserMessage = createOptimisticUserMessage(
+        variables.content,
+      );
+      const optimisticAssistantMessage = createOptimisticAssistantMessage();
+      streamingAssistantMessageIdRef.current = optimisticAssistantMessage._id;
 
       if (previousReviewChat) {
-        const optimisticUserMessage: AgentDocumentReviewChatResponse["messages"][number] =
-          {
-            _id: `pending-user-${Date.now()}`,
-            role: "user",
-            content: variables.content,
-            createdAt: new Date().toISOString(),
-          };
-
-        queryClient.setQueryData<AgentDocumentReviewChatResponse>(
-          agentDocumentKeys.reviewChat(
-            variables.teammateId,
-            variables.documentId,
-          ),
-          {
-            ...previousReviewChat,
-            messages: [...previousReviewChat.messages, optimisticUserMessage],
-          },
-        );
+        queryClient.setQueryData<AgentDocumentReviewChatResponse>(queryKey, {
+          ...previousReviewChat,
+          messages: [
+            ...previousReviewChat.messages,
+            optimisticUserMessage,
+            optimisticAssistantMessage,
+          ],
+        });
       }
 
       await onMutate?.(variables, mutationContext);
 
       return { previousReviewChat };
     },
+    mutationFn: async (variables) => {
+      const queryKey = agentDocumentKeys.reviewChat(
+        variables.teammateId,
+        variables.documentId,
+      );
+
+      return sendDocumentReviewMessage({
+        ...variables,
+        onToken: (delta) => {
+          const assistantMessageId = streamingAssistantMessageIdRef.current;
+
+          if (!assistantMessageId) {
+            return;
+          }
+
+          queryClient.setQueryData<AgentDocumentReviewChatResponse>(
+            queryKey,
+            (current) => {
+              if (!current) {
+                return current;
+              }
+
+              return {
+                ...current,
+                messages: appendAssistantStreamDelta(
+                  current.messages,
+                  assistantMessageId,
+                  delta,
+                ),
+              };
+            },
+          );
+        },
+      });
+    },
     onError: (error, variables, onMutateResult, mutationContext) => {
+      streamingAssistantMessageIdRef.current = null;
+
       if (onMutateResult?.previousReviewChat) {
         queryClient.setQueryData(
           agentDocumentKeys.reviewChat(
@@ -91,6 +126,8 @@ export function useSendDocumentReviewMessage(
       onError?.(error, variables, onMutateResult, mutationContext);
     },
     onSuccess: (data, variables, onMutateResult, context) => {
+      streamingAssistantMessageIdRef.current = null;
+
       let nextReviewChat: AgentDocumentReviewChatResponse | undefined;
 
       queryClient.setQueryData<AgentDocumentReviewChatResponse>(
@@ -112,25 +149,15 @@ export function useSendDocumentReviewMessage(
             };
           }
 
-          const nextMessages = current.messages.filter(
-            (entry) => !entry._id.startsWith("pending-user-"),
-          );
-
-          if (!nextMessages.some((entry) => entry._id === data.userMessage._id)) {
-            nextMessages.push(data.userMessage);
-          }
-
-          if (
-            !nextMessages.some((entry) => entry._id === data.assistantMessage._id)
-          ) {
-            nextMessages.push(data.assistantMessage);
-          }
-
           nextReviewChat = {
             ...current,
             document: data.document,
             taskConversation: data.taskConversation ?? current.taskConversation,
-            messages: nextMessages,
+            messages: finalizePendingChatMessages(
+              current.messages,
+              data.userMessage,
+              data.assistantMessage,
+            ),
             modelId: data.modelId,
             reasoningEffort: data.reasoningEffort,
             conversationSummary: data.conversationSummary,

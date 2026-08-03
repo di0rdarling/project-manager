@@ -3,11 +3,14 @@ import type { ChatModelId } from "@/lib/chats/chat-models";
 import type { KimiReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 
+export type UserSubscription = "free" | "premium";
+
 type UserBase<TId> = {
   _id: TId;
   email: string;
   passwordHash: string;
   name: string | null;
+  subscription: UserSubscription;
   /** Preferred model for generating agent task suggestions. */
   agentTaskGenerationModelId?: ChatModelId | null;
   /** Preferred model for generating the cross-project dashboard digest. */
