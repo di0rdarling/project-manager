@@ -294,7 +294,14 @@ export default function AgentTasks({
       updatedTask &&
       (updatedTask.outputDocumentStatus !== selectedTask.outputDocumentStatus ||
         getAgentTaskDecisionStatus(updatedTask) !==
-          getAgentTaskDecisionStatus(selectedTask))
+          getAgentTaskDecisionStatus(selectedTask) ||
+        updatedTask.detail !== selectedTask.detail ||
+        updatedTask.rationale !== selectedTask.rationale ||
+        updatedTask.impact !== selectedTask.impact ||
+        updatedTask.riskIfSkipped !== selectedTask.riskIfSkipped ||
+        updatedTask.outputDescription !== selectedTask.outputDescription ||
+        updatedTask.title !== selectedTask.title ||
+        updatedTask.projectName !== selectedTask.projectName)
     ) {
       setSelectedTask(updatedTask);
     }
@@ -646,6 +653,7 @@ export default function AgentTasks({
             ? () => handleGenerateAlternative(selectedTask.title)
             : undefined
         }
+        onTaskUpdated={setSelectedTask}
         isGeneratingAlternative={
           isReplacingTask && replacingTaskTitle === selectedTask?.title
         }

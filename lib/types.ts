@@ -470,6 +470,8 @@ export type AgentTaskOverviewChatResponse = {
 export type SendAgentTaskOverviewMessageResponse = {
   userMessage: AgentTaskOverviewMessageResponse;
   assistantMessage: AgentTaskOverviewMessageResponse;
+  task: AgentTask;
+  previousTaskTitle?: string;
   modelId: ChatModelId;
   reasoningEffort: KimiReasoningEffort | null;
   conversationSummary: string | null;

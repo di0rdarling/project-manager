@@ -22,10 +22,8 @@ import {
   getAgentTaskOverviewContextUsage,
 } from "@/lib/chats/chat-context/get-agent-task-overview-context-usage";
 import { loadAgentTaskOverviewGenerationContext } from "@/lib/chats/chat-context/agent-task-overview-generation-context";
-import {
-  generateChatReply,
-  getChatProviderConfigError,
-} from "@/lib/chat-generation";
+import { generateAgentTaskOverviewChatReply } from "@/lib/agent-task-overview-chat-generation";
+import { getChatProviderConfigError } from "@/lib/chat-generation";
 import { DEFAULT_CHAT_MODEL_ID } from "@/lib/chats/chat-models";
 import { chatModelSupportsReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
 import { generateConversationSummary } from "@/lib/gemini";
@@ -455,21 +453,46 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const generatedAt = new Date();
-    const assistantReply = await generateChatReply(
-      generationContext.history,
-      content,
-      generationContext.teammateId,
-      generationContext.projectContext,
-      generationContext.otherConversationsContext,
-      generationContext.otherTeammatesContext,
-      generationContext.agentNotesContext,
-      userName,
-      generationContext.modelId,
-      generationContext.reasoningEffort,
-      generatedAt,
-      generationContext.taskOverviewContext,
-      generationContext.agentTasksDocumentsContext,
+    const assistantReply = await generateAgentTaskOverviewChatReply(
+      {
+        history: generationContext.history,
+        message: content,
+        teammateId: generationContext.teammateId,
+        projectContext: generationContext.projectContext,
+        otherConversationsContext: generationContext.otherConversationsContext,
+        otherTeammatesContext: generationContext.otherTeammatesContext,
+        agentNotesContext: generationContext.agentNotesContext,
+        userName,
+        modelId: generationContext.modelId,
+        reasoningEffort: generationContext.reasoningEffort,
+        generatedAt,
+        taskOverviewContext: generationContext.taskOverviewContext,
+        agentTasksDocumentsContext: generationContext.agentTasksDocumentsContext,
+      },
+      {
+        db,
+        userId: auth.userId,
+        teammateId: parsedTeammate.teammateId,
+        projectId: parsedProject.projectId,
+        taskTitle: parsedTaskTitle.taskTitle,
+      },
     );
+
+    const updatedTask =
+      assistantReply.updatedTask ??
+      (await findAgentTaskByTitle(
+        db,
+        auth.userId,
+        parsedTeammate.teammateId,
+        parsedProject.projectId,
+        parsedTaskTitle.taskTitle,
+      ));
+
+    const currentTaskTitle = updatedTask?.title ?? parsedTaskTitle.taskTitle;
+    const previousTaskTitle =
+      currentTaskTitle !== parsedTaskTitle.taskTitle
+        ? parsedTaskTitle.taskTitle
+        : undefined;
 
     const now = generatedAt.toISOString();
     const { userMessage, assistantMessage } = await insertTaskOverviewMessages(
@@ -478,7 +501,7 @@ export async function POST(request: Request, context: RouteContext) {
         userId: auth.userId,
         teammateId: parsedTeammate.teammateId,
         projectId: parsedProject.projectId,
-        taskTitle: parsedTaskTitle.taskTitle,
+        taskTitle: currentTaskTitle,
         userContent: content,
         assistantContent: assistantReply.content,
         createdAt: now,
@@ -491,7 +514,7 @@ export async function POST(request: Request, context: RouteContext) {
       { role: "model" as const, content: assistantReply.content },
     ];
 
-    const overviewChatTitle = `Task: ${generationContext.taskTitle}`;
+    const overviewChatTitle = `Task: ${currentTaskTitle}`;
     let conversationSummary = session.conversationSummary;
 
     try {
@@ -513,7 +536,12 @@ export async function POST(request: Request, context: RouteContext) {
 
       await updateTaskOverviewSessionSummary(
         db,
-        sessionKey,
+        {
+          userId: auth.userId,
+          teammateId: parsedTeammate.teammateId,
+          projectId: parsedProject.projectId,
+          taskTitle: currentTaskTitle,
+        },
         conversationSummary,
         now,
       );
@@ -558,7 +586,7 @@ export async function POST(request: Request, context: RouteContext) {
       auth.userId,
       parsedTeammate.teammateId,
       parsedProject.projectId,
-      parsedTaskTitle.taskTitle,
+      currentTaskTitle,
     );
 
     const updatedContextUsage = await getAgentTaskOverviewContextUsage({
@@ -566,7 +594,7 @@ export async function POST(request: Request, context: RouteContext) {
       userId: auth.userId,
       teammateId: parsedTeammate.teammateId,
       projectId: parsedProject.projectId,
-      task: loaded.task,
+      task: updatedTask ?? loaded.task,
       messages: updatedMessages,
       userName,
       modelId: session.modelId,
@@ -577,6 +605,8 @@ export async function POST(request: Request, context: RouteContext) {
     const response: SendAgentTaskOverviewMessageResponse = {
       userMessage,
       assistantMessage,
+      task: updatedTask ?? loaded.task,
+      ...(previousTaskTitle ? { previousTaskTitle } : {}),
       modelId: session.modelId,
       reasoningEffort: session.reasoningEffort,
       conversationSummary,

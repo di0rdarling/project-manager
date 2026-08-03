@@ -29,6 +29,22 @@ function serializeTaskOverviewMessage(
   };
 }
 
+export async function renameTaskOverviewMessagesTaskTitle(
+  db: Db,
+  userId: ObjectId,
+  teammateId: ChatTeammateId,
+  projectId: ObjectId,
+  previousTaskTitle: string,
+  nextTaskTitle: string,
+): Promise<void> {
+  await db
+    .collection(AGENT_TASK_OVERVIEW_MESSAGES_COLLECTION)
+    .updateMany(
+      { userId, teammateId, projectId, taskTitle: previousTaskTitle },
+      { $set: { taskTitle: nextTaskTitle } },
+    );
+}
+
 export async function getTaskOverviewMessages(
   db: Db,
   userId: ObjectId,

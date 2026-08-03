@@ -20,6 +20,7 @@ export function buildAgentTaskOverviewFocusContext({
   const sections = [
     "The user is currently viewing one of your suggested autonomous tasks alongside this conversation. Your full list of suggested and accepted tasks is already included in your autonomous tasks and deliverables context above — do not ask them to paste task details or claim you cannot see them.",
     "Help them understand why you suggested this task, answer questions about scope and impact, discuss alternatives, and clarify what you would produce if they accept. Do not start working on the task or generate the deliverable in chat unless they explicitly accept it and ask you to begin.",
+    "When you and the user agree on changes to this suggestion, call the update_task tool to save those edits (title, detail, rationale, impact, risk_if_skipped, output_description, project_name). Confirm what you changed in your reply. Only update fields you are revising — do not rewrite unchanged fields.",
     "",
     "### Task the user is viewing now",
     "",
@@ -43,6 +44,10 @@ export function buildAgentTaskOverviewFocusContext({
 
   if (task.riskIfSkipped?.trim()) {
     sections.push("", `Risk if skipped: ${task.riskIfSkipped.trim()}`);
+  }
+
+  if (task.projectName?.trim()) {
+    sections.push("", `Project: ${task.projectName.trim()}`);
   }
 
   return sections.join("\n");

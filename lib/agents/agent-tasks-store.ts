@@ -3,6 +3,7 @@ import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import type { AgentTasksDraft } from "@/lib/agents/agent-tasks-json";
 import { EMPTY_AGENT_TASKS_DRAFT } from "@/lib/agents/agent-tasks-json";
 import type { ChatModelId } from "@/lib/chats/chat-models";
+import type { UpdateAgentTaskToolArgs } from "@/lib/agents/agent-task-edit-tool";
 import type { AgentTask, AgentTaskDecisionStatus } from "@/lib/types";
 
 export const AGENT_TASKS_COLLECTION = "agent_tasks";
@@ -103,6 +104,73 @@ export async function updateAgentTaskStatus(
     { tasks },
     updatedAt,
   );
+}
+
+export async function updateAgentTaskFields(
+  db: Db,
+  userId: ObjectId,
+  teammateId: ChatTeammateId,
+  projectId: ObjectId,
+  taskTitle: string,
+  updates: UpdateAgentTaskToolArgs,
+  updatedAt: string = new Date().toISOString(),
+): Promise<{ task: AgentTask; previousTitle: string } | null> {
+  const record = await getAgentTasks(db, userId, teammateId, projectId);
+
+  if (!record) {
+    return null;
+  }
+
+  const taskIndex = record.tasks.findIndex((task) => task.title === taskTitle);
+
+  if (taskIndex === -1) {
+    return null;
+  }
+
+  const currentTask = record.tasks[taskIndex];
+  const nextTitle = updates.title ?? currentTask.title;
+
+  if (nextTitle !== currentTask.title) {
+    const hasDuplicateTitle = record.tasks.some(
+      (task, index) => index !== taskIndex && task.title === nextTitle,
+    );
+
+    if (hasDuplicateTitle) {
+      throw new Error("A task with this title already exists in this project.");
+    }
+  }
+
+  const nextTask: AgentTask = {
+    ...currentTask,
+    ...(updates.title !== undefined ? { title: updates.title } : {}),
+    ...(updates.detail !== undefined ? { detail: updates.detail } : {}),
+    ...(updates.rationale !== undefined ? { rationale: updates.rationale } : {}),
+    ...(updates.impact !== undefined ? { impact: updates.impact } : {}),
+    ...(updates.riskIfSkipped !== undefined
+      ? { riskIfSkipped: updates.riskIfSkipped }
+      : {}),
+    ...(updates.outputDescription !== undefined
+      ? { outputDescription: updates.outputDescription }
+      : {}),
+    ...(updates.projectName !== undefined
+      ? { projectName: updates.projectName }
+      : {}),
+  };
+
+  const tasks = record.tasks.map((task, index) =>
+    index === taskIndex ? nextTask : task,
+  );
+
+  await upsertAgentTasks(
+    db,
+    userId,
+    teammateId,
+    projectId,
+    { tasks },
+    updatedAt,
+  );
+
+  return { task: nextTask, previousTitle: currentTask.title };
 }
 
 export type AgentTaskOutputResult = {

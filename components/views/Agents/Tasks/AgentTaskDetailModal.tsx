@@ -23,6 +23,7 @@ import { AgentTaskOverviewChatPanel } from "@/components/views/Agents/Tasks/Agen
 import { ContentWithChatLayout } from "@/components/views/shared/ContentWithChatLayout";
 import { useAcceptAgentDocument } from "@/hooks/mutations/agent-documents/useAcceptAgentDocument";
 import { useRejectAgentDocument } from "@/hooks/mutations/agent-documents/useRejectAgentDocument";
+import { useFetchAgentTaskOverviewChat } from "@/hooks/queries/useFetchAgentTaskOverviewChat";
 import {
   getAgentDocumentDetailPath,
 } from "@/lib/agents/agent-documents";
@@ -71,6 +72,7 @@ type AgentTaskDetailModalProps = {
   isRegeneratingOutput?: boolean;
   onGenerateAlternative?: () => void;
   isGeneratingAlternative?: boolean;
+  onTaskUpdated?: (task: AgentTask) => void;
 };
 
 function AgentTaskOutputNotAccepted() {
@@ -516,14 +518,19 @@ export default function AgentTaskDetailModal({
   isRegeneratingOutput = false,
   onGenerateAlternative,
   isGeneratingAlternative = false,
+  onTaskUpdated,
 }: Readonly<AgentTaskDetailModalProps>) {
   const [activeTab, setActiveTab] = useState("overview");
   const [isOverviewChatOpen, setIsOverviewChatOpen] = useState(false);
+  const [overviewChatTaskTitle, setOverviewChatTaskTitle] = useState("");
   const [isRedoConfirmOpen, setIsRedoConfirmOpen] = useState(false);
   const [isRejectConfirmOpen, setIsRejectConfirmOpen] = useState(false);
   const [selectedModelId, setSelectedModelId] =
     useState<ChatModelId>(DEFAULT_CHAT_MODEL_ID);
   const previousTaskStatusRef = useRef<AgentTaskDecisionStatus | null>(null);
+  const previousModalOpenRef = useRef(false);
+  const previousModalTaskTitleRef = useRef<string | null>(null);
+  const preserveOverviewChatRef = useRef(false);
 
   const acceptDocumentMutation = useAcceptAgentDocument({
     onSuccess: () => {
@@ -550,6 +557,8 @@ export default function AgentTaskDetailModal({
       setIsRedoConfirmOpen(false);
       setIsRejectConfirmOpen(false);
       setIsOverviewChatOpen(false);
+      previousModalOpenRef.current = false;
+      previousModalTaskTitleRef.current = null;
     }
   }, [open]);
 
@@ -559,10 +568,39 @@ export default function AgentTaskDetailModal({
       return;
     }
 
-    setActiveTab("overview");
-    setIsOverviewChatOpen(false);
-    setSelectedModelId(getAgentTaskOutputModelId(task));
-    previousTaskStatusRef.current = getAgentTaskDecisionStatus(task);
+    const justOpened = !previousModalOpenRef.current;
+    previousModalOpenRef.current = true;
+
+    if (justOpened) {
+      previousModalTaskTitleRef.current = task.title;
+      setActiveTab("overview");
+      setIsOverviewChatOpen(false);
+      setOverviewChatTaskTitle(task.title);
+      setSelectedModelId(getAgentTaskOutputModelId(task));
+      previousTaskStatusRef.current = getAgentTaskDecisionStatus(task);
+      return;
+    }
+
+    const previousTitle = previousModalTaskTitleRef.current;
+    const titleChanged =
+      previousTitle !== null && previousTitle !== task.title;
+
+    if (titleChanged) {
+      if (preserveOverviewChatRef.current) {
+        preserveOverviewChatRef.current = false;
+        previousModalTaskTitleRef.current = task.title;
+        setSelectedModelId(getAgentTaskOutputModelId(task));
+        previousTaskStatusRef.current = getAgentTaskDecisionStatus(task);
+        return;
+      }
+
+      previousModalTaskTitleRef.current = task.title;
+      setActiveTab("overview");
+      setIsOverviewChatOpen(false);
+      setOverviewChatTaskTitle(task.title);
+      setSelectedModelId(getAgentTaskOutputModelId(task));
+      previousTaskStatusRef.current = getAgentTaskDecisionStatus(task);
+    }
   }, [open, task?.title, task?.outputModelId]);
 
   useEffect(() => {
@@ -589,6 +627,36 @@ export default function AgentTaskDetailModal({
       setIsOverviewChatOpen(false);
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (!open || !task) {
+      return;
+    }
+
+    if (preserveOverviewChatRef.current) {
+      return;
+    }
+
+    setOverviewChatTaskTitle(task.title);
+  }, [open, task?.title]);
+
+  const chatProjectId = profileProjectId ?? projectId;
+
+  const { data: overviewChat } = useFetchAgentTaskOverviewChat(
+    teammateId ?? "jordan",
+    chatProjectId ?? "",
+    overviewChatTaskTitle || task?.title || "",
+    {
+      enabled: Boolean(
+        open &&
+          task &&
+          isOverviewChatOpen &&
+          teammateId &&
+          chatProjectId &&
+          (overviewChatTaskTitle || task.title),
+      ),
+    },
+  );
 
   if (!open || !task) {
     return null;
@@ -688,8 +756,6 @@ export default function AgentTaskDetailModal({
     onStartOutput?.({ regenerate: false, modelId: selectedModelId });
   }
 
-  const blocks = buildAgentTaskDetailBlocks(activeTask);
-  const chatProjectId = profileProjectId ?? projectId;
   const canDiscussOverview =
     Boolean(teammateId && chatProjectId) && !isGeneratingAlternative;
   const showOverviewSplit =
@@ -698,6 +764,9 @@ export default function AgentTaskDetailModal({
     canDiscussOverview &&
     teammateId &&
     chatProjectId;
+
+  const overviewDisplayTask = overviewChat?.task ?? activeTask;
+  const blocks = buildAgentTaskDetailBlocks(overviewDisplayTask);
   const showDiscussOverviewAction =
     activeTab === "overview" &&
     canDiscussOverview &&
@@ -737,9 +806,10 @@ export default function AgentTaskDetailModal({
       <Modal
         open={open}
         onClose={onClose}
-        title={activeTask.title}
+        title={overviewDisplayTask.title}
         size={showOverviewSplit ? "extraWide" : "wide"}
         fillHeight={Boolean(showOverviewSplit)}
+        bodyClassName={showOverviewSplit ? "pl-6 pr-0" : undefined}
         footerStart={overviewFooterStart}
         secondaryAction={
           showOverviewActions && onReject
@@ -846,11 +916,11 @@ export default function AgentTaskDetailModal({
             {showOverviewSplit ? (
               <ContentWithChatLayout
                 compact
-                className="min-h-0 flex-1 -mx-6"
-                contentClassName="pl-6 pr-4"
+                className="min-h-0 flex-1"
+                contentClassName="pr-4"
                 content={
                   <AgentTaskOverviewContent
-                    task={task}
+                    task={overviewDisplayTask}
                     blocks={blocks}
                     isGeneratingAlternative={isGeneratingAlternative}
                   />
@@ -859,15 +929,26 @@ export default function AgentTaskDetailModal({
                   <AgentTaskOverviewChatPanel
                     teammateId={teammateId}
                     projectId={chatProjectId}
-                    taskTitle={activeTask.title}
+                    taskTitle={overviewChatTaskTitle || overviewDisplayTask.title}
                     compact
                     onClose={() => setIsOverviewChatOpen(false)}
+                    onTaskUpdated={(updatedTask) => {
+                      const currentTitle =
+                        overviewChatTaskTitle || task?.title || "";
+
+                      if (updatedTask.title !== currentTitle) {
+                        preserveOverviewChatRef.current = true;
+                      }
+
+                      setOverviewChatTaskTitle(updatedTask.title);
+                      onTaskUpdated?.(updatedTask);
+                    }}
                   />
                 }
               />
             ) : (
               <AgentTaskOverviewContent
-                task={task}
+                task={overviewDisplayTask}
                 blocks={blocks}
                 isGeneratingAlternative={isGeneratingAlternative}
               />

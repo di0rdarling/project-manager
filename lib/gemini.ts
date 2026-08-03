@@ -30,7 +30,7 @@ function getGeminiApiKey(): string {
   return apiKey;
 }
 
-function getGeminiClient() {
+export function getGeminiClient() {
   return new GoogleGenerativeAI(getGeminiApiKey());
 }
 

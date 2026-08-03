@@ -25,6 +25,8 @@ type ModalProps = {
   footerStart?: ReactNode;
   /** When true, children fill remaining height for split layouts. */
   fillHeight?: boolean;
+  /** Override default `px-6` padding on the scrollable body. */
+  bodyClassName?: string;
 };
 
 const sizeClassNames = {
@@ -68,6 +70,7 @@ export function Modal({
   secondaryAction,
   footerStart,
   fillHeight = false,
+  bodyClassName,
 }: ModalProps) {
   const titleId = useId();
   const hasFooterActions = Boolean(
@@ -133,7 +136,7 @@ export function Modal({
             fillHeight
               ? "flex flex-col overflow-hidden"
               : "overflow-y-auto"
-          } px-6 ${
+          } ${bodyClassName ?? "px-6"} ${
             hasFooterActions
               ? fillHeight
                 ? "pb-0"

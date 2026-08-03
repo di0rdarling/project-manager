@@ -53,6 +53,28 @@ type TaskOverviewSessionKey = {
   taskTitle: string;
 };
 
+export async function renameTaskOverviewSessionTaskTitle(
+  db: Db,
+  key: TaskOverviewSessionKey,
+  nextTaskTitle: string,
+  updatedAt: string = new Date().toISOString(),
+): Promise<void> {
+  await db.collection(AGENT_TASK_OVERVIEW_SESSIONS_COLLECTION).updateOne(
+    {
+      userId: key.userId,
+      teammateId: key.teammateId,
+      projectId: key.projectId,
+      taskTitle: key.taskTitle,
+    },
+    {
+      $set: {
+        taskTitle: nextTaskTitle,
+        updatedAt,
+      },
+    },
+  );
+}
+
 export async function getOrCreateTaskOverviewSession(
   db: Db,
   key: TaskOverviewSessionKey,

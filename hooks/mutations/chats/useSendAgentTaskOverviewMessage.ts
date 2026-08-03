@@ -77,57 +77,72 @@ export function useSendAgentTaskOverviewMessage(
       onError?.(error, variables, onMutateResult, mutationContext);
     },
     onSuccess: (data, variables, onMutateResult, context) => {
-      const queryKey = agentTasksKeys.overviewChat(
+      const currentTaskTitle = data.task.title;
+      const titleChanged = currentTaskTitle !== variables.taskTitle;
+      const sourceQueryKey = agentTasksKeys.overviewChat(
         variables.teammateId,
         variables.projectId,
         variables.taskTitle,
       );
+      const nextQueryKey = agentTasksKeys.overviewChat(
+        variables.teammateId,
+        variables.projectId,
+        currentTaskTitle,
+      );
 
-      queryClient.setQueryData<AgentTaskOverviewChatResponse>(
-        queryKey,
-        (current) => {
-          if (!current) {
-            return {
-              messages: [data.userMessage, data.assistantMessage],
-              task: {
-                title: variables.taskTitle,
-                detail: "",
-                rationale: "",
-                impact: "",
-                riskIfSkipped: "",
-                outputDescription: "",
-              },
-              modelId: data.modelId,
-              reasoningEffort: data.reasoningEffort,
-              conversationSummary: data.conversationSummary,
-              contextUsage: data.contextUsage,
-            };
-          }
-
-          const nextMessages = current.messages.filter(
-            (entry) => !entry._id.startsWith("pending-user-"),
-          );
-
-          if (!nextMessages.some((entry) => entry._id === data.userMessage._id)) {
-            nextMessages.push(data.userMessage);
-          }
-
-          if (
-            !nextMessages.some((entry) => entry._id === data.assistantMessage._id)
-          ) {
-            nextMessages.push(data.assistantMessage);
-          }
-
+      const applyUpdate = (
+        current: AgentTaskOverviewChatResponse | undefined,
+      ): AgentTaskOverviewChatResponse => {
+        if (!current) {
           return {
-            ...current,
-            messages: nextMessages,
+            messages: [data.userMessage, data.assistantMessage],
+            task: data.task,
             modelId: data.modelId,
             reasoningEffort: data.reasoningEffort,
             conversationSummary: data.conversationSummary,
             contextUsage: data.contextUsage,
           };
-        },
-      );
+        }
+
+        const nextMessages = current.messages.filter(
+          (entry) => !entry._id.startsWith("pending-user-"),
+        );
+
+        if (!nextMessages.some((entry) => entry._id === data.userMessage._id)) {
+          nextMessages.push(data.userMessage);
+        }
+
+        if (
+          !nextMessages.some((entry) => entry._id === data.assistantMessage._id)
+        ) {
+          nextMessages.push(data.assistantMessage);
+        }
+
+        return {
+          ...current,
+          messages: nextMessages,
+          task: data.task,
+          modelId: data.modelId,
+          reasoningEffort: data.reasoningEffort,
+          conversationSummary: data.conversationSummary,
+          contextUsage: data.contextUsage,
+        };
+      };
+
+      const sourceChat =
+        queryClient.getQueryData<AgentTaskOverviewChatResponse>(sourceQueryKey);
+      queryClient.setQueryData(nextQueryKey, applyUpdate(sourceChat));
+
+      if (titleChanged) {
+        queryClient.removeQueries({ queryKey: sourceQueryKey });
+      }
+
+      void queryClient.invalidateQueries({
+        queryKey: agentTasksKeys.detail(
+          variables.teammateId,
+          variables.projectId,
+        ),
+      });
 
       void queryClient.invalidateQueries({
         queryKey: agentMemoryKeys.detail(variables.teammateId),

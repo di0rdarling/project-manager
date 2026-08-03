@@ -73,7 +73,7 @@ export function getKimiApiKey(): string {
   return apiKey;
 }
 
-function getKimiClient() {
+export function getKimiClient() {
   return new OpenAI({
     apiKey: getKimiApiKey(),
     baseURL: KIMI_BASE_URL,

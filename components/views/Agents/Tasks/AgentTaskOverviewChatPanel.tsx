@@ -33,6 +33,7 @@ import {
   type KimiReasoningEffort,
 } from "@/lib/chats/kimi-reasoning-effort";
 import { shouldShowAssistantTypingIndicator } from "@/lib/chats/should-show-assistant-typing-indicator";
+import type { AgentTask } from "@/lib/types";
 
 type AgentTaskOverviewChatPanelProps = {
   teammateId: ChatTeammateId;
@@ -40,6 +41,7 @@ type AgentTaskOverviewChatPanelProps = {
   taskTitle: string;
   compact?: boolean;
   onClose?: () => void;
+  onTaskUpdated?: (task: AgentTask) => void;
 };
 
 export function AgentTaskOverviewChatPanel({
@@ -48,6 +50,7 @@ export function AgentTaskOverviewChatPanel({
   taskTitle,
   compact = false,
   onClose,
+  onTaskUpdated,
 }: Readonly<AgentTaskOverviewChatPanelProps>) {
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -64,6 +67,9 @@ export function AgentTaskOverviewChatPanel({
   });
 
   const sendMessageMutation = useSendAgentTaskOverviewMessage({
+    onSuccess: (data) => {
+      onTaskUpdated?.(data.task);
+    },
     onError: (mutationError) => {
       toast.error(mutationError.message);
     },
