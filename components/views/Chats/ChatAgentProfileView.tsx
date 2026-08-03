@@ -37,17 +37,10 @@ export default function ChatAgentProfileView({
   const backNavigation = getAgentProfileBackNavigation(navigationContext);
   const [isProjectSelectOpen, setIsProjectSelectOpen] = useState(false);
   const [isCreateChatOpen, setIsCreateChatOpen] = useState(false);
-  const [chatProjectId, setChatProjectId] = useState<string | null>(
-    navigationContext.projectId ?? null,
-  );
+  const [chatProjectId, setChatProjectId] = useState<string | null>(null);
 
   function handleStartChat() {
-    if (navigationContext.projectId) {
-      setChatProjectId(navigationContext.projectId);
-      setIsCreateChatOpen(true);
-    } else {
-      setIsProjectSelectOpen(true);
-    }
+    setIsProjectSelectOpen(true);
   }
 
   function handleProjectSelected(projectId: string) {
@@ -157,6 +150,7 @@ export default function ChatAgentProfileView({
         onClose={() => setIsProjectSelectOpen(false)}
         onSelect={handleProjectSelected}
         title={`Start a chat with ${teammate.name}`}
+        defaultProjectId={navigationContext.projectId}
       />
 
       {chatProjectId ? (

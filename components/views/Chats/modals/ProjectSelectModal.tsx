@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { Modal } from "@/components/ui/Modal";
@@ -12,6 +12,7 @@ type ProjectSelectModalProps = {
   onClose: () => void;
   onSelect: (projectId: string) => void;
   title?: string;
+  defaultProjectId?: string | null;
 };
 
 export default function ProjectSelectModal({
@@ -19,6 +20,7 @@ export default function ProjectSelectModal({
   onClose,
   onSelect,
   title = "Select a project",
+  defaultProjectId = null,
 }: Readonly<ProjectSelectModalProps>) {
   const [selectedProjectId, setSelectedProjectId] = useState("");
 
@@ -28,6 +30,12 @@ export default function ProjectSelectModal({
     isError,
     error,
   } = useFetchProjects({ enabled: open });
+
+  useEffect(() => {
+    if (open) {
+      setSelectedProjectId(defaultProjectId ?? "");
+    }
+  }, [open, defaultProjectId]);
 
   function handleClose() {
     setSelectedProjectId("");
