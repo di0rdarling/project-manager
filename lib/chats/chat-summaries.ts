@@ -1,6 +1,7 @@
 import { ObjectId, type Db } from "mongodb";
 import { AGENT_DOCUMENTS_COLLECTION } from "@/lib/agents/agent-documents-store";
 import { AGENT_DOCUMENT_REVIEW_SESSIONS_COLLECTION } from "@/lib/agents/agent-document-review-session-store";
+import { AGENT_TASK_OVERVIEW_SESSIONS_COLLECTION } from "@/lib/agents/agent-task-overview-session-store";
 import {
   DEFAULT_CHAT_TEAMMATE_ID,
   isChatTeammateId,
@@ -40,6 +41,7 @@ export type TeammateChatSummary = {
 export const RECENT_CHAT_SUMMARY_LIMIT = 5;
 
 export const DOCUMENT_REVIEW_CHAT_ID_PREFIX = "document-review:";
+export const TASK_OVERVIEW_CHAT_ID_PREFIX = "task-overview:";
 
 type StoredDocumentReviewSession = {
   _id: ObjectId;
@@ -55,6 +57,40 @@ type StoredAgentDocumentForSummary = Pick<
   AgentDocument,
   "_id" | "projectId" | "title" | "projectName"
 >;
+
+type StoredTaskOverviewSession = {
+  _id: ObjectId;
+  userId: ObjectId;
+  teammateId: ChatTeammateId;
+  projectId: ObjectId;
+  taskTitle: string;
+  conversationSummary: string | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+};
+
+export type ExcludeTaskOverviewRef = {
+  projectId: ObjectId;
+  taskTitle: string;
+};
+
+function buildTaskOverviewChatId(projectId: ObjectId, taskTitle: string): string {
+  return `${TASK_OVERVIEW_CHAT_ID_PREFIX}${projectId.toString()}:${taskTitle}`;
+}
+
+function shouldExcludeTaskOverviewSession(
+  session: Pick<StoredTaskOverviewSession, "projectId" | "taskTitle">,
+  exclude?: ExcludeTaskOverviewRef,
+): boolean {
+  if (!exclude) {
+    return false;
+  }
+
+  return (
+    session.projectId.equals(exclude.projectId) &&
+    session.taskTitle === exclude.taskTitle
+  );
+}
 
 function mergeSummariesByRecency(
   ...lists: TeammateChatSummary[][]
@@ -206,6 +242,93 @@ async function summarizeDocumentReviewSessions(
   return summaries;
 }
 
+async function summarizeTaskOverviewSessions(
+  sessions: StoredTaskOverviewSession[],
+  projectById: Map<string, StoredProject>,
+): Promise<TeammateChatSummary[]> {
+  const summaries: TeammateChatSummary[] = [];
+
+  for (const session of sessions) {
+    const summary = session.conversationSummary?.trim();
+    if (!summary) {
+      continue;
+    }
+
+    const project = projectById.get(session.projectId.toString());
+
+    summaries.push({
+      chatId: buildTaskOverviewChatId(session.projectId, session.taskTitle),
+      kind: "task_overview",
+      teammateId: session.teammateId,
+      title: `Task: ${session.taskTitle}`,
+      createdAt: toIsoString(session.createdAt),
+      updatedAt: toIsoString(session.updatedAt),
+      summary,
+      project: serializeProjectContext(project),
+    });
+  }
+
+  return summaries;
+}
+
+async function loadTaskOverviewChatSummaries(
+  db: Db,
+  userId: ObjectId,
+  options: {
+    teammateId?: ChatTeammateId;
+    excludeTeammateId?: ChatTeammateId;
+    excludeTaskOverview?: ExcludeTaskOverviewRef;
+    projectId?: ObjectId;
+    limit?: number;
+  },
+): Promise<TeammateChatSummary[]> {
+  const query: Record<string, unknown> = { userId };
+
+  if (options.teammateId) {
+    query.teammateId = options.teammateId;
+  }
+
+  if (options.excludeTeammateId) {
+    query.teammateId = { $ne: options.excludeTeammateId };
+  }
+
+  let cursor = db
+    .collection<StoredTaskOverviewSession>(
+      AGENT_TASK_OVERVIEW_SESSIONS_COLLECTION,
+    )
+    .find(query)
+    .sort({ updatedAt: -1 });
+
+  if (options.limit) {
+    cursor = cursor.limit(Math.max(options.limit * 3, options.limit));
+  }
+
+  const sessions = await cursor.toArray();
+  let filteredSessions = sessions.filter(
+    (session) =>
+      session.conversationSummary?.trim() &&
+      !shouldExcludeTaskOverviewSession(session, options.excludeTaskOverview),
+  );
+
+  if (options.projectId) {
+    filteredSessions = filteredSessions.filter((session) =>
+      session.projectId.equals(options.projectId!),
+    );
+  }
+
+  if (filteredSessions.length === 0) {
+    return [];
+  }
+
+  const projectIds = [
+    ...new Set(filteredSessions.map((session) => session.projectId)),
+  ];
+
+  const projectById = await loadProjectContextById(db, userId, projectIds);
+
+  return summarizeTaskOverviewSessions(filteredSessions, projectById);
+}
+
 async function loadDocumentReviewChatSummaries(
   db: Db,
   userId: ObjectId,
@@ -300,6 +423,11 @@ type GetTeammateChatSummariesOptions = {
    */
   excludeDocumentReviewId?: ObjectId;
   /**
+   * When set, omits the task-scoped conversation for this task from
+   * "other conversations" context (the live transcript is used instead).
+   */
+  excludeTaskOverview?: ExcludeTaskOverviewRef;
+  /**
    * When true, archived chats are omitted. Use for live-chat "other
    * conversations" context so finished threads do not clutter active work.
    */
@@ -342,18 +470,29 @@ export async function getTeammateChatSummaries(
     cursor = cursor.limit(Math.max(options.limit * 3, options.limit));
   }
 
-  const [chats, documentReviewSummaries] = await Promise.all([
-    cursor.toArray(),
-    loadDocumentReviewChatSummaries(db, userId, {
-      teammateId,
-      excludeDocumentReviewId: options?.excludeDocumentReviewId,
-      projectId: options?.projectId,
-      limit: options?.limit,
-    }),
-  ]);
+  const [chats, documentReviewSummaries, taskOverviewSummaries] =
+    await Promise.all([
+      cursor.toArray(),
+      loadDocumentReviewChatSummaries(db, userId, {
+        teammateId,
+        excludeDocumentReviewId: options?.excludeDocumentReviewId,
+        projectId: options?.projectId,
+        limit: options?.limit,
+      }),
+      loadTaskOverviewChatSummaries(db, userId, {
+        teammateId,
+        excludeTaskOverview: options?.excludeTaskOverview,
+        projectId: options?.projectId,
+        limit: options?.limit,
+      }),
+    ]);
 
   const chatSummaries = await summarizeChats(db, userId, chats);
-  const merged = mergeSummariesByRecency(chatSummaries, documentReviewSummaries);
+  const merged = mergeSummariesByRecency(
+    chatSummaries,
+    documentReviewSummaries,
+    taskOverviewSummaries,
+  );
 
   return applySummaryLimit(merged, options?.limit);
 }
@@ -371,25 +510,34 @@ export async function getOtherTeammatesRecentChatSummaries(
 ): Promise<TeammateChatSummary[]> {
   const fetchLimit = Math.max(limit * 3, limit);
 
-  const [chats, documentReviewSummaries] = await Promise.all([
-    db
-      .collection<StoredChat>("chats")
-      .find({
-        userId,
-        teammateId: { $ne: currentTeammateId },
-        archivedAt: null,
-      })
-      .sort({ updatedAt: -1 })
-      .limit(fetchLimit)
-      .toArray(),
-    loadDocumentReviewChatSummaries(db, userId, {
-      excludeTeammateId: currentTeammateId,
-      limit,
-    }),
-  ]);
+  const [chats, documentReviewSummaries, taskOverviewSummaries] =
+    await Promise.all([
+      db
+        .collection<StoredChat>("chats")
+        .find({
+          userId,
+          teammateId: { $ne: currentTeammateId },
+          archivedAt: null,
+        })
+        .sort({ updatedAt: -1 })
+        .limit(fetchLimit)
+        .toArray(),
+      loadDocumentReviewChatSummaries(db, userId, {
+        excludeTeammateId: currentTeammateId,
+        limit,
+      }),
+      loadTaskOverviewChatSummaries(db, userId, {
+        excludeTeammateId: currentTeammateId,
+        limit,
+      }),
+    ]);
 
   const chatSummaries = await summarizeChats(db, userId, chats);
-  const merged = mergeSummariesByRecency(chatSummaries, documentReviewSummaries);
+  const merged = mergeSummariesByRecency(
+    chatSummaries,
+    documentReviewSummaries,
+    taskOverviewSummaries,
+  );
 
   return applySummaryLimit(merged, limit);
 }

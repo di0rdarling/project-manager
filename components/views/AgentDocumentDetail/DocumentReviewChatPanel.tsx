@@ -47,6 +47,8 @@ type DocumentReviewChatPanelProps = {
   projectId?: string | null;
   documentStatus?: AgentDocumentStatus;
   onTaskRejected?: () => void;
+  /** Hide accept/reject actions while the user is hand-editing the document. */
+  disableReviewActions?: boolean;
 };
 
 export function DocumentReviewChatPanel({
@@ -55,6 +57,7 @@ export function DocumentReviewChatPanel({
   projectId = null,
   documentStatus: initialDocumentStatus,
   onTaskRejected,
+  disableReviewActions = false,
 }: Readonly<DocumentReviewChatPanelProps>) {
   const [message, setMessage] = useState("");
   const [isRejectConfirmOpen, setIsRejectConfirmOpen] = useState(false);
@@ -131,12 +134,14 @@ export function DocumentReviewChatPanel({
   );
   const documentStatus =
     reviewChat?.document.status ?? initialDocumentStatus ?? null;
-  const canMarkComplete = documentStatus
-    ? canAcceptAgentDocument(documentStatus)
-    : false;
-  const canReject = documentStatus
-    ? canRejectAgentDocument(documentStatus)
-    : false;
+  const canMarkComplete =
+    !disableReviewActions && documentStatus
+      ? canAcceptAgentDocument(documentStatus)
+      : false;
+  const canReject =
+    !disableReviewActions && documentStatus
+      ? canRejectAgentDocument(documentStatus)
+      : false;
   const isMarkingComplete = acceptDocumentMutation.isPending;
   const isRejecting = rejectDocumentMutation.isPending;
   const reviewActionDisabled =

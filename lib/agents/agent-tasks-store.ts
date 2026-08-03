@@ -261,6 +261,36 @@ export async function updateAgentTaskOutput(
   );
 }
 
+export async function updateAgentTaskOutputDocumentTitle(
+  db: Db,
+  userId: ObjectId,
+  teammateId: ChatTeammateId,
+  projectId: ObjectId,
+  documentId: string,
+  documentTitle: string,
+  updatedAt: string = new Date().toISOString(),
+): Promise<StoredAgentTasks | null> {
+  const record = await getAgentTasks(db, userId, teammateId, projectId);
+
+  if (!record) {
+    return null;
+  }
+
+  const taskIndex = record.tasks.findIndex(
+    (task) => task.outputDocumentId === documentId,
+  );
+
+  if (taskIndex === -1) {
+    return null;
+  }
+
+  const tasks = record.tasks.map((task, index) =>
+    index === taskIndex ? { ...task, outputDocumentTitle: documentTitle } : task,
+  );
+
+  return upsertAgentTasks(db, userId, teammateId, projectId, { tasks }, updatedAt);
+}
+
 export async function getAllAgentTasksForTeammate(
   db: Db,
   userId: ObjectId,

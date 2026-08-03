@@ -16,7 +16,15 @@ function formatProjectContext(
 }
 
 function formatConversationLabel(chat: TeammateChatSummary): string {
-  return chat.kind === "document_review" ? "Document review" : "Chat";
+  if (chat.kind === "document_review") {
+    return "Document review";
+  }
+
+  if (chat.kind === "task_overview") {
+    return "Task conversation";
+  }
+
+  return "Chat";
 }
 
 function formatChatSummary(chat: TeammateChatSummary, index: number): string {

@@ -171,6 +171,31 @@ export async function updateAgentDocumentStatus(
   return result ? serializeAgentDocument(result) : null;
 }
 
+export async function updateAgentDocumentContent(
+  db: Db,
+  userId: ObjectId,
+  teammateId: ChatTeammateId,
+  documentId: ObjectId,
+  input: { title: string; content: string },
+): Promise<AgentDocumentResponse | null> {
+  const now = new Date().toISOString();
+  const result = await db
+    .collection<StoredAgentDocument>(AGENT_DOCUMENTS_COLLECTION)
+    .findOneAndUpdate(
+      { _id: documentId, userId, teammateId },
+      {
+        $set: {
+          title: input.title.trim(),
+          content: input.content.trim(),
+          updatedAt: now,
+        },
+      },
+      { returnDocument: "after" },
+    );
+
+  return result ? serializeAgentDocument(result) : null;
+}
+
 export async function updateAgentDocumentSavedProjectNoteId(
   db: Db,
   userId: ObjectId,

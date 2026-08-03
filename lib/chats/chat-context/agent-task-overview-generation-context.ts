@@ -64,6 +64,10 @@ export async function loadAgentTaskOverviewGenerationContext(
     teammateId,
     {
       excludeArchived: true,
+      excludeTaskOverview: {
+        projectId,
+        taskTitle: task.title,
+      },
     },
   );
   const otherConversationsContext =

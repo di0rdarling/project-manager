@@ -64,6 +64,24 @@ export async function rejectAgentDocument(input: {
   return parseResponse<RejectAgentDocumentResponse>(response);
 }
 
+export async function updateAgentDocumentContent(input: {
+  teammateId: ChatTeammateId;
+  documentId: string;
+  title: string;
+  content: string;
+}): Promise<AgentDocumentResponse> {
+  const { teammateId, documentId, title, content } = input;
+  const response = await fetch(
+    `/api/chats/agents/${teammateId}/documents/${documentId}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, content }),
+    },
+  );
+  return parseResponse<AgentDocumentResponse>(response);
+}
+
 export async function saveAgentDocumentAsProjectNote(input: {
   teammateId: ChatTeammateId;
   documentId: string;

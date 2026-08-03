@@ -2,22 +2,26 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, type RefObject } from "react";
+import { useState, type FormEvent, type RefObject } from "react";
 import toast from "react-hot-toast";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, PencilIcon } from "@heroicons/react/24/outline";
 import PageContent from "@/components/layout/PageContent";
 import { AgentDocumentSaveAsProjectNoteButton } from "@/components/agents/AgentDocumentSaveAsProjectNoteMenu";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
+import { IconButton } from "@/components/ui/IconButton";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { DocumentDetailContent } from "@/components/views/document-detail/DocumentDetailContent";
 import { DocumentDetailHeader } from "@/components/views/document-detail/DocumentDetailHeader";
 import { DocumentDetailLayout } from "@/components/views/document-detail/DocumentDetailLayout";
+import { DocumentDetailToolbarActions } from "@/components/views/document-detail/DocumentDetailToolbarActions";
 import { ContentWithChatLayout } from "@/components/views/shared/ContentWithChatLayout";
 import { DocumentReviewChatPanel } from "@/components/views/AgentDocumentDetail/DocumentReviewChatPanel";
-import { useDocumentHeadings } from "@/hooks/document-detail/useDocumentHeadings";
+import { useEditableDocument } from "@/hooks/document-detail/useEditableDocument";
 import { useSaveAgentDocumentAsProjectNote } from "@/hooks/mutations/agent-documents/useSaveAgentDocumentAsProjectNote";
+import { useUpdateAgentDocumentContent } from "@/hooks/mutations/agent-documents/useUpdateAgentDocumentContent";
 import { useFetchAgentDocument } from "@/hooks/queries/useFetchAgentDocument";
 import {
+  canEditAgentDocument,
   canSaveAgentDocumentAsProjectNote,
   getAgentDocumentStatusBadgeClassName,
   getAgentDocumentStatusLabel,
@@ -40,25 +44,53 @@ interface AgentDocumentDetailViewProps {
   documentId: string;
 }
 
+const DOCUMENT_EDIT_FORM_ID = "agent-document-edit-form";
+
 function DocumentBody({
   document,
   headings,
   hasHeadings,
   headingsKey,
+  editorReadyKey = 0,
   contentElement,
   contentPanelRef,
   onSaveAsProjectNote,
   isSavingAsProjectNote = false,
+  canEdit = false,
+  isEditing = false,
+  title = "",
+  content = "",
+  onTitleChange,
+  onContentChange,
+  onEditorReady,
+  onStartEditing,
+  onCancelEditing,
+  onSubmit,
+  isSaving = false,
+  formError,
 }: Readonly<{
   document: AgentDocumentResponse;
   teammateId: ChatTeammateId;
-  headings: ReturnType<typeof useDocumentHeadings>["headings"];
+  headings: ReturnType<typeof useEditableDocument>["headings"];
   hasHeadings: boolean;
   headingsKey: string;
+  editorReadyKey?: number;
   contentElement: HTMLElement | null;
   contentPanelRef: RefObject<HTMLDivElement | null>;
   onSaveAsProjectNote?: () => void;
   isSavingAsProjectNote?: boolean;
+  canEdit?: boolean;
+  isEditing?: boolean;
+  title?: string;
+  content?: string;
+  onTitleChange?: (value: string) => void;
+  onContentChange?: (value: string) => void;
+  onEditorReady?: () => void;
+  onStartEditing?: () => void;
+  onCancelEditing?: () => void;
+  onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
+  isSaving?: boolean;
+  formError?: string | null;
 }>) {
   const canSaveAsProjectNote =
     canSaveAgentDocumentAsProjectNote(document) && Boolean(onSaveAsProjectNote);
@@ -66,10 +98,12 @@ function DocumentBody({
   return (
     <DocumentDetailLayout
       hasHeadings={hasHeadings}
-      tocContentKey={headingsKey}
+      tocContentKey={`${isEditing ? "edit" : "read"}-${headingsKey}-${editorReadyKey}`}
       headings={headings}
       contentElement={contentElement}
-      isEditing={false}
+      isEditing={isEditing}
+      formId={DOCUMENT_EDIT_FORM_ID}
+      onSubmit={onSubmit}
       contentPanelRef={contentPanelRef}
       tocTitle="In this document"
       header={
@@ -77,25 +111,44 @@ function DocumentBody({
           label="Document"
           createdAt={document.createdAt}
           updatedAt={document.updatedAt}
-          title={document.title || "Untitled document"}
-          isEditing={false}
+          title={isEditing ? title : document.title || "Untitled document"}
+          isEditing={isEditing}
+          onTitleChange={onTitleChange}
+          titleInputId="agent-document-title"
+          autoFocusTitle={isEditing}
           actions={
-            <>
-              <span
-                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentDocumentStatusBadgeClassName(document.status)}`}
-              >
-                {getAgentDocumentStatusLabel(document.status)}
-              </span>
-              {canSaveAsProjectNote ? (
-                <AgentDocumentSaveAsProjectNoteButton
-                  document={document}
-                  onSave={onSaveAsProjectNote!}
-                  isSaving={isSavingAsProjectNote}
-                />
-              ) : null}
-            </>
+            isEditing ? undefined : (
+              <>
+                <span
+                  className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${getAgentDocumentStatusBadgeClassName(document.status)}`}
+                >
+                  {getAgentDocumentStatusLabel(document.status)}
+                </span>
+                {canEdit ? (
+                  <IconButton
+                    type="button"
+                    aria-label="Edit document"
+                    onClick={onStartEditing}
+                  >
+                    <PencilIcon className="size-4" />
+                  </IconButton>
+                ) : null}
+                {canSaveAsProjectNote ? (
+                  <AgentDocumentSaveAsProjectNoteButton
+                    document={document}
+                    onSave={onSaveAsProjectNote!}
+                    isSaving={isSavingAsProjectNote}
+                  />
+                ) : null}
+              </>
+            )
           }
         />
+      }
+      footer={
+        formError ? (
+          <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>
+        ) : null
       }
     >
       {document.projectName ? (
@@ -106,12 +159,21 @@ function DocumentBody({
       <DocumentDetailContent
         documentId={document._id}
         contentInputId="agent-document-content"
-        isEditing={false}
-        editContent={document.content}
+        isEditing={isEditing}
+        editContent={content}
         readContent={document.content}
         headings={headings}
-        onContentChange={() => {}}
+        onContentChange={onContentChange ?? (() => {})}
+        onEditorReady={onEditorReady}
         contentLabel="Document content"
+        toolbarActions={
+          isEditing ? (
+            <DocumentDetailToolbarActions
+              onCancel={onCancelEditing ?? (() => {})}
+              isSaving={isSaving}
+            />
+          ) : undefined
+        }
       />
     </DocumentDetailLayout>
   );
@@ -125,20 +187,46 @@ function ReviewLayout({
   headings,
   hasHeadings,
   headingsKey,
+  editorReadyKey,
   contentElement,
   contentPanelRef,
   onTaskRejected,
+  canEdit,
+  isEditing,
+  title,
+  content,
+  onTitleChange,
+  onContentChange,
+  onEditorReady,
+  onStartEditing,
+  onCancelEditing,
+  onSubmit,
+  isSaving,
+  formError,
 }: Readonly<{
   document: AgentDocumentResponse;
   teammateId: ChatTeammateId;
   agentName: string;
   backHref: string;
-  headings: ReturnType<typeof useDocumentHeadings>["headings"];
+  headings: ReturnType<typeof useEditableDocument>["headings"];
   hasHeadings: boolean;
   headingsKey: string;
+  editorReadyKey: number;
   contentElement: HTMLElement | null;
   contentPanelRef: RefObject<HTMLDivElement | null>;
   onTaskRejected: () => void;
+  canEdit: boolean;
+  isEditing: boolean;
+  title: string;
+  content: string;
+  onTitleChange: (value: string) => void;
+  onContentChange: (value: string) => void;
+  onEditorReady: () => void;
+  onStartEditing: () => void;
+  onCancelEditing: () => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  isSaving: boolean;
+  formError?: string | null;
 }>) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -161,8 +249,21 @@ function ReviewLayout({
             headings={headings}
             hasHeadings={hasHeadings}
             headingsKey={headingsKey}
+            editorReadyKey={editorReadyKey}
             contentElement={contentElement}
             contentPanelRef={contentPanelRef}
+            canEdit={canEdit}
+            isEditing={isEditing}
+            title={title}
+            content={content}
+            onTitleChange={onTitleChange}
+            onContentChange={onContentChange}
+            onEditorReady={onEditorReady}
+            onStartEditing={onStartEditing}
+            onCancelEditing={onCancelEditing}
+            onSubmit={onSubmit}
+            isSaving={isSaving}
+            formError={formError}
           />
         }
         contentClassName="px-4 py-6 sm:px-6"
@@ -173,6 +274,7 @@ function ReviewLayout({
             projectId={document.projectId}
             documentStatus={document.status}
             onTaskRejected={onTaskRejected}
+            disableReviewActions={isEditing}
           />
         }
       />
@@ -216,18 +318,42 @@ export default function AgentDocumentDetailView({
     },
   });
 
+  const [mutationError, setMutationError] = useState<string | null>(null);
   const {
+    isEditing,
+    setIsEditing,
+    title,
+    setTitle,
+    content,
+    setContent,
+    validationError,
+    setValidationError,
+    startEditing,
+    cancelEditing,
+    validate,
+    clearValidationError,
     headings,
     hasHeadings,
     headingsKey,
+    editorReadyKey,
     contentElement,
     contentPanelRef,
-    syncContentPanelElement,
-  } = useDocumentHeadings(document?.content ?? "");
+    notifyEditorReady,
+  } = useEditableDocument(document, {
+    titleRequiredMessage: "Document title is required",
+    contentRequiredMessage: "Document content is required",
+  });
 
-  useEffect(() => {
-    syncContentPanelElement();
-  }, [document?.content, syncContentPanelElement]);
+  const updateContentMutation = useUpdateAgentDocumentContent({
+    onSuccess: () => {
+      toast.success("Document saved.");
+      setIsEditing(false);
+      setMutationError(null);
+    },
+    onError: (error) => {
+      setMutationError(error.message);
+    },
+  });
 
   if (!teammateId) {
     return (
@@ -246,6 +372,7 @@ export default function AgentDocumentDetailView({
   const showReviewChat = document
     ? isAgentDocumentInReviewStage(document.status)
     : false;
+  const canEdit = document ? canEditAgentDocument(document.status) : false;
 
   if (isPending) {
     return (
@@ -285,6 +412,48 @@ export default function AgentDocumentDetailView({
     });
   }
 
+  function handleStartEditing() {
+    if (!canEdit) {
+      return;
+    }
+
+    setMutationError(null);
+    updateContentMutation.reset();
+    startEditing();
+  }
+
+  function handleCancelEditing() {
+    setMutationError(null);
+    updateContentMutation.reset();
+    cancelEditing();
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!document || !teammateId) {
+      return;
+    }
+
+    const nextValidationError = validate();
+    if (nextValidationError) {
+      setValidationError(nextValidationError);
+      return;
+    }
+
+    clearValidationError();
+    setMutationError(null);
+    updateContentMutation.mutate({
+      teammateId,
+      documentId: document._id,
+      title: title.trim(),
+      content,
+      projectId: document.projectId,
+    });
+  }
+
+  const formError = validationError ?? mutationError;
+
   if (showReviewChat) {
     return (
       <ReviewLayout
@@ -295,9 +464,22 @@ export default function AgentDocumentDetailView({
         headings={headings}
         hasHeadings={hasHeadings}
         headingsKey={headingsKey}
+        editorReadyKey={editorReadyKey}
         contentElement={contentElement}
         contentPanelRef={contentPanelRef}
         onTaskRejected={() => router.push(backHref)}
+        canEdit={canEdit}
+        isEditing={isEditing}
+        title={title}
+        content={content}
+        onTitleChange={setTitle}
+        onContentChange={setContent}
+        onEditorReady={notifyEditorReady}
+        onStartEditing={handleStartEditing}
+        onCancelEditing={handleCancelEditing}
+        onSubmit={handleSubmit}
+        isSaving={updateContentMutation.isPending}
+        formError={formError}
       />
     );
   }
@@ -318,10 +500,23 @@ export default function AgentDocumentDetailView({
         headings={headings}
         hasHeadings={hasHeadings}
         headingsKey={headingsKey}
+        editorReadyKey={editorReadyKey}
         contentElement={contentElement}
         contentPanelRef={contentPanelRef}
         onSaveAsProjectNote={handleSaveAsProjectNote}
         isSavingAsProjectNote={saveAsProjectNoteMutation.isPending}
+        canEdit={canEdit}
+        isEditing={isEditing}
+        title={title}
+        content={content}
+        onTitleChange={setTitle}
+        onContentChange={setContent}
+        onEditorReady={notifyEditorReady}
+        onStartEditing={handleStartEditing}
+        onCancelEditing={handleCancelEditing}
+        onSubmit={handleSubmit}
+        isSaving={updateContentMutation.isPending}
+        formError={formError}
       />
     </PageContent>
   );

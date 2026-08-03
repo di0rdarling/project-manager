@@ -86,7 +86,7 @@ export function buildChatConversationSummaryPrompt({
 
   if (conversationKind === "task_overview") {
     sections.push(
-      "This is a task overview conversation: the user is viewing one of your suggested autonomous tasks and discussing it with you before accepting or rejecting it. Make it clear in the summary that this was a discussion about the task suggestion, including any questions, scope clarifications, alternatives considered, or decisions about whether to accept the task.",
+      "This is a task conversation: the user is discussing one of your suggested autonomous tasks with you — from early scope discussion before acceptance, through deliverable review, to sign-off. Make it clear in the summary what stage the discussion covered, including questions, scope clarifications, alternatives considered, review feedback, requested changes, and any decisions about accepting the task or the deliverable.",
     );
   }
 

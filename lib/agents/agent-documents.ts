@@ -50,6 +50,11 @@ export function canAcceptAgentDocument(
   return isAgentDocumentInReviewStage(status);
 }
 
+/** Deliverable content can only be hand-edited while it's awaiting sign-off. */
+export function canEditAgentDocument(status: AgentDocumentStatus): boolean {
+  return isAgentDocumentInReviewStage(status);
+}
+
 export function canRejectAgentDocument(
   status: AgentDocumentStatus,
 ): boolean {

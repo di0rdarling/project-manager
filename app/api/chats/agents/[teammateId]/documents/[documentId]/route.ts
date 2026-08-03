@@ -2,18 +2,25 @@ import { ObjectId } from "mongodb";
 import { isChatTeammateId } from "@/lib/chats/chat-teammates";
 import {
   canAcceptAgentDocument,
+  canEditAgentDocument,
   canRejectAgentDocument,
   parseAgentDocumentStatus,
 } from "@/lib/agents/agent-documents";
 import {
   getAgentDocumentById,
+  updateAgentDocumentContent,
   updateAgentDocumentStatus,
 } from "@/lib/agents/agent-documents-store";
+import {
+  findAgentTaskByDocumentId,
+  updateAgentTaskOutputDocumentTitle,
+} from "@/lib/agents/agent-tasks-store";
 import { rejectAndDeleteAgentTaskByDocumentId } from "@/lib/agents/reject-agent-task";
 import {
   getProjectNameForUser,
   serializeAgentTasksResponse,
 } from "@/lib/agents/agent-tasks-route-helpers";
+import { isRichTextEmpty } from "@/lib/rich-text";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 
@@ -88,15 +95,11 @@ export async function PATCH(request: Request, context: RouteContext) {
       return parsed.error;
     }
 
-    const body = (await request.json()) as { status?: unknown };
-    const status = parseAgentDocumentStatus(body.status);
-
-    if (status !== "accepted" && status !== "rejected") {
-      return Response.json(
-        { error: "status must be accepted or rejected" },
-        { status: 400 },
-      );
-    }
+    const body = (await request.json()) as {
+      status?: unknown;
+      title?: unknown;
+      content?: unknown;
+    };
 
     const client = await getClientPromise();
     const db = client.db();
@@ -111,6 +114,70 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     if (!existing) {
       return Response.json({ error: "Document not found" }, { status: 404 });
+    }
+
+    if (body.title !== undefined || body.content !== undefined) {
+      if (!canEditAgentDocument(existing.status)) {
+        return Response.json(
+          {
+            error:
+              "This deliverable can only be edited while it's awaiting review.",
+          },
+          { status: 400 },
+        );
+      }
+
+      const title = typeof body.title === "string" ? body.title.trim() : "";
+      const content = typeof body.content === "string" ? body.content : "";
+
+      if (!title) {
+        return Response.json({ error: "Title is required" }, { status: 400 });
+      }
+
+      if (isRichTextEmpty(content)) {
+        return Response.json({ error: "Content is required" }, { status: 400 });
+      }
+
+      const document = await updateAgentDocumentContent(
+        db,
+        auth.userId,
+        parsed.teammateId,
+        documentObjectId,
+        { title, content },
+      );
+
+      if (!document) {
+        return Response.json({ error: "Document not found" }, { status: 404 });
+      }
+
+      const taskMatch = await findAgentTaskByDocumentId(
+        db,
+        auth.userId,
+        parsed.teammateId,
+        parsed.documentId,
+      );
+
+      if (taskMatch && taskMatch.task.outputDocumentTitle !== title) {
+        await updateAgentTaskOutputDocumentTitle(
+          db,
+          auth.userId,
+          parsed.teammateId,
+          taskMatch.projectId,
+          parsed.documentId,
+          title,
+        );
+      }
+
+      return Response.json(document);
+    }
+
+    const status = parseAgentDocumentStatus(body.status);
+
+    if (status !== "accepted" && status !== "rejected") {
+      return Response.json(
+        { error: "status must be accepted or rejected" },
+        { status: 400 },
+      );
     }
 
     if (

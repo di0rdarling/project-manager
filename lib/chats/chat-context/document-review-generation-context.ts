@@ -71,6 +71,14 @@ export async function loadDocumentReviewGenerationContext(
     {
       excludeArchived: true,
       excludeDocumentReviewId: new ObjectId(document._id),
+      ...(task
+        ? {
+            excludeTaskOverview: {
+              projectId: new ObjectId(document.projectId),
+              taskTitle: task.title,
+            },
+          }
+        : {}),
     },
   );
   const otherConversationsContext =
