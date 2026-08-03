@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { updateAgentTaskOverviewChat } from "@/lib/api/agent-task-overview-chat";
 import { agentTasksKeys } from "@/lib/query-keys";
+import { syncReviewChatFromOverviewChat } from "@/lib/query-cache/sync-task-conversation-cache";
 import type {
   AgentTaskOverviewChatResponse,
   UpdateAgentTaskOverviewChatResponse,
@@ -51,6 +52,27 @@ export function useUpdateAgentTaskOverviewChat(
               }
             : current,
       );
+
+      const overviewChat = queryClient.getQueryData<AgentTaskOverviewChatResponse>(
+        agentTasksKeys.overviewChat(
+          variables.teammateId,
+          variables.projectId,
+          variables.taskTitle,
+        ),
+      );
+
+      if (overviewChat?.task.outputDocumentId) {
+        syncReviewChatFromOverviewChat(
+          queryClient,
+          variables.teammateId,
+          overviewChat.task.outputDocumentId,
+          {
+            projectId: variables.projectId,
+            taskTitle: variables.taskTitle,
+          },
+          overviewChat,
+        );
+      }
 
       onSuccess?.(data, variables, onMutateResult, context);
     },

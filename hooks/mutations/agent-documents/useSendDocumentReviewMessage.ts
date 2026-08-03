@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { sendDocumentReviewMessage } from "@/lib/api/agent-document-review-chat";
 import { agentDocumentKeys, agentMemoryKeys } from "@/lib/query-keys";
+import { syncOverviewChatFromReviewChat } from "@/lib/query-cache/sync-task-conversation-cache";
 import type {
   AgentDocumentReviewChatResponse,
   SendDocumentReviewMessageResponse,
@@ -90,6 +91,8 @@ export function useSendDocumentReviewMessage(
       onError?.(error, variables, onMutateResult, mutationContext);
     },
     onSuccess: (data, variables, onMutateResult, context) => {
+      let nextReviewChat: AgentDocumentReviewChatResponse | undefined;
+
       queryClient.setQueryData<AgentDocumentReviewChatResponse>(
         agentDocumentKeys.reviewChat(
           variables.teammateId,
@@ -101,6 +104,7 @@ export function useSendDocumentReviewMessage(
               messages: [data.userMessage, data.assistantMessage],
               document: data.document,
               task: null,
+              taskConversation: data.taskConversation,
               modelId: data.modelId,
               reasoningEffort: data.reasoningEffort,
               conversationSummary: data.conversationSummary,
@@ -122,15 +126,33 @@ export function useSendDocumentReviewMessage(
             nextMessages.push(data.assistantMessage);
           }
 
-          return {
+          nextReviewChat = {
             ...current,
             document: data.document,
+            taskConversation: data.taskConversation ?? current.taskConversation,
             messages: nextMessages,
             modelId: data.modelId,
             reasoningEffort: data.reasoningEffort,
             conversationSummary: data.conversationSummary,
             contextUsage: data.contextUsage,
           };
+
+          return nextReviewChat;
+        },
+      );
+
+      syncOverviewChatFromReviewChat(
+        queryClient,
+        variables.teammateId,
+        data.taskConversation,
+        {
+          messages:
+            nextReviewChat?.messages ?? [data.userMessage, data.assistantMessage],
+          modelId: data.modelId,
+          reasoningEffort: data.reasoningEffort,
+          conversationSummary: data.conversationSummary,
+          contextUsage: data.contextUsage,
+          task: nextReviewChat?.task ?? null,
         },
       );
 

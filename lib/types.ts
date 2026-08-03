@@ -429,6 +429,10 @@ export type AgentDocumentReviewChatResponse = {
   messages: AgentDocumentReviewMessageResponse[];
   document: AgentDocumentResponse;
   task: AgentTask | null;
+  taskConversation: {
+    projectId: string;
+    taskTitle: string;
+  } | null;
   modelId: ChatModelId;
   reasoningEffort: KimiReasoningEffort | null;
   conversationSummary: string | null;
@@ -439,6 +443,10 @@ export type SendDocumentReviewMessageResponse = {
   userMessage: AgentDocumentReviewMessageResponse;
   assistantMessage: AgentDocumentReviewMessageResponse;
   document: AgentDocumentResponse;
+  taskConversation: {
+    projectId: string;
+    taskTitle: string;
+  } | null;
   modelId: ChatModelId;
   reasoningEffort: KimiReasoningEffort | null;
   conversationSummary: string | null;

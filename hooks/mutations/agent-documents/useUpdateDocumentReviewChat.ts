@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { updateDocumentReviewChat } from "@/lib/api/agent-document-review-chat";
 import { agentDocumentKeys } from "@/lib/query-keys";
+import { syncOverviewChatFromReviewChat } from "@/lib/query-cache/sync-task-conversation-cache";
 import type {
   AgentDocumentReviewChatResponse,
   UpdateDocumentReviewChatResponse,
@@ -50,6 +51,22 @@ export function useUpdateDocumentReviewChat(
               }
             : current,
       );
+
+      const reviewChat = queryClient.getQueryData<AgentDocumentReviewChatResponse>(
+        agentDocumentKeys.reviewChat(
+          variables.teammateId,
+          variables.documentId,
+        ),
+      );
+
+      if (reviewChat) {
+        syncOverviewChatFromReviewChat(
+          queryClient,
+          variables.teammateId,
+          reviewChat.taskConversation,
+          reviewChat,
+        );
+      }
 
       onSuccess?.(data, variables, onMutateResult, context);
     },

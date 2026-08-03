@@ -18,7 +18,7 @@ export function AgentSideChatPanelAside({
 }: Readonly<AgentSideChatPanelAsideProps>) {
   const widthClass = compact
     ? "lg:w-full lg:max-w-none"
-    : "xl:min-h-0 xl:w-[min(100%,28rem)] xl:flex-none 2xl:w-[min(100%,32rem)]";
+    : "xl:w-full xl:max-w-none 2xl:w-full 2xl:max-w-none";
   const borderClass = compact
     ? "border-t border-zinc-200 dark:border-zinc-800 lg:border-l lg:border-t-0"
     : "border-t border-zinc-200 dark:border-zinc-800 xl:border-l xl:border-t-0";
@@ -29,7 +29,7 @@ export function AgentSideChatPanelAside({
 
   return (
     <aside
-      className={`flex w-full min-h-0 flex-col overflow-hidden bg-white dark:bg-zinc-950 ${compact ? "min-w-0" : "shrink-0"} ${heightClass} ${widthClass} ${borderClass}`}
+      className={`flex w-full min-h-0 min-w-0 flex-col overflow-hidden bg-white dark:bg-zinc-950 ${compact ? "min-w-0" : "xl:shrink-0"} ${heightClass} ${widthClass} ${borderClass}`}
     >
       <div className="shrink-0 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
         {header}

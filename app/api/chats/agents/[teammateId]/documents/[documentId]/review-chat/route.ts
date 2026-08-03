@@ -13,6 +13,18 @@ import {
   updateDocumentReviewSessionSummary,
 } from "@/lib/agents/agent-document-review-session-store";
 import {
+  getUnifiedTaskConversationMessages,
+  resolveUnifiedTaskConversationSession,
+  type TaskConversationKey,
+} from "@/lib/agents/agent-task-conversation";
+import { insertTaskOverviewMessages } from "@/lib/agents/agent-task-overview-store";
+import {
+  parseTaskOverviewModelId,
+  parseTaskOverviewReasoningEffort,
+  updateTaskOverviewSessionSettings,
+  updateTaskOverviewSessionSummary,
+} from "@/lib/agents/agent-task-overview-session-store";
+import {
   getAgentDocumentById,
   updateAgentDocumentStatus,
 } from "@/lib/agents/agent-documents-store";
@@ -70,6 +82,34 @@ function parseRouteParams(teammateId: string, documentId: string) {
   return { teammateId, documentId: new ObjectId(documentId) };
 }
 
+function getTaskConversationMeta(
+  task: AgentTask | null,
+  projectId: ObjectId | null,
+): { projectId: string; taskTitle: string } | null {
+  if (!task || !projectId) {
+    return null;
+  }
+
+  return {
+    projectId: projectId.toString(),
+    taskTitle: task.title,
+  };
+}
+
+function getTaskConversationKey(
+  userId: ObjectId,
+  teammateId: ChatTeammateId,
+  projectId: ObjectId,
+  task: AgentTask,
+): TaskConversationKey {
+  return {
+    userId,
+    teammateId,
+    projectId,
+    taskTitle: task.title,
+  };
+}
+
 async function loadDocumentForReview(
   db: Awaited<ReturnType<Awaited<ReturnType<typeof getClientPromise>>["db"]>>,
   userId: ObjectId,
@@ -100,7 +140,11 @@ async function loadDocumentForReview(
     documentId.toString(),
   );
 
-  return { document, task: taskMatch?.task ?? null };
+  return {
+    document,
+    task: taskMatch?.task ?? null,
+    projectId: taskMatch?.projectId ?? null,
+  };
 }
 
 function getDefaultReviewModelId(task: AgentTask | null) {
@@ -114,23 +158,36 @@ async function buildReviewChatResponse(
   documentId: ObjectId,
   document: AgentDocumentResponse,
   task: AgentTask | null,
+  projectId: ObjectId | null,
   userName: string | null,
   pendingMessage?: string,
 ): Promise<AgentDocumentReviewChatResponse> {
-  const messages = await getDocumentReviewMessages(
-    db,
-    userId,
-    teammateId,
-    documentId,
-  );
+  const defaultModelId = getDefaultReviewModelId(task);
+  const usesUnifiedConversation = Boolean(task && projectId);
+  const taskConversation = getTaskConversationMeta(task, projectId);
 
-  const session = await getOrCreateDocumentReviewSession(
-    db,
-    userId,
-    teammateId,
-    documentId,
-    getDefaultReviewModelId(task),
-  );
+  const messages = usesUnifiedConversation
+    ? await getUnifiedTaskConversationMessages(
+        db,
+        getTaskConversationKey(userId, teammateId, projectId!, task!),
+        documentId,
+      )
+    : await getDocumentReviewMessages(db, userId, teammateId, documentId);
+
+  const session = usesUnifiedConversation
+    ? await resolveUnifiedTaskConversationSession(
+        db,
+        getTaskConversationKey(userId, teammateId, projectId!, task!),
+        documentId,
+        defaultModelId,
+      )
+    : await getOrCreateDocumentReviewSession(
+        db,
+        userId,
+        teammateId,
+        documentId,
+        defaultModelId,
+      );
 
   const contextUsage = await getDocumentReviewContextUsage({
     db,
@@ -144,12 +201,14 @@ async function buildReviewChatResponse(
     reasoningEffort: session.reasoningEffort,
     conversationSummary: session.conversationSummary,
     pendingMessage,
+    continuesTaskConversation: usesUnifiedConversation,
   });
 
   return {
     messages,
     document,
     task,
+    taskConversation,
     modelId: session.modelId,
     reasoningEffort: session.reasoningEffort,
     conversationSummary: session.conversationSummary,
@@ -195,6 +254,7 @@ export async function GET(_request: Request, context: RouteContext) {
       parsed.documentId,
       loaded.document,
       loaded.task,
+      loaded.projectId,
       userName,
     );
 
@@ -259,32 +319,71 @@ export async function PATCH(request: Request, context: RouteContext) {
     const currentUser = await findUserById(db, auth.userId);
     const userName = currentUser?.name ?? null;
     const defaultModelId = getDefaultReviewModelId(loaded.task);
+    const usesUnifiedConversation = Boolean(loaded.task && loaded.projectId);
 
-    const session = await updateDocumentReviewSessionSettings(
-      db,
-      auth.userId,
-      parsed.teammateId,
-      parsed.documentId,
-      {
-        ...(modelId ? { modelId } : {}),
-        ...(body.reasoningEffort !== undefined
-          ? {
-              reasoningEffort:
-                modelId && !chatModelSupportsReasoningEffort(modelId)
-                  ? null
-                  : reasoningEffort,
-            }
-          : {}),
-      },
-      defaultModelId,
-    );
+    const session = usesUnifiedConversation
+      ? await updateTaskOverviewSessionSettings(
+          db,
+          getTaskConversationKey(
+            auth.userId,
+            parsed.teammateId,
+            loaded.projectId!,
+            loaded.task!,
+          ),
+          {
+            ...(parseTaskOverviewModelId(body.modelId)
+              ? { modelId: parseTaskOverviewModelId(body.modelId)! }
+              : {}),
+            ...(body.reasoningEffort !== undefined
+              ? {
+                  reasoningEffort:
+                    parseTaskOverviewModelId(body.modelId) &&
+                    !chatModelSupportsReasoningEffort(
+                      parseTaskOverviewModelId(body.modelId)!,
+                    )
+                      ? null
+                      : parseTaskOverviewReasoningEffort(body.reasoningEffort),
+                }
+              : {}),
+          },
+          defaultModelId,
+        )
+      : await updateDocumentReviewSessionSettings(
+          db,
+          auth.userId,
+          parsed.teammateId,
+          parsed.documentId,
+          {
+            ...(modelId ? { modelId } : {}),
+            ...(body.reasoningEffort !== undefined
+              ? {
+                  reasoningEffort:
+                    modelId && !chatModelSupportsReasoningEffort(modelId)
+                      ? null
+                      : reasoningEffort,
+                }
+              : {}),
+          },
+          defaultModelId,
+        );
 
-    const messages = await getDocumentReviewMessages(
-      db,
-      auth.userId,
-      parsed.teammateId,
-      parsed.documentId,
-    );
+    const messages = usesUnifiedConversation
+      ? await getUnifiedTaskConversationMessages(
+          db,
+          getTaskConversationKey(
+            auth.userId,
+            parsed.teammateId,
+            loaded.projectId!,
+            loaded.task!,
+          ),
+          parsed.documentId,
+        )
+      : await getDocumentReviewMessages(
+          db,
+          auth.userId,
+          parsed.teammateId,
+          parsed.documentId,
+        );
 
     const contextUsage = await getDocumentReviewContextUsage({
       db,
@@ -297,6 +396,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       modelId: session.modelId,
       reasoningEffort: session.reasoningEffort,
       conversationSummary: session.conversationSummary,
+      continuesTaskConversation: usesUnifiedConversation,
     });
 
     const response: UpdateDocumentReviewChatResponse = {
@@ -356,21 +456,44 @@ export async function POST(request: Request, context: RouteContext) {
     const currentUser = await findUserById(db, auth.userId);
     const userName = currentUser?.name ?? null;
     const defaultModelId = getDefaultReviewModelId(loaded.task);
+    const usesUnifiedConversation = Boolean(loaded.task && loaded.projectId);
+    const taskConversationKey =
+      usesUnifiedConversation && loaded.task && loaded.projectId
+        ? getTaskConversationKey(
+            auth.userId,
+            parsed.teammateId,
+            loaded.projectId,
+            loaded.task,
+          )
+        : null;
 
-    const session = await getOrCreateDocumentReviewSession(
-      db,
-      auth.userId,
-      parsed.teammateId,
-      parsed.documentId,
-      defaultModelId,
-    );
+    const session = usesUnifiedConversation
+      ? await resolveUnifiedTaskConversationSession(
+          db,
+          taskConversationKey!,
+          parsed.documentId,
+          defaultModelId,
+        )
+      : await getOrCreateDocumentReviewSession(
+          db,
+          auth.userId,
+          parsed.teammateId,
+          parsed.documentId,
+          defaultModelId,
+        );
 
-    const existingMessages = await getDocumentReviewMessages(
-      db,
-      auth.userId,
-      parsed.teammateId,
-      parsed.documentId,
-    );
+    const existingMessages = usesUnifiedConversation
+      ? await getUnifiedTaskConversationMessages(
+          db,
+          taskConversationKey!,
+          parsed.documentId,
+        )
+      : await getDocumentReviewMessages(
+          db,
+          auth.userId,
+          parsed.teammateId,
+          parsed.documentId,
+        );
 
     const contextUsage = await getDocumentReviewContextUsage({
       db,
@@ -384,6 +507,7 @@ export async function POST(request: Request, context: RouteContext) {
       reasoningEffort: session.reasoningEffort,
       conversationSummary: session.conversationSummary,
       pendingMessage: content,
+      continuesTaskConversation: usesUnifiedConversation,
     });
 
     if (contextUsage.isAtLimit) {
@@ -406,6 +530,7 @@ export async function POST(request: Request, context: RouteContext) {
       session.modelId,
       session.reasoningEffort,
       session.conversationSummary,
+      usesUnifiedConversation,
     );
 
     const providerConfigError = getChatProviderConfigError(
@@ -442,17 +567,24 @@ export async function POST(request: Request, context: RouteContext) {
     );
 
     const now = generatedAt.toISOString();
-    const { userMessage, assistantMessage } = await insertDocumentReviewMessages(
-      db,
-      {
-        userId: auth.userId,
-        teammateId: parsed.teammateId,
-        documentId: parsed.documentId,
-        userContent: content,
-        assistantContent: assistantReply.content,
-        createdAt: now,
-      },
-    );
+    const { userMessage, assistantMessage } = usesUnifiedConversation
+      ? await insertTaskOverviewMessages(db, {
+          userId: auth.userId,
+          teammateId: parsed.teammateId,
+          projectId: loaded.projectId!,
+          taskTitle: loaded.task!.title,
+          userContent: content,
+          assistantContent: assistantReply.content,
+          createdAt: now,
+        })
+      : await insertDocumentReviewMessages(db, {
+          userId: auth.userId,
+          teammateId: parsed.teammateId,
+          documentId: parsed.documentId,
+          userContent: content,
+          assistantContent: assistantReply.content,
+          createdAt: now,
+        });
 
     const fullTranscript = [
       ...generationContext.history,
@@ -460,7 +592,9 @@ export async function POST(request: Request, context: RouteContext) {
       { role: "model" as const, content: assistantReply.content },
     ];
 
-    const reviewChatTitle = `Review: ${generationContext.documentTitle}`;
+    const reviewChatTitle = usesUnifiedConversation
+      ? `Task: ${loaded.task!.title}`
+      : `Review: ${generationContext.documentTitle}`;
     let conversationSummary = session.conversationSummary;
 
     try {
@@ -472,7 +606,9 @@ export async function POST(request: Request, context: RouteContext) {
         buildChatConversationSummaryPrompt({
           teammateId: parsed.teammateId,
           chatTitle: reviewChatTitle,
-          conversationKind: "document_review",
+          conversationKind: usesUnifiedConversation
+            ? "task_overview"
+            : "document_review",
           olderSummary: hasTruncatedMessages ? session.conversationSummary : null,
           recentMessages,
           userName,
@@ -480,14 +616,23 @@ export async function POST(request: Request, context: RouteContext) {
         }),
       );
 
-      await updateDocumentReviewSessionSummary(
-        db,
-        auth.userId,
-        parsed.teammateId,
-        parsed.documentId,
-        conversationSummary,
-        now,
-      );
+      if (usesUnifiedConversation && taskConversationKey) {
+        await updateTaskOverviewSessionSummary(
+          db,
+          taskConversationKey,
+          conversationSummary,
+          now,
+        );
+      } else {
+        await updateDocumentReviewSessionSummary(
+          db,
+          auth.userId,
+          parsed.teammateId,
+          parsed.documentId,
+          conversationSummary,
+          now,
+        );
+      }
     } catch {
       // Keep the previous summary if generation fails.
     }
@@ -537,12 +682,18 @@ export async function POST(request: Request, context: RouteContext) {
       document = updated ?? document;
     }
 
-    const updatedMessages = await getDocumentReviewMessages(
-      db,
-      auth.userId,
-      parsed.teammateId,
-      parsed.documentId,
-    );
+    const updatedMessages = usesUnifiedConversation
+      ? await getUnifiedTaskConversationMessages(
+          db,
+          taskConversationKey!,
+          parsed.documentId,
+        )
+      : await getDocumentReviewMessages(
+          db,
+          auth.userId,
+          parsed.teammateId,
+          parsed.documentId,
+        );
 
     const updatedContextUsage = await getDocumentReviewContextUsage({
       db,
@@ -555,12 +706,14 @@ export async function POST(request: Request, context: RouteContext) {
       modelId: session.modelId,
       reasoningEffort: session.reasoningEffort,
       conversationSummary,
+      continuesTaskConversation: usesUnifiedConversation,
     });
 
     const response: SendDocumentReviewMessageResponse = {
       userMessage,
       assistantMessage,
       document,
+      taskConversation: getTaskConversationMeta(loaded.task, loaded.projectId),
       modelId: session.modelId,
       reasoningEffort: session.reasoningEffort,
       conversationSummary,

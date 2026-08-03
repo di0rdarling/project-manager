@@ -141,7 +141,7 @@ function ReviewLayout({
   onTaskRejected: () => void;
 }>) {
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <header className="shrink-0 border-b border-zinc-200 bg-white px-4 py-3 sm:px-6 dark:border-zinc-800 dark:bg-zinc-950">
         <Link
           href={backHref}

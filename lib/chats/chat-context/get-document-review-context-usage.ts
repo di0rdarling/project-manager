@@ -34,6 +34,7 @@ type GetDocumentReviewContextUsageInput = {
   reasoningEffort: KimiReasoningEffort | null;
   conversationSummary: string | null;
   pendingMessage?: string;
+  continuesTaskConversation?: boolean;
 };
 
 export async function getDocumentReviewContextUsage(
@@ -50,6 +51,7 @@ export async function getDocumentReviewContextUsage(
     input.modelId,
     input.reasoningEffort,
     input.conversationSummary,
+    input.continuesTaskConversation ?? Boolean(input.task),
   );
 
   const usedTokens = await countChatContextTokens({

@@ -16,6 +16,11 @@ import { buildDocumentReviewFocusContext } from "@/lib/prompts/document-review-c
 import { buildChatOtherConversationsContext } from "@/lib/prompts/chat-other-conversations-prompt";
 import { buildOtherTeammatesContext } from "@/lib/prompts/chat-other-teammates-context-prompt";
 import type { AgentDocumentReviewMessageResponse } from "@/lib/types";
+import type { AgentTaskOverviewMessageResponse } from "@/lib/types";
+
+export type TaskConversationMessage =
+  | AgentDocumentReviewMessageResponse
+  | AgentTaskOverviewMessageResponse;
 
 export type DocumentReviewGenerationContext = {
   history: GeminiChatMessage[];
@@ -40,11 +45,12 @@ export async function loadDocumentReviewGenerationContext(
   teammateId: ChatTeammateId,
   document: AgentDocumentResponse,
   task: AgentTask | null,
-  messages: AgentDocumentReviewMessageResponse[],
+  messages: TaskConversationMessage[],
   userName: string | null,
   modelId: ChatModelId,
   reasoningEffort: KimiReasoningEffort | null,
   conversationSummary: string | null,
+  continuesTaskConversation = false,
 ): Promise<DocumentReviewGenerationContext> {
   const history = messages.map((message) => ({
     role: message.role,
@@ -90,6 +96,7 @@ export async function loadDocumentReviewGenerationContext(
   const documentReviewContext = buildDocumentReviewFocusContext({
     document,
     task,
+    continuesTaskConversation,
   });
 
   return {

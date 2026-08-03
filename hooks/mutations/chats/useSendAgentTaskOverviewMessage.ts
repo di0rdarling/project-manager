@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { sendAgentTaskOverviewMessage } from "@/lib/api/agent-task-overview-chat";
 import { agentMemoryKeys, agentTasksKeys } from "@/lib/query-keys";
+import { syncReviewChatFromOverviewChat } from "@/lib/query-cache/sync-task-conversation-cache";
 import type {
   AgentTaskOverviewChatResponse,
   SendAgentTaskOverviewMessageResponse,
@@ -135,6 +136,22 @@ export function useSendAgentTaskOverviewMessage(
 
       if (titleChanged) {
         queryClient.removeQueries({ queryKey: sourceQueryKey });
+      }
+
+      const nextOverviewChat =
+        queryClient.getQueryData<AgentTaskOverviewChatResponse>(nextQueryKey);
+
+      if (nextOverviewChat?.task.outputDocumentId) {
+        syncReviewChatFromOverviewChat(
+          queryClient,
+          variables.teammateId,
+          nextOverviewChat.task.outputDocumentId,
+          {
+            projectId: variables.projectId,
+            taskTitle: currentTaskTitle,
+          },
+          nextOverviewChat,
+        );
       }
 
       void queryClient.invalidateQueries({
