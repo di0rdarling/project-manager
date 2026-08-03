@@ -6,7 +6,7 @@ import {
   type UseMutationOptions,
 } from "@tanstack/react-query";
 import { deleteProject } from "@/lib/api/projects";
-import { projectKeys } from "@/lib/query-keys";
+import { accountUsageKeys, projectKeys } from "@/lib/query-keys";
 import type { ProjectResponse } from "@/lib/types";
 
 type UseDeleteProjectOptions = Omit<
@@ -25,6 +25,7 @@ export function useDeleteProject(options?: UseDeleteProjectOptions) {
       queryClient.setQueryData<ProjectResponse[]>(projectKeys.all, (current) =>
         current?.filter((project) => project._id !== projectId),
       );
+      queryClient.invalidateQueries({ queryKey: accountUsageKeys.detail });
       onSuccess?.(data, projectId, onMutateResult, context);
     },
   });

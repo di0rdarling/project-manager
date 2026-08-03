@@ -82,8 +82,6 @@ export default function AccountView() {
 
         {currentUser ? (
           <AccountUsageLimitsSection subscription={currentUser.subscription} />
-        ) : isPending ? (
-          <LoadingMessage>Loading usage limits...</LoadingMessage>
         ) : null}
       </section>
     </PageContent>

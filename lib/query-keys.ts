@@ -104,3 +104,7 @@ export const agentDocumentKeys = {
 export const currentUserKeys = {
   detail: ["current-user"] as const,
 };
+
+export const accountUsageKeys = {
+  detail: ["account-usage"] as const,
+};

@@ -1,3 +1,9 @@
+import {
+  formatAiTeammateLimitNames,
+  FREE_TIER_AI_TEAMMATE_IDS,
+  getSubscriptionLimits,
+  PREMIUM_TIER_AI_TEAMMATE_IDS,
+} from "@/lib/account/subscription-limits";
 import type { UserSubscription } from "@/lib/types";
 
 export type AiUsageCategoryKey =
@@ -7,12 +13,33 @@ export type AiUsageCategoryKey =
   | "aiSummaries"
   | "aiTeammates";
 
-export type AiUsageLimitCategory = {
+type AiUsageLimitBase = {
   key: AiUsageCategoryKey;
   label: string;
   used: number;
-  max: number;
 };
+
+export type NumericAiUsageLimit = AiUsageLimitBase & {
+  kind: "numeric";
+  max: number;
+  unitLabel: string;
+};
+
+export type UnlimitedAiUsageLimit = AiUsageLimitBase & {
+  kind: "unlimited";
+};
+
+export type TeammateAiUsageLimit = AiUsageLimitBase & {
+  kind: "teammates";
+  max: number;
+  includedLabel: string;
+  summaryLabel: string;
+};
+
+export type AiUsageLimitCategory =
+  | NumericAiUsageLimit
+  | UnlimitedAiUsageLimit
+  | TeammateAiUsageLimit;
 
 const CATEGORY_LABELS: Record<AiUsageCategoryKey, string> = {
   activeProjects: "Active projects",
@@ -22,23 +49,24 @@ const CATEGORY_LABELS: Record<AiUsageCategoryKey, string> = {
   aiTeammates: "AI teammates",
 };
 
-const PLACEHOLDER_USAGE: Record<
+/** Illustrative usage until real tracking is wired up. */
+const PLACEHOLDER_USED: Record<
   UserSubscription,
-  Record<AiUsageCategoryKey, { used: number; max: number }>
+  Record<AiUsageCategoryKey, number>
 > = {
   free: {
-    activeProjects: { used: 2, max: 3 },
-    aiChats: { used: 18, max: 25 },
-    aiTextEnhancements: { used: 11, max: 15 },
-    aiSummaries: { used: 7, max: 10 },
-    aiTeammates: { used: 2, max: 2 },
+    activeProjects: 1,
+    aiChats: 142,
+    aiTextEnhancements: 38,
+    aiSummaries: 12,
+    aiTeammates: FREE_TIER_AI_TEAMMATE_IDS.length,
   },
   premium: {
-    activeProjects: { used: 8, max: 20 },
-    aiChats: { used: 64, max: 200 },
-    aiTextEnhancements: { used: 42, max: 100 },
-    aiSummaries: { used: 28, max: 75 },
-    aiTeammates: { used: 4, max: 10 },
+    activeProjects: 5,
+    aiChats: 890,
+    aiTextEnhancements: 210,
+    aiSummaries: 34,
+    aiTeammates: PREMIUM_TIER_AI_TEAMMATE_IDS.length,
   },
 };
 
@@ -50,17 +78,106 @@ const CATEGORY_ORDER: AiUsageCategoryKey[] = [
   "aiTeammates",
 ];
 
-export function getPlaceholderAiUsageLimits(
-  subscription: UserSubscription,
-): AiUsageLimitCategory[] {
-  const usage = PLACEHOLDER_USAGE[subscription];
+export type AiUsageCounts = Partial<Record<AiUsageCategoryKey, number>>;
 
-  return CATEGORY_ORDER.map((key) => ({
-    key,
-    label: CATEGORY_LABELS[key],
-    used: usage[key].used,
-    max: usage[key].max,
-  }));
+function getCategoryUsedCount(
+  subscription: UserSubscription,
+  key: AiUsageCategoryKey,
+  usageCounts?: AiUsageCounts,
+): number {
+  const liveCount = usageCounts?.[key];
+  if (liveCount !== undefined) {
+    return liveCount;
+  }
+
+  return PLACEHOLDER_USED[subscription][key];
+}
+
+function buildUsageLimitCategory(
+  subscription: UserSubscription,
+  key: AiUsageCategoryKey,
+  usageCounts?: AiUsageCounts,
+): AiUsageLimitCategory {
+  const limits = getSubscriptionLimits(subscription);
+  const used = getCategoryUsedCount(subscription, key, usageCounts);
+  const label = CATEGORY_LABELS[key];
+
+  switch (key) {
+    case "activeProjects":
+      if (limits.activeProjects === null) {
+        return {
+          kind: "unlimited",
+          key,
+          label,
+          used,
+        };
+      }
+
+      return {
+        kind: "numeric",
+        key,
+        label,
+        used,
+        max: limits.activeProjects,
+        unitLabel: "projects",
+      };
+
+    case "aiChats":
+      return {
+        kind: "numeric",
+        key,
+        label,
+        used,
+        max: limits.aiChatMessagesPerMonth,
+        unitLabel: "messages per month",
+      };
+
+    case "aiTextEnhancements":
+      return {
+        kind: "numeric",
+        key,
+        label,
+        used,
+        max: limits.aiTextEnhancementsPerMonth,
+        unitLabel: "enhancements per month",
+      };
+
+    case "aiSummaries":
+      return {
+        kind: "numeric",
+        key,
+        label,
+        used,
+        max: limits.aiSummariesPerMonth,
+        unitLabel: "summaries per month",
+      };
+
+    case "aiTeammates": {
+      const teammateIds = limits.aiTeammateIds;
+
+      return {
+        kind: "teammates",
+        key,
+        label,
+        used: teammateIds.length,
+        max: teammateIds.length,
+        includedLabel: formatAiTeammateLimitNames(teammateIds),
+        summaryLabel:
+          subscription === "premium"
+            ? "Full suite"
+            : `${teammateIds.length} included`,
+      };
+    }
+  }
+}
+
+export function getAiUsageLimits(
+  subscription: UserSubscription,
+  usageCounts?: AiUsageCounts,
+): AiUsageLimitCategory[] {
+  return CATEGORY_ORDER.map((key) =>
+    buildUsageLimitCategory(subscription, key, usageCounts),
+  );
 }
 
 export function getAiUsagePercent(used: number, max: number): number {
@@ -69,4 +186,17 @@ export function getAiUsagePercent(used: number, max: number): number {
   }
 
   return Math.min(100, Math.round((used / max) * 100));
+}
+
+export function formatAiUsageLimitValue(category: AiUsageLimitCategory): string {
+  switch (category.kind) {
+    case "unlimited":
+      return `${category.used} / Unlimited`;
+
+    case "teammates":
+      return category.summaryLabel;
+
+    case "numeric":
+      return `${category.used} / ${category.max}`;
+  }
 }

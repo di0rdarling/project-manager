@@ -6,7 +6,7 @@ import {
   type UseMutationOptions,
 } from "@tanstack/react-query";
 import { createProject } from "@/lib/api/projects";
-import { projectKeys } from "@/lib/query-keys";
+import { accountUsageKeys, projectKeys } from "@/lib/query-keys";
 import type { ProjectResponse } from "@/lib/types";
 
 type CreateProjectInput = Parameters<typeof createProject>[0];
@@ -27,6 +27,7 @@ export function useCreateProject(options?: UseCreateProjectOptions) {
       queryClient.setQueryData<ProjectResponse[]>(projectKeys.all, (current) =>
         current ? [project, ...current] : [project],
       );
+      queryClient.invalidateQueries({ queryKey: accountUsageKeys.detail });
       onSuccess?.(project, variables, onMutateResult, context);
     },
   });
