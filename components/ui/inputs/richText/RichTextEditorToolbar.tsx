@@ -14,6 +14,7 @@ import {
   StrikethroughIcon,
   UnderlineIcon,
 } from "@heroicons/react/24/outline";
+import { RichTextEditorLinkToolbar } from "@/components/ui/inputs/richText/RichTextEditorLinkToolbar";
 import { RichTextEditorTableToolbar } from "@/components/ui/inputs/richText/RichTextEditorTableToolbar";
 import {
   HeadingButton,
@@ -96,6 +97,7 @@ export function RichTextEditorToolbar({ editor }: RichTextEditorToolbarProps) {
       >
         <PaintBrushIcon className="size-4" />
       </ToolbarButton>
+      <RichTextEditorLinkToolbar editor={editor} />
 
       <ToolbarDivider />
 
