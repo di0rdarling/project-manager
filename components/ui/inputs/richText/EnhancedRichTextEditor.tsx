@@ -88,8 +88,8 @@ export function EnhancedRichTextEditor({
       <div
         className={
           isEmbedded
-            ? undefined
-            : "rounded-lg border border-zinc-300 bg-white focus-within:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:focus-within:border-zinc-400"
+            ? "min-w-0"
+            : "min-w-0 overflow-hidden rounded-lg border border-zinc-300 bg-white focus-within:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:focus-within:border-zinc-400"
         }
       >
         <div
@@ -108,8 +108,8 @@ export function EnhancedRichTextEditor({
             </div>
           ) : null}
         </div>
-        <div className={isEmbedded ? "p-4" : undefined}>
-          <EditorContent editor={editor} />
+        <div className={isEmbedded ? "min-w-0 p-4" : "min-w-0"}>
+          <EditorContent editor={editor} className="min-w-0 max-w-full" />
           <EnhancedRichTextEditorSelectionToolbar
             editor={editor}
             onEnhanced={onChange}

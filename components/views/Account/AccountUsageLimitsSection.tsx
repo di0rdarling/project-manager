@@ -48,7 +48,9 @@ function AccountUsageLimitRow({ category }: AccountUsageLimitRowProps) {
             <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
               {category.label}
             </span>
-            <UsageDataSourceChip isLiveData={category.isLiveData} />
+            <UsageDataSourceChip
+              showPlaceholderChip={category.showPlaceholderChip}
+            />
           </div>
           {unitLabel ? (
             <p className="text-xs text-zinc-500 dark:text-zinc-400">

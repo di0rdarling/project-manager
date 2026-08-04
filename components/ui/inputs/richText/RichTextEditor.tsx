@@ -52,9 +52,11 @@ export function RichTextEditor({
       <label id={`${id}-label`} htmlFor={id} className="block text-sm font-medium">
         {label}
       </label>
-      <div className="overflow-hidden rounded-lg border border-zinc-300 bg-white focus-within:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:focus-within:border-zinc-400">
+      <div className="min-w-0 overflow-hidden rounded-lg border border-zinc-300 bg-white focus-within:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:focus-within:border-zinc-400">
         <RichTextEditorToolbar editor={editor} />
-        <EditorContent editor={editor} />
+        <div className="min-w-0">
+          <EditorContent editor={editor} className="min-w-0 max-w-full" />
+        </div>
         <RichTextEditorAiDropdown editor={editor} onEnhanced={onChange} />
       </div>
     </div>

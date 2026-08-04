@@ -5,7 +5,7 @@ import { TableOfContents } from "@/components/views/document-detail/TableOfConte
 import type { RichTextHeading } from "@/lib/rich-text";
 
 export const documentContentPanelClassName =
-  "note-toc-content note-toc-content-editing rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950";
+  "note-toc-content note-toc-content-editing min-w-0 rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950";
 
 export const documentReadContentPanelClassName = "note-toc-content tiptap-content";
 

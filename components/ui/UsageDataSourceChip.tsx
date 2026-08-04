@@ -1,9 +1,11 @@
 type UsageDataSourceChipProps = {
-  isLiveData: boolean;
+  showPlaceholderChip: boolean;
 };
 
-export function UsageDataSourceChip({ isLiveData }: UsageDataSourceChipProps) {
-  if (isLiveData) {
+export function UsageDataSourceChip({
+  showPlaceholderChip,
+}: UsageDataSourceChipProps) {
+  if (!showPlaceholderChip) {
     return null;
   }
 

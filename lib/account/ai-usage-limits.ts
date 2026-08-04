@@ -18,6 +18,7 @@ type AiUsageLimitBase = {
   label: string;
   used: number;
   isLiveData: boolean;
+  showPlaceholderChip: boolean;
 };
 
 export type NumericAiUsageLimit = AiUsageLimitBase & {
@@ -87,6 +88,10 @@ export function isAiUsageCategoryLive(key: AiUsageCategoryKey): boolean {
   return AI_USAGE_LIVE_DATA_CATEGORIES.has(key);
 }
 
+/** Rows that should show the "Placeholder" chip on the account page. */
+export const AI_USAGE_PLACEHOLDER_CHIP_CATEGORIES: ReadonlySet<AiUsageCategoryKey> =
+  new Set(["aiTextEnhancements", "aiSummaries"]);
+
 export type AiUsageCounts = Partial<Record<AiUsageCategoryKey, number>>;
 
 function getCategoryUsedCount(
@@ -111,6 +116,7 @@ function buildUsageLimitCategory(
   const used = getCategoryUsedCount(subscription, key, usageCounts);
   const label = CATEGORY_LABELS[key];
   const isLiveData = isAiUsageCategoryLive(key);
+  const showPlaceholderChip = AI_USAGE_PLACEHOLDER_CHIP_CATEGORIES.has(key);
 
   switch (key) {
     case "activeProjects":
@@ -121,6 +127,7 @@ function buildUsageLimitCategory(
           label,
           used,
           isLiveData,
+          showPlaceholderChip,
         };
       }
 
@@ -130,6 +137,7 @@ function buildUsageLimitCategory(
         label,
         used,
         isLiveData,
+        showPlaceholderChip,
         max: limits.activeProjects,
         unitLabel: "projects",
       };
@@ -141,6 +149,7 @@ function buildUsageLimitCategory(
         label,
         used,
         isLiveData,
+        showPlaceholderChip,
         max: limits.aiChatMessagesPerMonth,
         unitLabel: "messages per month",
       };
@@ -152,6 +161,7 @@ function buildUsageLimitCategory(
         label,
         used,
         isLiveData,
+        showPlaceholderChip,
         max: limits.aiTextEnhancementsPerMonth,
         unitLabel: "enhancements per month",
       };
@@ -163,6 +173,7 @@ function buildUsageLimitCategory(
         label,
         used,
         isLiveData,
+        showPlaceholderChip,
         max: limits.aiSummariesPerMonth,
         unitLabel: "summaries per month",
       };
@@ -176,6 +187,7 @@ function buildUsageLimitCategory(
         label,
         used: teammateIds.length,
         isLiveData,
+        showPlaceholderChip,
         max: teammateIds.length,
         includedLabel: formatAiTeammateLimitNames(teammateIds),
         summaryLabel:

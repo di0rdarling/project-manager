@@ -26,8 +26,29 @@ body {
 
 .tiptap-editor {
   min-height: 8rem;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
   padding: 0.75rem;
   outline: none;
+}
+
+.tiptap-editor .tableWrapper {
+  contain: inline-size;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  margin: 0.75em 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tiptap-editor > table {
+  display: block;
+  margin: 0.75em 0;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .tiptap-editor p.is-editor-empty:first-child::before {
@@ -325,6 +346,10 @@ body {
   margin: 0.75em 0;
   min-width: 100%;
   width: max-content;
+}
+
+.tiptap-editor .tableWrapper table {
+  margin: 0;
 }
 
 .tiptap-content th,
