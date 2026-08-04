@@ -68,3 +68,15 @@ export function isUnlimitedActiveProjects(
 ): boolean {
   return SUBSCRIPTION_LIMITS[subscription].activeProjects === null;
 }
+
+export function hasReachedActiveProjectLimit(
+  subscription: UserSubscription,
+  activeProjectCount: number,
+): boolean {
+  const limit = SUBSCRIPTION_LIMITS[subscription].activeProjects;
+  if (limit === null) {
+    return false;
+  }
+
+  return activeProjectCount >= limit;
+}

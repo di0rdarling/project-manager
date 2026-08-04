@@ -7,8 +7,10 @@ import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { LoadingMessage } from "@/components/ui/LoadingMessage";
 import { useFetchCurrentUser } from "@/hooks/queries/useFetchCurrentUser";
 import { useFetchProjects } from "@/hooks/queries/useFetchProjects";
+import { hasReachedActiveProjectLimit } from "@/lib/account/subscription-limits";
 import PageContent from "@/components/layout/PageContent";
 import CreateProjectModal from "./modals/CreateProjectModal";
+import FreeProjectLimitModal from "./modals/FreeProjectLimitModal";
 import CrossProjectAIDigest from "./CrossProjectAIDigest";
 import DashboardStats from "./DashboardStats";
 import HomepageRecentChatsSection from "./HomepageRecentChatsSection";
@@ -25,6 +27,7 @@ function getGreeting(): string {
 
 export default function ProjectManagerView() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
 
   const {
     data: projects = [],
@@ -36,6 +39,13 @@ export default function ProjectManagerView() {
   const { data: currentUser } = useFetchCurrentUser();
 
   function openCreateModal() {
+    const subscription = currentUser?.subscription ?? "free";
+
+    if (hasReachedActiveProjectLimit(subscription, projects.length)) {
+      setIsLimitModalOpen(true);
+      return;
+    }
+
     setIsCreateModalOpen(true);
   }
 
@@ -109,6 +119,14 @@ export default function ProjectManagerView() {
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={(projectName) =>
           toast.success(`Project "${projectName}" created successfully.`)
+        }
+      />
+
+      <FreeProjectLimitModal
+        open={isLimitModalOpen}
+        onClose={() => setIsLimitModalOpen(false)}
+        onUpgradeSuccess={() =>
+          toast.success("Upgraded to Premium. You can now create more projects.")
         }
       />
     </PageContent>

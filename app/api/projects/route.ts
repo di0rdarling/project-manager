@@ -1,5 +1,8 @@
+import { countActiveProjectsForUser } from "@/lib/account/count-active-projects";
+import { hasReachedActiveProjectLimit } from "@/lib/account/subscription-limits";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
+import { findUserById, normalizeUserSubscription } from "@/lib/users";
 import {
   serializeProject,
   type StoredProject,
@@ -49,6 +52,22 @@ export async function POST(request: Request) {
       );
     }
 
+    const client = await getClientPromise();
+    const db = client.db();
+    const user = await findUserById(db, auth.userId);
+    const subscription = normalizeUserSubscription(user?.subscription);
+    const activeProjects = await countActiveProjectsForUser(db, auth.userId);
+
+    if (hasReachedActiveProjectLimit(subscription, activeProjects)) {
+      return Response.json(
+        {
+          error:
+            "Active project limit reached. Upgrade to Premium to create more projects.",
+        },
+        { status: 403 },
+      );
+    }
+
     const now = new Date().toISOString();
     const project: Omit<Project, "_id"> = {
       userId: auth.userId,
@@ -59,9 +78,7 @@ export async function POST(request: Request) {
       updatedAt: now,
     };
 
-    const client = await getClientPromise();
-    const result = await client
-      .db()
+    const result = await db
       .collection<Omit<Project, "_id">>("projects")
       .insertOne(project);
 
