@@ -4,6 +4,7 @@ import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import { noteFolderMatchesScope } from "@/lib/notes";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import type { Note, NoteResponse } from "@/lib/types";
 
 type RouteContext = {
@@ -204,6 +205,8 @@ export async function PATCH(request: Request, context: RouteContext) {
       return Response.json({ error: "Note not found" }, { status: 404 });
     }
 
+    await touchProjectUpdatedAt(db, projectObjectId, auth.userId, updates.updatedAt);
+
     return Response.json(serializeNote(result));
   } catch {
     return Response.json({ error: "Failed to update note" }, { status: 500 });
@@ -240,6 +243,12 @@ export async function DELETE(_request: Request, context: RouteContext) {
     if (result.deletedCount === 0) {
       return Response.json({ error: "Note not found" }, { status: 404 });
     }
+
+    await touchProjectUpdatedAt(
+      client.db(),
+      new ObjectId(id),
+      auth.userId,
+    );
 
     return Response.json({ success: true });
   } catch {

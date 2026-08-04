@@ -4,6 +4,7 @@ import { isKimiReasoningEffort } from "@/lib/chats/kimi-reasoning-effort";
 import { getChatContextUsage } from "@/lib/chats/chat-context/get-chat-context-usage";
 import { serializeChatsWithContext } from "@/lib/chats/chat-list-items";
 import { requireUserId } from "@/lib/current-user";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import getClientPromise from "@/lib/mongodb";
 import { findUserById } from "@/lib/users";
 import {
@@ -164,6 +165,15 @@ export async function PATCH(request: Request, context: RouteContext) {
       return Response.json({ error: "Chat not found" }, { status: 404 });
     }
 
+    if (result.chat.projectId) {
+      await touchProjectUpdatedAt(
+        result.client.db(),
+        result.chat.projectId,
+        auth.userId,
+        now,
+      );
+    }
+
     return Response.json(serializeChat(updateResult));
   } catch {
     return Response.json({ error: "Failed to update chat" }, { status: 500 });
@@ -198,6 +208,14 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
     if (deleteResult.deletedCount === 0) {
       return Response.json({ error: "Chat not found" }, { status: 404 });
+    }
+
+    if (result.chat.projectId) {
+      await touchProjectUpdatedAt(
+        db,
+        result.chat.projectId,
+        auth.userId,
+      );
     }
 
     return Response.json({ success: true });

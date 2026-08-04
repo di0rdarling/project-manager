@@ -3,7 +3,9 @@ import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { generateProjectSummary } from "@/lib/gemini";
 import {
-  serializeProject,
+  serializeProjectWithActivity,
+} from "@/lib/projects/get-latest-chat-activity-by-project";
+import {
   type StoredProject,
 } from "@/lib/serialize/serialize-project";
 import type { CoreUser, DomainKnowledge, Feature, Note, PainPoint, Requirement, Tool, Challenge } from "@/lib/types";
@@ -254,7 +256,7 @@ export async function POST(_request: Request, context: RouteContext) {
       );
     }
 
-    return Response.json(serializeProject(savedProject));
+    return Response.json(await serializeProjectWithActivity(db, auth.userId, savedProject));
   } catch (error) {
     if (
       error instanceof Error &&
@@ -312,7 +314,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
       return Response.json({ error: "Project not found" }, { status: 404 });
     }
 
-    return Response.json(serializeProject(savedProject));
+    return Response.json(await serializeProjectWithActivity(db, auth.userId, savedProject));
   } catch {
     return Response.json(
       { error: "Failed to delete project summary" },

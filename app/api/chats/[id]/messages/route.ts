@@ -31,6 +31,7 @@ import {
   buildChatTitlePrompt,
   CHAT_TITLE_GENERATION_TURN_THRESHOLD,
 } from "@/lib/prompts/chat-title-prompt";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import {
   buildChatTitleFromMessage,
   serializeChat,
@@ -290,6 +291,15 @@ export async function POST(request: Request, context: RouteContext) {
           $set: updatedChat,
         },
       );
+
+      if (result.chat.projectId) {
+        await touchProjectUpdatedAt(
+          db,
+          result.chat.projectId,
+          auth.userId,
+          now,
+        );
+      }
 
       if (conversationSummaryUpdated && conversationSummary?.trim()) {
         try {

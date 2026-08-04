@@ -12,62 +12,12 @@ import {
   ItemActionsMenu,
 } from "@/components/ui/ItemActionsMenu";
 import { ListItemDate } from "@/components/ui/ListItemDate";
-import { formatRelativeDate, isSameCalendarDay } from "@/lib/dates";
+import { formatRelativeDate } from "@/lib/dates";
+import {
+  getProjectActivityStatus,
+  projectActivityConfig,
+} from "@/lib/projects/project-activity";
 import type { ProjectResponse } from "@/lib/types";
-
-type ActivityStatus =
-  | "today"
-  | "thisWeek"
-  | "thisMonth"
-  | "inactive";
-
-function getActivityStatus(updatedAt: string): ActivityStatus {
-  const updated = new Date(updatedAt);
-  const now = new Date();
-
-  if (isSameCalendarDay(updated, now)) {
-    return "today";
-  }
-
-  const diffMs = now.getTime() - updated.getTime();
-  const diffDays = diffMs / (1000 * 60 * 60 * 24);
-
-  if (diffDays < 7) {
-    return "thisWeek";
-  }
-
-  if (diffDays < 30) {
-    return "thisMonth";
-  }
-
-  return "inactive";
-}
-
-const activityConfig: Record<
-  ActivityStatus,
-  { label: string; className: string }
-> = {
-  today: {
-    label: "Active today",
-    className:
-      "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400",
-  },
-  thisWeek: {
-    label: "Active this week",
-    className:
-      "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400",
-  },
-  thisMonth: {
-    label: "Active this month",
-    className:
-      "bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300",
-  },
-  inactive: {
-    label: "No recent activity",
-    className:
-      "bg-zinc-100 text-zinc-500 dark:bg-zinc-900 dark:text-zinc-500",
-  },
-};
 
 interface ProjectCardProps {
   project: ProjectResponse;
@@ -80,8 +30,8 @@ export default function ProjectCard({
   onEdit,
   onDelete,
 }: Readonly<ProjectCardProps>) {
-  const activity = getActivityStatus(project.updatedAt);
-  const activityStyles = activityConfig[activity];
+  const activity = getProjectActivityStatus(project.lastActivityAt);
+  const activityStyles = projectActivityConfig[activity];
 
   return (
     <article className="group relative flex h-full cursor-pointer flex-col rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700">
@@ -98,8 +48,8 @@ export default function ProjectCard({
           </h3>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
             Updated{" "}
-            <time dateTime={project.updatedAt}>
-              {formatRelativeDate(project.updatedAt)}
+            <time dateTime={project.lastActivityAt}>
+              {formatRelativeDate(project.lastActivityAt)}
             </time>
           </p>
         </div>

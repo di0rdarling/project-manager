@@ -7,6 +7,7 @@ import {
   noteFolderMatchesScope,
   projectLevelNoteFoldersFilter,
 } from "@/lib/notes";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import type { NoteFolder, NoteFolderResponse } from "@/lib/types";
 
 type RouteContext = {
@@ -202,6 +203,8 @@ export async function POST(request: Request, context: RouteContext) {
     const insertResult = await db
       .collection<Omit<NoteFolder, "_id">>("noteFolders")
       .insertOne(folder);
+
+    await touchProjectUpdatedAt(db, projectObjectId, auth.userId, now);
 
     return Response.json(
       serializeNoteFolder({ ...folder, _id: insertResult.insertedId }),

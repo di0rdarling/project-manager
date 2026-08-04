@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import type { CoreUser, CoreUserResponse } from "@/lib/types";
 
@@ -132,6 +133,13 @@ export async function POST(request: Request, context: RouteContext) {
       .db()
       .collection<Omit<CoreUser, "_id">>("coreUsers")
       .insertOne(coreUser);
+
+    await touchProjectUpdatedAt(
+      result.client.db(),
+      new ObjectId(id),
+      auth.userId,
+      now,
+    );
 
     return Response.json(
       serializeCoreUser({ ...coreUser, _id: insertResult.insertedId }),

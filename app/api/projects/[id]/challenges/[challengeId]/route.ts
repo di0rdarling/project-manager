@@ -3,6 +3,7 @@ import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { parseChallengeStatus } from "@/lib/challenges";
 import { toIsoString } from "@/lib/dates";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import type { Challenge, ChallengeResponse } from "@/lib/types";
 
@@ -107,6 +108,12 @@ export async function PATCH(request: Request, context: RouteContext) {
       return Response.json({ error: "Challenge not found" }, { status: 404 });
     }
 
+    await touchProjectUpdatedAt(
+      client.db(),
+      new ObjectId(id),
+      auth.userId,
+    );
+
     return Response.json(serializeChallenge(result));
   } catch {
     return Response.json(
@@ -146,6 +153,12 @@ export async function DELETE(_request: Request, context: RouteContext) {
     if (result.deletedCount === 0) {
       return Response.json({ error: "Challenge not found" }, { status: 404 });
     }
+
+    await touchProjectUpdatedAt(
+      client.db(),
+      new ObjectId(id),
+      auth.userId,
+    );
 
     return Response.json({ success: true });
   } catch {

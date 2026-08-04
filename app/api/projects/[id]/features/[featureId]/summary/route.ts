@@ -10,6 +10,7 @@ import {
 } from "@/lib/domain-knowledge";
 import { getStoredRequirementIds } from "@/lib/feature-requirements";
 import { buildFeatureSummaryPrompt } from "@/lib/prompts/feature-summary-prompt";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import {
   serializeFeature,
   type StoredFeature,
@@ -192,6 +193,8 @@ export async function POST(_request: Request, context: RouteContext) {
       );
     }
 
+    await touchProjectUpdatedAt(db, projectObjectId, auth.userId, updatedAt);
+
     return Response.json(serializeFeature(savedFeature));
   } catch (error) {
     if (
@@ -254,6 +257,8 @@ export async function DELETE(_request: Request, context: RouteContext) {
     if (!savedFeature) {
       return Response.json({ error: "Feature not found" }, { status: 404 });
     }
+
+    await touchProjectUpdatedAt(db, projectObjectId, auth.userId);
 
     return Response.json(serializeFeature(savedFeature));
   } catch {

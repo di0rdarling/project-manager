@@ -7,6 +7,7 @@ import {
   projectLevelChallengesFilter,
 } from "@/lib/challenges";
 import { toIsoString } from "@/lib/dates";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import type { Challenge, ChallengeResponse } from "@/lib/types";
 
@@ -203,6 +204,13 @@ export async function POST(request: Request, context: RouteContext) {
       .db()
       .collection<Omit<Challenge, "_id">>("challenges")
       .insertOne(challenge);
+
+    await touchProjectUpdatedAt(
+      result.client.db(),
+      projectObjectId,
+      auth.userId,
+      now,
+    );
 
     return Response.json(
       serializeChallenge({ ...challenge, _id: insertResult.insertedId }),

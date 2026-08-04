@@ -7,6 +7,7 @@ import {
   parseConfidenceLevel,
   projectLevelDomainKnowledgeFilter,
 } from "@/lib/domain-knowledge";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import type { DomainKnowledge, DomainKnowledgeResponse } from "@/lib/types";
 
@@ -205,6 +206,13 @@ export async function POST(request: Request, context: RouteContext) {
       .db()
       .collection<Omit<DomainKnowledge, "_id">>("domainKnowledge")
       .insertOne(domainKnowledge);
+
+    await touchProjectUpdatedAt(
+      result.client.db(),
+      projectObjectId,
+      auth.userId,
+      now,
+    );
 
     return Response.json(
       serializeDomainKnowledge({

@@ -5,6 +5,7 @@ import {
   validateRequirementLinks,
 } from "@/lib/feature-requirements";
 import getClientPromise from "@/lib/mongodb";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import { serializeFeature, type StoredFeature } from "@/lib/serialize/serialize-feature";
 
@@ -130,6 +131,12 @@ export async function PATCH(request: Request, context: RouteContext) {
       return Response.json({ error: "Feature not found" }, { status: 404 });
     }
 
+    await touchProjectUpdatedAt(
+      client.db(),
+      projectId,
+      auth.userId,
+    );
+
     return Response.json(serializeFeature(result));
   } catch {
     return Response.json(
@@ -169,6 +176,12 @@ export async function DELETE(_request: Request, context: RouteContext) {
     if (result.deletedCount === 0) {
       return Response.json({ error: "Feature not found" }, { status: 404 });
     }
+
+    await touchProjectUpdatedAt(
+      client.db(),
+      new ObjectId(id),
+      auth.userId,
+    );
 
     return Response.json({ success: true });
   } catch {

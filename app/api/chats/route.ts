@@ -13,6 +13,7 @@ import {
 } from "@/lib/chats/kimi-reasoning-effort";
 import { serializeChatsWithContext } from "@/lib/chats/chat-list-items";
 import { requireUserId } from "@/lib/current-user";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import getClientPromise from "@/lib/mongodb";
 import type { StoredChat } from "@/lib/serialize/serialize-chat";
 import type { StoredProject } from "@/lib/serialize/serialize-project";
@@ -164,6 +165,8 @@ export async function POST(request: Request) {
     const result = await db
       .collection<Omit<Chat, "_id">>("chats")
       .insertOne(chat);
+
+    await touchProjectUpdatedAt(db, projectObjectId, auth.userId, now);
 
     const [createdChat] = await serializeChatsWithContext(db, [
       { ...chat, _id: result.insertedId },

@@ -3,6 +3,7 @@ import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
 import { isRichTextEmpty } from "@/lib/rich-text";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import { parseRequirementPriority } from "@/lib/requirements";
 import type { Requirement, RequirementResponse } from "@/lib/types";
 import type { StoredFeature } from "@/lib/serialize/serialize-feature";
@@ -103,6 +104,12 @@ export async function PATCH(request: Request, context: RouteContext) {
       return Response.json({ error: "Requirement not found" }, { status: 404 });
     }
 
+    await touchProjectUpdatedAt(
+      client.db(),
+      new ObjectId(id),
+      auth.userId,
+    );
+
     return Response.json(serializeRequirement(result));
   } catch {
     return Response.json(
@@ -168,6 +175,8 @@ export async function DELETE(_request: Request, context: RouteContext) {
         },
       },
     );
+
+    await touchProjectUpdatedAt(db, projectObjectId, auth.userId);
 
     return Response.json({ success: true });
   } catch {

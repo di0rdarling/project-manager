@@ -33,7 +33,10 @@ type ProjectBase<TId> = {
 };
 
 export type Project = ProjectBase<ObjectId>;
-export type ProjectResponse = ProjectBase<string>;
+export type ProjectResponse = ProjectBase<string> & {
+  /** Latest of project.updatedAt and any chat created/updated in this project. */
+  lastActivityAt: string;
+};
 
 type NoteBase<TId> = {
   _id: TId;

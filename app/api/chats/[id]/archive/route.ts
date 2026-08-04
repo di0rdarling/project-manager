@@ -3,6 +3,7 @@ import { refreshAgentMemoryFromChatSummary } from "@/lib/agents/agent-memory-ref
 import { refreshUserMemoryFromChatSummary } from "@/lib/agents/user-memory-refresh";
 import { requireUserId } from "@/lib/current-user";
 import { generateArchivedChatSummary } from "@/lib/gemini";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import getClientPromise from "@/lib/mongodb";
 import {
   buildChatArchiveSummaryPrompt,
@@ -111,6 +112,15 @@ export async function POST(_request: Request, context: RouteContext) {
       return Response.json({ error: "Chat not found" }, { status: 404 });
     }
 
+    if (updateResult.projectId) {
+      await touchProjectUpdatedAt(
+        result.client.db(),
+        updateResult.projectId,
+        auth.userId,
+        now,
+      );
+    }
+
     if (condensedSummary) {
       const currentUser = await findUserById(result.client.db(), auth.userId);
 
@@ -196,6 +206,15 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
     if (!updateResult) {
       return Response.json({ error: "Chat not found" }, { status: 404 });
+    }
+
+    if (updateResult.projectId) {
+      await touchProjectUpdatedAt(
+        result.client.db(),
+        updateResult.projectId,
+        auth.userId,
+        now,
+      );
     }
 
     return Response.json(serializeChat(updateResult));

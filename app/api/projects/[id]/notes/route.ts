@@ -3,6 +3,7 @@ import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
 import { featureNotesFilter, noteFolderMatchesScope, projectLevelNotesFilter } from "@/lib/notes";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import type { Note, NoteResponse } from "@/lib/types";
 
@@ -202,6 +203,8 @@ export async function POST(request: Request, context: RouteContext) {
     const insertResult = await db
       .collection<Omit<Note, "_id">>("notes")
       .insertOne(note);
+
+    await touchProjectUpdatedAt(db, projectObjectId, auth.userId, now);
 
     return Response.json(
       serializeNote({ ...note, _id: insertResult.insertedId }),

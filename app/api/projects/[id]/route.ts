@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
+import { getLatestChatActivityByProjectId } from "@/lib/projects/get-latest-chat-activity-by-project";
 import {
   serializeProject,
   type StoredProject,
@@ -24,16 +25,27 @@ export async function GET(_request: Request, context: RouteContext) {
     }
 
     const client = await getClientPromise();
-    const project = await client
-      .db()
+    const db = client.db();
+    const projectObjectId = new ObjectId(id);
+    const project = await db
       .collection<StoredProject>("projects")
-      .findOne({ _id: new ObjectId(id), userId: auth.userId });
+      .findOne({ _id: projectObjectId, userId: auth.userId });
 
     if (!project) {
       return Response.json({ error: "Project not found" }, { status: 404 });
     }
 
-    return Response.json(serializeProject(project));
+    const chatActivityByProjectId = await getLatestChatActivityByProjectId(
+      db,
+      auth.userId,
+      [projectObjectId],
+    );
+
+    return Response.json(
+      serializeProject(project, {
+        lastChatActivityAt: chatActivityByProjectId.get(id),
+      }),
+    );
   } catch {
     return Response.json(
       { error: "Failed to fetch project" },
@@ -68,11 +80,12 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const client = await getClientPromise();
-    const result = await client
-      .db()
+    const db = client.db();
+    const projectObjectId = new ObjectId(id);
+    const result = await db
       .collection<StoredProject>("projects")
       .findOneAndUpdate(
-        { _id: new ObjectId(id), userId: auth.userId },
+        { _id: projectObjectId, userId: auth.userId },
         {
           $set: {
             name,
@@ -87,7 +100,17 @@ export async function PATCH(request: Request, context: RouteContext) {
       return Response.json({ error: "Project not found" }, { status: 404 });
     }
 
-    return Response.json(serializeProject(result));
+    const chatActivityByProjectId = await getLatestChatActivityByProjectId(
+      db,
+      auth.userId,
+      [projectObjectId],
+    );
+
+    return Response.json(
+      serializeProject(result, {
+        lastChatActivityAt: chatActivityByProjectId.get(id),
+      }),
+    );
   } catch {
     return Response.json(
       { error: "Failed to update project" },

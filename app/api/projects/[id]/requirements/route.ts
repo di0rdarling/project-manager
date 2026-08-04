@@ -3,6 +3,7 @@ import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
 import { isRichTextEmpty } from "@/lib/rich-text";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import { parseRequirementPriority } from "@/lib/requirements";
 import type { Requirement, RequirementResponse } from "@/lib/types";
 
@@ -138,6 +139,13 @@ export async function POST(request: Request, context: RouteContext) {
       .db()
       .collection<Omit<Requirement, "_id">>("requirements")
       .insertOne(requirement);
+
+    await touchProjectUpdatedAt(
+      result.client.db(),
+      new ObjectId(id),
+      auth.userId,
+      now,
+    );
 
     return Response.json(
       serializeRequirement({ ...requirement, _id: insertResult.insertedId }),

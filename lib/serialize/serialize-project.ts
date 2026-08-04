@@ -1,4 +1,5 @@
 import { toIsoString } from "@/lib/dates";
+import { getLatestActivityAt } from "@/lib/projects/project-activity";
 import type { Project, ProjectResponse } from "@/lib/types";
 
 export type StoredProject = Omit<Project, "_id" | "createdAt" | "updatedAt"> & {
@@ -7,7 +8,18 @@ export type StoredProject = Omit<Project, "_id" | "createdAt" | "updatedAt"> & {
   updatedAt: string | Date;
 };
 
-export function serializeProject(project: StoredProject): ProjectResponse {
+type SerializeProjectOptions = {
+  lastChatActivityAt?: string | null;
+};
+
+export function serializeProject(
+  project: StoredProject,
+  options?: SerializeProjectOptions,
+): ProjectResponse {
+  const updatedAt = project.updatedAt
+    ? toIsoString(project.updatedAt)
+    : toIsoString(project.createdAt);
+
   return {
     _id: project._id.toString(),
     userId: project.userId.toString(),
@@ -18,8 +30,7 @@ export function serializeProject(project: StoredProject): ProjectResponse {
         ? project.aiSummary
         : null,
     createdAt: toIsoString(project.createdAt),
-    updatedAt: project.updatedAt
-      ? toIsoString(project.updatedAt)
-      : toIsoString(project.createdAt),
+    updatedAt,
+    lastActivityAt: getLatestActivityAt(updatedAt, options?.lastChatActivityAt),
   };
 }

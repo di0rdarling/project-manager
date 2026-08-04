@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/Button";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import {
   getChatTeammateById,
-  getChatTeammatePersonalityTraits,
   isChatTeammateId,
 } from "@/lib/chats/chat-teammates";
 import {
@@ -73,7 +72,6 @@ export default function ChatAgentProfileView({
   }
 
   const teammate = getChatTeammateById(teammateId)!;
-  const personalityTraits = getChatTeammatePersonalityTraits(teammateId);
 
   return (
     <PageContent>
@@ -130,20 +128,6 @@ export default function ChatAgentProfileView({
         profileFrom={navigationContext.from}
         profileProjectId={navigationContext.projectId}
       />
-
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Personality &amp; approach</h2>
-        <ul className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-          {personalityTraits.map((trait) => (
-            <li
-              key={trait}
-              className="text-sm leading-relaxed text-zinc-800 dark:text-zinc-200"
-            >
-              {trait}
-            </li>
-          ))}
-        </ul>
-      </section>
 
       <ProjectSelectModal
         open={isProjectSelectOpen}

@@ -2,6 +2,7 @@ import { countActiveProjectsForUser } from "@/lib/account/count-active-projects"
 import { hasReachedActiveProjectLimit } from "@/lib/account/subscription-limits";
 import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
+import { getLatestChatActivityByProjectId } from "@/lib/projects/get-latest-chat-activity-by-project";
 import { findUserById, normalizeUserSubscription } from "@/lib/users";
 import {
   serializeProject,
@@ -17,14 +18,26 @@ export async function GET() {
     }
 
     const client = await getClientPromise();
-    const projects = await client
-      .db()
+    const db = client.db();
+    const projects = await db
       .collection<StoredProject>("projects")
       .find({ userId: auth.userId })
       .sort({ createdAt: -1 })
       .toArray();
+    const chatActivityByProjectId = await getLatestChatActivityByProjectId(
+      db,
+      auth.userId,
+    );
 
-    return Response.json(projects.map(serializeProject));
+    return Response.json(
+      projects.map((project) =>
+        serializeProject(project, {
+          lastChatActivityAt: chatActivityByProjectId.get(
+            project._id.toString(),
+          ),
+        }),
+      ),
+    );
   } catch {
     return Response.json(
       { error: "Failed to fetch projects" },

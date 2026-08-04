@@ -4,6 +4,7 @@ import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
 import { getDescendantFolderIds } from "@/lib/note-folders";
 import { noteFolderMatchesScope } from "@/lib/notes";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import type { NoteFolder, NoteFolderResponse } from "@/lib/types";
 
 type RouteContext = {
@@ -205,6 +206,8 @@ export async function PATCH(request: Request, context: RouteContext) {
       return Response.json({ error: "Folder not found" }, { status: 404 });
     }
 
+    await touchProjectUpdatedAt(db, projectObjectId, auth.userId, updates.updatedAt);
+
     return Response.json(serializeNoteFolder(result));
   } catch {
     return Response.json({ error: "Failed to update note folder" }, { status: 500 });
@@ -282,6 +285,8 @@ export async function DELETE(_request: Request, context: RouteContext) {
     if (deleteResult.deletedCount === 0) {
       return Response.json({ error: "Folder not found" }, { status: 404 });
     }
+
+    await touchProjectUpdatedAt(db, projectObjectId, auth.userId);
 
     return Response.json({ success: true });
   } catch {

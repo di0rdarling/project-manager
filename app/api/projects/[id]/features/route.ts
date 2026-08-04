@@ -5,6 +5,7 @@ import {
   validateRequirementLinks,
 } from "@/lib/feature-requirements";
 import getClientPromise from "@/lib/mongodb";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import { serializeFeature, type StoredFeature } from "@/lib/serialize/serialize-feature";
 import type { Feature } from "@/lib/types";
@@ -130,6 +131,13 @@ export async function POST(request: Request, context: RouteContext) {
       .db()
       .collection<Omit<Feature, "_id">>("features")
       .insertOne(feature);
+
+    await touchProjectUpdatedAt(
+      result.client.db(),
+      result.projectId,
+      auth.userId,
+      now,
+    );
 
     return Response.json(
       serializeFeature({ ...feature, _id: insertResult.insertedId }),

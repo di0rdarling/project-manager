@@ -6,6 +6,7 @@ import {
 } from "@/lib/agents/agent-documents-store";
 import type { ChatTeammateId } from "@/lib/chats/chat-teammates";
 import { toIsoString } from "@/lib/dates";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import type { AgentDocumentResponse, Note, NoteResponse } from "@/lib/types";
 
@@ -117,6 +118,7 @@ export async function saveAgentDocumentAsProjectNote(
   const insertResult = await db
     .collection<Omit<Note, "_id">>("notes")
     .insertOne(note);
+  await touchProjectUpdatedAt(db, projectId, userId, now);
   const savedNote = serializeNote({ ...note, _id: insertResult.insertedId });
   const updatedDocument = await updateAgentDocumentSavedProjectNoteId(
     db,

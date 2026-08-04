@@ -3,6 +3,7 @@ import { requireUserId } from "@/lib/current-user";
 import getClientPromise from "@/lib/mongodb";
 import { toIsoString } from "@/lib/dates";
 import { parseConfidenceLevel } from "@/lib/domain-knowledge";
+import { touchProjectUpdatedAt } from "@/lib/projects/touch-project-updated-at";
 import { isRichTextEmpty } from "@/lib/rich-text";
 import type { DomainKnowledge, DomainKnowledgeResponse } from "@/lib/types";
 
@@ -112,6 +113,12 @@ export async function PATCH(request: Request, context: RouteContext) {
       );
     }
 
+    await touchProjectUpdatedAt(
+      client.db(),
+      new ObjectId(id),
+      auth.userId,
+    );
+
     return Response.json(serializeDomainKnowledge(result));
   } catch {
     return Response.json(
@@ -157,6 +164,12 @@ export async function DELETE(_request: Request, context: RouteContext) {
         { status: 404 },
       );
     }
+
+    await touchProjectUpdatedAt(
+      client.db(),
+      new ObjectId(id),
+      auth.userId,
+    );
 
     return Response.json({ success: true });
   } catch {
